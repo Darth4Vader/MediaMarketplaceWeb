@@ -1,0 +1,71 @@
+package backend;
+
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import backend.exceptions.EntityAdditionException;
+import backend.exceptions.JwtTokenNotFoundException;
+import backend.exceptions.LogValuesAreIncorrectException;
+import backend.exceptions.UserAlreadyExistsException;
+import backend.exceptions.UserDoesNotExistsException;
+import backend.exceptions.UserPasswordIsIncorrectException;
+
+@RestControllerAdvice
+public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
+	
+	protected final Log LOGGER = LogFactory.getLog(getClass());
+
+	public DefaultExceptionHandler() {
+		// TODO Auto-generated constructor stub
+	}
+	
+	@ExceptionHandler(UserAlreadyExistsException.class)
+	public ResponseEntity<Object> handleUserAlreadyExistsException(UserAlreadyExistsException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.CONFLICT, request);
+	}
+	
+	@ExceptionHandler(EntityAdditionException.class)
+	public ResponseEntity<Object> handleEntityAdditionException(EntityAdditionException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
+	}
+	
+	@ExceptionHandler(LogValuesAreIncorrectException.class)
+	public ResponseEntity<Object> handleLogValuesAreIncorrectException(LogValuesAreIncorrectException ex, WebRequest request) {
+		LOGGER.error(ex);
+		Map<String, Object> bodyOfResponse = Map.of(
+				"error", ex.getMessage(),
+				"values_problems", ex.getUserLogInfo()
+		);
+		return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+	}
+	
+	@ExceptionHandler(UserDoesNotExistsException.class)
+	public ResponseEntity<Object> handleUserDoesNotExistsException(UserDoesNotExistsException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.NOT_FOUND, request);
+	}
+	
+	@ExceptionHandler(UserPasswordIsIncorrectException.class)
+	public ResponseEntity<Object> handleUserPasswordIsIncorrectException(UserPasswordIsIncorrectException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
+	}
+	
+	@ExceptionHandler(JwtTokenNotFoundException.class)
+	public ResponseEntity<Object> handleJwtTokenNotFoundException(JwtTokenNotFoundException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
+	}
+	
+}

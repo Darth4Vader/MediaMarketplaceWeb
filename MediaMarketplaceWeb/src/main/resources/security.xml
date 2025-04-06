@@ -1,0 +1,24 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"  
+    xmlns:beans="http://www.springframework.org/schema/beans"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
+    xsi:schemaLocation="http://www.springframework.org/schema/beans  
+    http://www.springframework.org/schema/beans/spring-beans.xsd  
+    http://www.springframework.org/schema/security  
+    http://www.springframework.org/schema/security/spring-security.xsd">  
+        
+        
+       <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+    <property name="defaultErrorView" value="uncaughtException" />
+    <property name="excludedExceptions" value="org.springframework.security.access.AccessDeniedException" />
+
+    <property name="exceptionMappings">
+        <props>
+            <prop key=".DataAccessException">dataAccessFailure</prop>
+            <prop key=".NoSuchRequestHandlingMethodException">resourceNotFound</prop>
+            <prop key=".TypeMismatchException">resourceNotFound</prop>
+            <prop key=".MissingServletRequestParameterException">resourceNotFound</prop>
+        </props>
+    </property>
+</bean>
+
+</beans:beans>
