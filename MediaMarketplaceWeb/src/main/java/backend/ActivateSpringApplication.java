@@ -42,7 +42,14 @@ public class ActivateSpringApplication implements CommandLineRunner {
      * @return the application context
      */
     public static ConfigurableApplicationContext create(String... args) {
-        return SpringApplication.run(ActivateSpringApplication.class, args);
+        try {
+        	return SpringApplication.run(ActivateSpringApplication.class, args);
+        }
+        catch(Exception exp) {
+        	if(!ActivateSpringExceptionHandler.handleException(exp))
+        		throw exp;
+        	return null;
+        }
     }
 
     /**

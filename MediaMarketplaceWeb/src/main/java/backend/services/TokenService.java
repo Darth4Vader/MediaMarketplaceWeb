@@ -128,7 +128,8 @@ public class TokenService {
     	if(auth == null)
     		throw new UserNotLoggedInException();
     	//The current user
-    	User user = (User) auth.getPrincipal();
-    	return user;
+    	if(auth.getPrincipal() instanceof User)
+    		return (User) auth.getPrincipal();
+    	throw new UserNotLoggedInException();
     }
 }

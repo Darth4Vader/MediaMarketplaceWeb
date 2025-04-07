@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hibernate.exception.JDBCConnectionException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import backend.exceptions.EntityAdditionException;
+import backend.exceptions.EntityAlreadyExistsException;
+import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.JwtTokenNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
 import backend.exceptions.UserAlreadyExistsException;
@@ -22,11 +25,7 @@ import backend.exceptions.UserPasswordIsIncorrectException;
 @RestControllerAdvice
 public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	
-	protected final Log LOGGER = LogFactory.getLog(getClass());
-
-	public DefaultExceptionHandler() {
-		// TODO Auto-generated constructor stub
-	}
+	private final Log LOGGER = LogFactory.getLog(getClass());
 	
 	@ExceptionHandler(UserAlreadyExistsException.class)
 	public ResponseEntity<Object> handleUserAlreadyExistsException(UserAlreadyExistsException ex, WebRequest request) {
@@ -68,4 +67,21 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
 	}
 	
+	@ExceptionHandler(JDBCConnectionException.class)
+	public ResponseEntity<Object> handleJDBCConnectionException(JDBCConnectionException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, "Unable to connect to Server", new HttpHeaders(), HttpStatus.SERVICE_UNAVAILABLE, request);
+	}
+	
+	@ExceptionHandler(EntityNotFoundException.class)
+	public ResponseEntity<Object> handleEntityNotFoundException(EntityNotFoundException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.NOT_FOUND, request);
+	}
+	
+	@ExceptionHandler(EntityAlreadyExistsException.class)
+	public ResponseEntity<Object> handleEntityAlreadyExistsException(EntityAlreadyExistsException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.CONFLICT, request);
+	}
 }

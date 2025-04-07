@@ -356,7 +356,6 @@ public class UserAuthenticateService {
      */
     private void setAuthentication(Authentication auth) {
         // Set that the security context support threading of children.
-        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
     	// Set as the current authentication user
         SecurityContextHolder.getContext().setAuthentication(auth);
     }

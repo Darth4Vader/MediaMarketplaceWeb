@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -59,8 +60,8 @@ public class CartController {
      * @throws EntityAlreadyExistsException If the product already exists in the cart.
      * @throws EntityAdditionException If there is a problem adding the product due to data access issues.
      */
-    @PostMapping("/add/{productId}")
-    public ResponseEntity<String> addProductToCart(@PathVariable CartProductReference dto) 
+    @PostMapping("/add")
+    public ResponseEntity<String> addProductToCart(@RequestBody CartProductReference dto) 
             throws EntityNotFoundException, EntityAlreadyExistsException {
         try {
             cartService.addProductToCart(dto);
@@ -83,12 +84,12 @@ public class CartController {
      * @throws EntityRemovalException If there is a problem removing the product due to data access issues.
      */
     @DeleteMapping("/remove/{productId}")
-    public ResponseEntity<String> removeProductFromCart(@PathVariable CartProductReference dto) 
+    public ResponseEntity<String> removeProductFromCart(@PathVariable Long productId) 
             throws EntityNotFoundException {
         try {
-            cartService.removeProductFromCart(dto);
+            cartService.removeProductFromCart(productId);
         } catch (DataAccessException e) {
-            throw new EntityRemovalException("Unable to remove the product \"" + dto.getProductId() + "\" from the cart", e);
+            throw new EntityRemovalException("Unable to remove the product \"" + productId + "\" from the cart", e);
         }
         return new ResponseEntity<>("Removed Successfully", HttpStatus.OK);
     }

@@ -142,11 +142,11 @@ public class CartService {
      * @throws EntityNotFoundException if the product is not found or the user does not have a cart.
      */
     @Transactional
-    public void removeProductFromCart(CartProductReference cartProductReference) throws EntityNotFoundException {
+    public void removeProductFromCart(Long productId) throws EntityNotFoundException {
     	// Load the cart and the product
     	User user = tokenService.getCurretUser();
         Cart cart = getCartByUser(user);
-        Product product = productService.getProductByID(cartProductReference.getProductId());
+        Product product = productService.getProductByID(productId);
         // Now remove the product from the cart.
         removeProductFromCart(cart, product);
     }

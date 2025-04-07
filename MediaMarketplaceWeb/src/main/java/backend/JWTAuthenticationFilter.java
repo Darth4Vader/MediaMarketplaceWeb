@@ -1,86 +1,59 @@
 package backend;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import backend.controllers.UserAuthenticateController;
-import backend.services.TokenService;
+import backend.exceptions.UserNotLoggedInException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-//@Component
+@Component
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
-
-    /*@Autowired
-    private TokenService tokenService;
-
-    @Autowired
-    private UserDetailsService userDetailsService;*/
+	
+	private final Log LOGGER = LogFactory.getLog(getClass());
 	
 	@Autowired
-	private  UserAuthenticateController userAuthenticateController;
+	private UserAuthenticateController userAuthenticateController;
 	
-	/*@Autowired
-	@Qualifier("handlerExceptionResolver")*/
-	private final HandlerExceptionResolver resolver;
-	
-    @Autowired
-    public JWTAuthenticationFilter(HandlerExceptionResolver handlerExceptionResolver) {
-        this.resolver = handlerExceptionResolver;
-    }
+	@Autowired
+	//@Qualifier("exceptionResolver")
+	@Qualifier("handlerExceptionResolver")
+	private HandlerExceptionResolver resolver;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         try {
 	    	final String authorizationHeader = request.getHeader("Authorization");
-	        System.out.println("Authorization Header: " + authorizationHeader);
-	        String username = null;
-	        String jwt = null;
-	        System.out.println("Ok Before filter");
 	        if (authorizationHeader != null) {
-				jwt = authorizationHeader;
-	        	userAuthenticateController.loginUserFromToken(jwt, request);
+				String jwt = authorizationHeader;
+	        	if(userAuthenticateController.loginUserFromToken(jwt, request))
+	        		LOGGER.info("User authenticated successfully");
 	        }
-	        
-	        /*if (authorizationHeader != null) {
-	            jwt = authorizationHeader;
-	            System.out.println(jwt);
-	            username = tokenService.extractUsername(jwt);
-	        }
-	
-	        //if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-	        if(username != null) {
-	        	System.out.println(username);
-	            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-	            if (tokenService.validateToken(jwt, userDetails)) {
-	                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-	                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-	                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-	            }
-	        }
-	        */
 	        filterChain.doFilter(request, response);
+	        try {
+	        	userAuthenticateController.signOutFromCurrentUser();
+	        }
+	        catch(UserNotLoggedInException e) {
+	        	// ignore, not every method need authentication
+	        }
         }
         catch(Exception e) {
-        	resolver.resolveException(request, response, null, e);
+        	LOGGER.error("Error in JWTAuthenticationFilter: " + e.getMessage());
+        	e.printStackTrace();
+        	if(resolver != null)
+        		resolver.resolveException(request, response, null, e);
+        	else
+        		LOGGER.error("Exception Resolver is null");
         }
     }
     

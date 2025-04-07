@@ -2,61 +2,33 @@ package backend;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
-import com.nimbusds.jose.jwk.source.JWKSource;
-import com.nimbusds.jose.proc.SecurityContext;
-import com.nimbusds.jwt.proc.JWTProcessor;
 
-import backend.auth.RSAKeysPair;
 import backend.entities.enums.RoleType;
-import backend.services.UserAuthenticateService;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.constraints.NotNull;
 
 /**
  * Security configuration for the application.
@@ -69,31 +41,6 @@ import jakarta.validation.constraints.NotNull;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    private final RSAKeysPair rsaKeys;
-
-    /**
-     * Constructor for injecting the RSA key pair.
-     * 
-     * @param rsaKeys the RSA key pair used for JWT encoding and decoding
-     */
-    public SecurityConfig(RSAKeysPair rsaKeys) {
-        this.rsaKeys = rsaKeys;
-    }
-
-    /**
-     * Provides the AuthenticationManager bean.
-     * 
-     * @param detailsService the UserDetailsService for loading user-specific data
-     * @return an AuthenticationManager instance
-     */
-    @Bean
-    public AuthenticationManager authManager(UserDetailsService detailsService) {
-        DaoAuthenticationProvider daoProvider = new DaoAuthenticationProvider();
-        daoProvider.setUserDetailsService(detailsService);
-        daoProvider.setPasswordEncoder(passwordEncoder());
-        return new ProviderManager(daoProvider);
-    }
-
     /**
      * Configures exception handling for the application. 
      * Ignoring the access deny exception, so that the user will get it and can handle it's exception
@@ -101,6 +48,7 @@ public class SecurityConfig {
      * @return a SimpleMappingExceptionResolver instance
      */
     @Bean
+    @Qualifier("exceptionResolver")
     public SimpleMappingExceptionResolver exceptionResolver() {
         SimpleMappingExceptionResolver exceptionResolver = new SimpleMappingExceptionResolver();
         
@@ -178,7 +126,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-        	//.cors(Customizer.withDefaults())
         	.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable()) // Disables CSRF protection, common in stateless REST APIs.
             /*.sessionManagement((session) ->
@@ -191,7 +138,6 @@ public class SecurityConfig {
             		.requestMatchers(HttpMethod.GET, "/api/main/**").permitAll()
             		.requestMatchers("/api/users/carts/**").hasAnyRole(RoleType.ROLE_USER.getRoleName())
             		.requestMatchers("/error").permitAll()
-        		//.requestMatchers("/**").permitAll()
             		.anyRequest().authenticated()
                 /*
             	.requestMatchers("/auth").permitAll()
@@ -212,26 +158,10 @@ public class SecurityConfig {
             );
         //used for moving the AccessDeny exception to the JavaFX
         http.exceptionHandling(cust -> cust
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                	System.out.println("auth1");
+                .accessDeniedHandler((_, _, accessDeniedException) -> {
                     throw new RuntimeException(accessDeniedException);
                 })
-                
-                .authenticationEntryPoint((request, response, authException) -> {
-                	
-                    String jwtAuthToken = request.getHeader("Authorization");//here is your token value
-                    System.out.println("SPOOOOO " + jwtAuthToken);
-                    //loginUserFromJwt(jwtAuthToken);
-                	
-                	/*
-                	System.out.println("SPOOOOO");
-                	System.out.println(request.getContentType());
-                	//System.out.println(response.);
-                    throw new RuntimeException(authException);
-                    */
-                	
-                	System.out.println(request.getRequestURI());
-                	
+                .authenticationEntryPoint((_, response, _) -> {
                 	response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                 	response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
@@ -242,45 +172,30 @@ public class SecurityConfig {
                     final ObjectMapper mapper = new ObjectMapper();
                     mapper.writeValue(response.getOutputStream(), body);
                 })
-                
-                .defaultAccessDeniedHandlerFor((request, response, accessDeniedException) -> {
+                .defaultAccessDeniedHandlerFor((_, _, accessDeniedException) -> {
                 	System.out.println("auth2");
                     throw new RuntimeException(accessDeniedException);
-                }, null)
-                
-                //.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                
-                
-                .defaultAuthenticationEntryPointFor((request, response, authException) -> {
+                }, null)  
+                .defaultAuthenticationEntryPointFor((_, _, authException) -> {
                 	System.out.println("auth3");
                     throw new RuntimeException(authException);
                 }, null)
                 
             );
-        http.addFilterBefore(new JWTAuthenticationFilter(exceptionResolver()), UsernamePasswordAuthenticationFilter.class);
-        
-        //http.addFilterBefore(new UrlRewriteFilter(), MyWebFilter.class);
-        //ttp.addFilterBefore(null, null)
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
-
-    /**
-     * Provides the PasswordEncoder bean.
-     * 
-     * @return a BCryptPasswordEncoder instance
-     */
+    
+    @Autowired
+    private JWTAuthenticationFilter jwtAuthenticationFilter;
+    
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-    
-    /*@Bean
-    private JWTAuthenticationFilter jwtAuthenticationFilter;*/
-    
-    /*@Bean
-    public JWTAuthenticationFilter jwtAuthenticationFilter() {
-        return new JWTAuthenticationFilter();
-    }*/
+    public FilterRegistrationBean<JWTAuthenticationFilter> registerJwtAuthenticationFilter(JWTAuthenticationFilter jwtAuthenticationFilter) {
+		FilterRegistrationBean<JWTAuthenticationFilter> registrationBean = new FilterRegistrationBean<>(jwtAuthenticationFilter);
+		registrationBean.setFilter(jwtAuthenticationFilter);
+		registrationBean.setEnabled(false);
+		return registrationBean;
+	}
 
     /**
      * Provides the JwtAuthenticationConverter bean for converting JWTs to Authentication objects.
@@ -296,27 +211,5 @@ public class SecurityConfig {
         JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
         jwtConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
         return jwtConverter;
-    }
-
-    /**
-     * Provides the JwtDecoder bean for decoding JWTs.
-     * 
-     * @return a JwtDecoder instance
-     */
-    @Bean
-    public JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withPublicKey(rsaKeys.getPublicKey()).build();
-    }
-
-    /**
-     * Provides the JwtEncoder bean for encoding JWTs.
-     * 
-     * @return a JwtEncoder instance
-     */
-    @Bean
-    public JwtEncoder jwtEncoder() {
-        JWK jwk = new RSAKey.Builder(rsaKeys.getPublicKey()).privateKey(rsaKeys.getPrivateKey()).build();
-        JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
-        return new NimbusJwtEncoder(jwks);
     }
 }
