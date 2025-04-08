@@ -1,15 +1,19 @@
 package backend.controllers;
 
+import java.net.URI;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import backend.dtos.PersonDto;
 import backend.exceptions.EntityAdditionException;
@@ -31,6 +35,11 @@ public class PersonController {
 
     @Autowired
     private PersonService personService;
+    
+    @GetMapping("/{id}")
+    public PersonDto getPerson(@PathVariable("id") Long id) throws EntityNotFoundException {
+		return personService.getPerson(id);
+	}
 
     /**
      * Adds a new person to the system.
@@ -44,14 +53,21 @@ public class PersonController {
      * @return A {@link ResponseEntity} with a success message and HTTP status 200 (OK).
      * @throws EntityAlreadyExistsException If a person with the same media ID already exists.
      */
-    @PostMapping("/add")
-    public ResponseEntity<String> addPerson(@Valid @RequestBody PersonDto personDto) throws EntityAlreadyExistsException {
+    @PostMapping("/")
+    public ResponseEntity<?> addPerson(@Valid @RequestBody PersonDto personDto) throws EntityAlreadyExistsException {
         try {
-            personService.addPerson(personDto);
+        	// create the person and get the ID
+        	final Long id = personService.addPerson(personDto);
+        	// build the URI for the created person location
+        	URI location = ServletUriComponentsBuilder
+                    .fromCurrentRequest()
+                    .path("/{id}")
+                    .buildAndExpand(id)
+                    .toUri();
+        	return ResponseEntity.created(location).build();
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to add the person with the media id: \"" + personDto.getPersonMediaID() + "\"", e);
         }
-        return new ResponseEntity<>("Created Successfully", HttpStatus.OK);
     }
 
     /**
@@ -66,8 +82,8 @@ public class PersonController {
      * @return A {@link ResponseEntity} with a success message and HTTP status 200 (OK).
      * @throws EntityNotFoundException If the person with the provided ID cannot be found.
      */
-    @DeleteMapping("/remove/{id}")
-    public ResponseEntity<String> removePerson(@PathVariable Long id) throws EntityNotFoundException {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> removePerson(@PathVariable("id") Long id) throws EntityNotFoundException {
         try {
             personService.removePerson(id);
         } catch (DataAccessException e) {

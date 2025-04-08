@@ -1,11 +1,15 @@
 package backend.services;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import backend.auth.AuthenticateAdmin;
 import backend.dtos.PersonDto;
+import backend.entities.Actor;
+import backend.entities.Director;
 import backend.entities.Person;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
@@ -36,6 +40,12 @@ public class PersonService {
 
     @Autowired
     private DirectorRepository directorRepository;
+    
+    public PersonDto getPerson(Long id) throws EntityNotFoundException {
+		// Retrieve the person by ID and convert it to a DTO.
+		Person person = getPersonByID(id);
+		return convertPersonToDto(person);
+	}
 
     /**
      * Adds a new person to the database.
@@ -49,7 +59,7 @@ public class PersonService {
      */
     @AuthenticateAdmin
     @Transactional
-    public void addPerson(PersonDto personDto) throws EntityAlreadyExistsException {
+    public Long addPerson(PersonDto personDto) throws EntityAlreadyExistsException {
         try {
             // Load the person by media ID.
             Person person = getPersonByMediaID(personDto.getPersonMediaID());
@@ -60,7 +70,8 @@ public class PersonService {
         }
         // Convert the DTO to a Person entity and save it to the database.
         Person person = getPersonFromDto(personDto);
-        personRepository.save(person);
+        Person resultPerson = personRepository.save(person);
+        return resultPerson.getId();
     }
 
     /**
@@ -79,9 +90,13 @@ public class PersonService {
     public void removePerson(Long id) throws EntityNotFoundException {
         // Retrieve the person by ID.
         Person person = getPersonByID(id);
-        // First, delete all associated actor roles and directed media.
-        actorRepository.deleteAllInBatch(person.getActorRoles());
-        directorRepository.deleteAllInBatch(person.getDirectedMedia());
+        // First, delete all associated actor roles and directed media (if exists).
+        List<Actor> actorRoles = person.getActorRoles();
+        if(actorRoles != null)
+        	actorRepository.deleteAllInBatch(actorRoles);
+        List<Director> directedMedia = person.getDirectedMedia();
+        if(directedMedia != null)
+        	directorRepository.deleteAllInBatch(person.getDirectedMedia());
         // Then, delete the person from the database.
         personRepository.delete(person);
     }

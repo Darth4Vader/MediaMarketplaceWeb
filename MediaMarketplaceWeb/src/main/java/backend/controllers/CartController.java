@@ -42,7 +42,7 @@ public class CartController {
      * @return A {@link CartDto} object representing the current cart.
      * @throws EntityNotFoundException If the cart is not found.
      */
-    @GetMapping("/get")
+    @GetMapping("/")
     public CartDto getCart() throws EntityNotFoundException {
         return cartService.getCart();
     }
@@ -60,15 +60,15 @@ public class CartController {
      * @throws EntityAlreadyExistsException If the product already exists in the cart.
      * @throws EntityAdditionException If there is a problem adding the product due to data access issues.
      */
-    @PostMapping("/add")
-    public ResponseEntity<String> addProductToCart(@RequestBody CartProductReference dto) 
+    @PostMapping("/")
+    public ResponseEntity<?> addProductToCart(@RequestBody CartProductReference dto) 
             throws EntityNotFoundException, EntityAlreadyExistsException {
         try {
             cartService.addProductToCart(dto);
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to add the product \"" + dto.getProductId() + "\" to the cart", e);
         }
-        return new ResponseEntity<>("Added Successfully", HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
     /**
@@ -83,8 +83,8 @@ public class CartController {
      * @throws EntityNotFoundException If the product or cart is not found.
      * @throws EntityRemovalException If there is a problem removing the product due to data access issues.
      */
-    @DeleteMapping("/remove/{productId}")
-    public ResponseEntity<String> removeProductFromCart(@PathVariable Long productId) 
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<String> removeProductFromCart(@PathVariable("productId") Long productId) 
             throws EntityNotFoundException {
         try {
             cartService.removeProductFromCart(productId);

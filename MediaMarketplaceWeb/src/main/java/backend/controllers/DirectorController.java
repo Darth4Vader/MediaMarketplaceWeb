@@ -30,7 +30,7 @@ import jakarta.validation.Valid;
  * </p>
  */
 @RestController
-@RequestMapping("/directors")
+@RequestMapping("/api/main/directors")
 public class DirectorController {
 
     @Autowired
