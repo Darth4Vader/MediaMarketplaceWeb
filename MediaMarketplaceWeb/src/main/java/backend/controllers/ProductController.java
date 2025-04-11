@@ -1,5 +1,6 @@
 package backend.controllers;
 
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,11 +9,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import backend.dtos.ProductDto;
 import backend.dtos.references.ProductReference;
@@ -44,7 +48,6 @@ public class ProductController {
      * @return A list of {@link ProductDto} objects representing all products.
      */
     @GetMapping("/")
-    @ResponseStatus(code = HttpStatus.OK)
     public List<ProductDto> getAllProducts() {
         return productService.getAllProducts();
     }
@@ -59,24 +62,9 @@ public class ProductController {
      * @return The {@link ProductDto} object representing the product associated with the movie.
      * @throws EntityNotFoundException If the movie with the provided ID cannot be found.
      */
-    @GetMapping("/get/{movieId}")
-    public ProductDto getProductOfMovie(Long movieId) throws EntityNotFoundException {
+    @GetMapping("/")
+    public ProductDto getProductOfMovie(@RequestParam Long movieId) throws EntityNotFoundException {
         return productService.getProductOfMovie(movieId);
-    }
-
-    /**
-     * Retrieves the product reference associated with a movie.
-     * <p>
-     * This endpoint returns the {@link ProductReference} for the product associated with the specified movie ID.
-     * </p>
-     *
-     * @param movieId The ID of the movie for which the product reference details are to be retrieved.
-     * @return The {@link ProductReference} object representing the product reference associated with the movie.
-     * @throws EntityNotFoundException If the movie with the provided ID cannot be found.
-     */
-    @GetMapping("/get_reference/{movieId}")
-    public ProductReference getProductReferenceOfMovie(Long movieId) throws EntityNotFoundException {
-        return productService.getProductReferenceOfMovie(movieId);
     }
 
     /**
@@ -90,13 +78,26 @@ public class ProductController {
      * @return The ID of the newly created product.
      * @throws EntityNotFoundException If the movie associated with the product cannot be found.
      */
-    @PostMapping("/add")
-    public Long addProduct(@Valid @RequestBody ProductReference productDto) throws EntityNotFoundException {
+    @PostMapping("/")
+    public ResponseEntity<?> addProduct(@Valid @RequestBody ProductReference productDto) throws EntityNotFoundException {
         try {
-            return productService.addProduct(productDto);
+        	// create the product and get the ID
+        	final Long id = productService.addProduct(productDto);
+        	// build the URI for the created person location
+        	URI location = ServletUriComponentsBuilder
+                    .fromCurrentRequest()
+                    .path("/{id}")
+                    .buildAndExpand(id)
+                    .toUri();
+        	return ResponseEntity.created(location).build();
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to add the product for the movie with id \"" + productDto.getMovieId() + "\"", e);
         }
+    }
+    
+    @GetMapping("/{id}")
+    public ProductDto getProduct(@Valid @PathVariable("id") Long productId) throws EntityNotFoundException {
+    	return productService.getProduct(productId);
     }
 
     /**
@@ -110,7 +111,7 @@ public class ProductController {
      * @return A {@link ResponseEntity} with a success message and HTTP status 200 (OK).
      * @throws EntityNotFoundException If the product or the movie associated with it cannot be found.
      */
-    @PostMapping("/update/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<String> updateProduct(@Valid @RequestBody ProductReference productDto) throws EntityNotFoundException {
         try {
             productService.updateProduct(productDto);
@@ -131,13 +132,28 @@ public class ProductController {
      * @return A {@link ResponseEntity} with a success message and HTTP status 200 (OK).
      * @throws EntityNotFoundException If the product with the provided ID cannot be found.
      */
-    @DeleteMapping("/remove/{productId}")
-    public ResponseEntity<String> removeProduct(@Valid @RequestBody Long productId) throws EntityNotFoundException {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> removeProduct(@Valid @PathVariable("id") Long productId) throws EntityNotFoundException {
         try {
             productService.removeProduct(productId);
         } catch (DataAccessException e) {
             throw new EntityRemovalException("Unable to remove the product \"" + productId + "\"", e);
         }
         return new ResponseEntity<>("Removed Successfully", HttpStatus.OK);
+    }
+    
+    /**
+     * Retrieves the product reference associated with a movie.
+     * <p>
+     * This endpoint returns the {@link ProductReference} for the product associated with the specified movie ID.
+     * </p>
+     *
+     * @param movieId The ID of the movie for which the product reference details are to be retrieved.
+     * @return The {@link ProductReference} object representing the product reference associated with the movie.
+     * @throws EntityNotFoundException If the movie with the provided ID cannot be found.
+     */
+    @GetMapping("/references/")
+    public ProductReference getProductReferenceOfMovie(@RequestParam Long movieId) throws EntityNotFoundException {
+        return productService.getProductReferenceOfMovie(movieId);
     }
 }

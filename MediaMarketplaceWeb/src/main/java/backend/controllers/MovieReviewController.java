@@ -29,7 +29,7 @@ import backend.services.MovieReviewService;
  * </p>
  */
 @RestController
-@RequestMapping("api/main/movie_reviews")
+@RequestMapping("api/main/movie-reviews")
 public class MovieReviewController {
 
     @Autowired
@@ -46,8 +46,7 @@ public class MovieReviewController {
      * @return A list of {@link MovieReviewDto} objects representing the reviews for the movie.
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      */
-    @GetMapping("/get_all/{movieId}")
-    @ResponseStatus(code = HttpStatus.OK)
+    @GetMapping("/reviews/{movieId}")
     public List<MovieReviewDto> getAllReviewOfMovie(@PathVariable Long movieId) throws EntityNotFoundException {
         return movieReviewService.getAllReviewOfMovie(movieId);
     }
@@ -65,8 +64,7 @@ public class MovieReviewController {
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      * @throws UserNotLoggedInException If the user is not logged in.
      */
-    @GetMapping("/get/{movieId}/{userId}")
-    @ResponseStatus(code = HttpStatus.OK)
+    @GetMapping("reviews/{movieId}/current-user")
     public MovieReviewReference getMovieReviewOfUser(@PathVariable Long movieId) throws EntityNotFoundException, UserNotLoggedInException {
         return movieReviewService.getMovieReviewOfUser(movieId);
     }
@@ -80,7 +78,7 @@ public class MovieReviewController {
      * @param movieId The ID of the movie for which to retrieve the average rating.
      * @return The average rating of the movie.
      */
-    @GetMapping("/get_ratings/{movieId}")
+    @GetMapping("/ratings/{movieId}")
     @ResponseStatus(code = HttpStatus.OK)
     public Integer getMovieRatings(@PathVariable Long movieId) {
         return movieReviewService.getMovieRatings(movieId);
@@ -98,8 +96,7 @@ public class MovieReviewController {
      * @throws MovieReviewValuesAreIncorrectException If the review values provided are incorrect.
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      */
-    @PostMapping("/add_review/{movieId}/{userId}")
-    @ResponseStatus(code = HttpStatus.OK)
+    @PostMapping("/reviews/{movieId}/current-user")
     public void addMovieReviewOfUser(@RequestBody MovieReviewReference movieReviewDto) throws MovieReviewValuesAreIncorrectException, EntityNotFoundException {
         try {
             movieReviewService.addMovieReviewOfUser(movieReviewDto);
@@ -120,8 +117,7 @@ public class MovieReviewController {
      * @throws MovieReviewValuesAreIncorrectException If the rating values provided are incorrect.
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      */
-    @PostMapping("/add_ratings/{movieId}/{userId}")
-    @ResponseStatus(code = HttpStatus.OK)
+    @PostMapping("/ratings/{movieId}/current-user")
     public void addMovieRatingOfUser(@RequestBody MovieRatingReference movieRatingDto) 
             throws MovieReviewValuesAreIncorrectException, EntityNotFoundException {
         try {

@@ -2,6 +2,11 @@ package backend.exceptions;
 
 public class JwtTokenNotFoundException extends RuntimeException {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	public JwtTokenNotFoundException() {
 		// TODO Auto-generated constructor stub
 	}

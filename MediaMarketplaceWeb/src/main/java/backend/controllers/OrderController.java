@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,7 +21,7 @@ import backend.services.OrderService;
  * </p>
  */
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/api/users/current/orders")
 public class OrderController {
 
     @Autowired
@@ -34,7 +35,7 @@ public class OrderController {
      *
      * @return A list of {@link OrderDto} objects representing the user's orders.
      */
-    @GetMapping("/get/orders")
+    @GetMapping("/")
     public List<OrderDto> getUserOrders() {
         return orderService.getUserOrders();
     }
@@ -51,7 +52,7 @@ public class OrderController {
      * @throws PurchaseOrderException If there is an issue during the order placement.
      * @throws EntityNotFoundException If a required entity for the order is not found.
      */
-    @GetMapping("/place_order")
+    @PostMapping("/place-order")
     public Long placeOrder() throws PurchaseOrderException, EntityNotFoundException {
         try {
             return orderService.placeOrder();

@@ -22,7 +22,7 @@ import backend.services.MoviePurchasedService;
  * </p>
  */
 @RestController
-@RequestMapping("/movie_purchased")
+@RequestMapping("/api/users/current/movie-purchased")
 public class MoviePurchasedController {
 
     @Autowired
@@ -37,7 +37,7 @@ public class MoviePurchasedController {
      *
      * @return A list of {@link MovieReference} objects representing active movies purchased by the user.
      */
-    @GetMapping("/get/user_media_products")
+    @GetMapping("/actives/")
     public List<MovieReference> getAllActiveMediaProductsOfUser() {
         return moviePurchasedService.getAllActiveMoviesOfUser();
     }
@@ -54,7 +54,7 @@ public class MoviePurchasedController {
      * @return A list of {@link MoviePurchasedDto} objects representing active purchases of the specified movie.
      * @throws EntityNotFoundException If the movie with the specified ID does not exist or if the user has not purchased the movie.
      */
-    @GetMapping("/get_active/{movieId}")
+    @GetMapping("/actives/{movieId}")
     public List<MoviePurchasedDto> getActiveListUserMovie(@PathVariable Long movieId) throws EntityNotFoundException {
         return moviePurchasedService.getActiveListUserMovie(movieId);
     }
@@ -72,7 +72,7 @@ public class MoviePurchasedController {
      * @return {@code true} if the current user is an admin or has an active purchase of the movie; {@code false} otherwise.
      * @throws EntityNotFoundException If the movie with the specified ID does not exist or if the user has not purchased the movie.
      */
-    @GetMapping("/is_active/{movieId}")
+    @GetMapping("/is-active/{movieId}")
     public boolean checkIfCanWatchMovie(@PathVariable Long movieId) throws EntityNotFoundException {
         return moviePurchasedService.checkIfCanWatchMovie(movieId);
     }

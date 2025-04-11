@@ -46,7 +46,7 @@ public class DirectorController {
      * @return A list of {@link DirectorDto} objects representing the directors of the specified movie.
      * @throws EntityNotFoundException If no directors are found for the given movie ID.
      */
-    @GetMapping("/get/{movieId}")
+    @GetMapping("/{movieId}")
     public List<DirectorDto> getDirectorsOfMovie(@PathVariable Long movieId) throws EntityNotFoundException {
         return directorService.getDirectorsOfMovie(movieId);
     }
@@ -64,7 +64,7 @@ public class DirectorController {
      * @throws EntityAlreadyExistsException If the director already exists for the specified movie.
      * @throws EntityAdditionException If there is a problem adding the director due to data access issues.
      */
-    @PostMapping("/add/{movieMediaId}/{personMediaID}")
+    @PostMapping("/{movieMediaId}/{personMediaID}")
     public ResponseEntity<String> addDirector(@Valid @RequestBody DirectorReference directorDto)
             throws EntityNotFoundException, EntityAlreadyExistsException {
         try {
@@ -87,7 +87,7 @@ public class DirectorController {
      * @throws EntityNotFoundException If the specified movie or director is not found.
      * @throws EntityRemovalException If there is a problem removing the director due to data access issues.
      */
-    @DeleteMapping("/remove/{movieMediaId}/{personMediaID}")
+    @DeleteMapping("/{movieMediaId}/{personMediaID}")
     public ResponseEntity<String> removeDirector(@Valid @RequestBody DirectorReference directorDto)
             throws EntityNotFoundException {
         try {
@@ -110,7 +110,7 @@ public class DirectorController {
      * @throws EntityNotFoundException If the specified movie is not found.
      * @throws EntityRemovalException If there is a problem removing the directors due to data access issues.
      */
-    @DeleteMapping("/remove_all_movie/{movieId}")
+    @DeleteMapping("/{movieId}/")
     public ResponseEntity<String> removeAllDirectorsFromMovie(@PathVariable Long movieId)
             throws EntityNotFoundException {
         try {

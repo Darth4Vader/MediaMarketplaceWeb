@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import backend.dtos.CreateMovieDto;
@@ -30,7 +29,7 @@ import jakarta.validation.Valid;
  * </p>
  */
 @RestController
-@RequestMapping("/movies")
+@RequestMapping("/api/main/movies")
 public class MovieController {
 
     @Autowired
@@ -45,9 +44,31 @@ public class MovieController {
      * @return A list of {@link MovieReference} objects.
      */
     @GetMapping("/")
-    @ResponseStatus(code = HttpStatus.OK)
     public List<MovieReference> getAllMovies() {
         return movieService.getAllMovies();
+    }
+    
+    /**
+     * Adds a new movie.
+     * <p>
+     * This endpoint creates a new movie using the provided details. If there is a problem with adding the movie, such as a database constraint violation,
+     * an {@link EntityAdditionException} will be thrown.
+     * </p>
+     *
+     * @param createMovieDto The details of the movie to be added.
+     * @return A {@link ResponseEntity} with a success message if the movie is added successfully.
+     * @throws EntityAlreadyExistsException If a movie with the same media ID already exists.
+     * @throws EntityNotFoundException If required entities for the movie do not exist.
+     */
+    @PostMapping("/")
+    public ResponseEntity<String> addMovie(@Valid @RequestBody CreateMovieDto createMovieDto)
+            throws EntityAlreadyExistsException, EntityNotFoundException {
+        try {
+            movieService.addMovie(createMovieDto);
+        } catch (DataAccessException e) {
+            throw new EntityAdditionException("Unable to add the movie with the media id: \"" + createMovieDto.getMediaID() + "\"", e);
+        }
+        return new ResponseEntity<>("Created Successfully", HttpStatus.OK);
     }
 
     /**
@@ -61,8 +82,8 @@ public class MovieController {
      * @return A {@link MovieDto} object containing movie details.
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      */
-    @GetMapping("/get/{movieId}")
-    public MovieDto getMovie(@PathVariable Long movieId) throws EntityNotFoundException {
+    @GetMapping("/{id}")
+    public MovieDto getMovie(@PathVariable("id") Long movieId) throws EntityNotFoundException {
         return movieService.getMovie(movieId);
     }
     
@@ -77,32 +98,9 @@ public class MovieController {
      * @return The media ID of the movie as a {@link String}.
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      */
-    @GetMapping("/get_mediaID/{movieId}")
-    public String getMovieMediaID(@PathVariable Long movieId) throws EntityNotFoundException {
+    @GetMapping("/{id}/media-id")
+    public String getMovieMediaID(@PathVariable("id") Long movieId) throws EntityNotFoundException {
         return movieService.getMovieMediaID(movieId);
-    }
-
-    /**
-     * Adds a new movie.
-     * <p>
-     * This endpoint creates a new movie using the provided details. If there is a problem with adding the movie, such as a database constraint violation,
-     * an {@link EntityAdditionException} will be thrown.
-     * </p>
-     *
-     * @param createMovieDto The details of the movie to be added.
-     * @return A {@link ResponseEntity} with a success message if the movie is added successfully.
-     * @throws EntityAlreadyExistsException If a movie with the same media ID already exists.
-     * @throws EntityNotFoundException If required entities for the movie do not exist.
-     */
-    @PostMapping("/add/{mediaID}")
-    public ResponseEntity<String> addMovie(@Valid @RequestBody CreateMovieDto createMovieDto)
-            throws EntityAlreadyExistsException, EntityNotFoundException {
-        try {
-            movieService.addMovie(createMovieDto);
-        } catch (DataAccessException e) {
-            throw new EntityAdditionException("Unable to add the movie with the media id: \"" + createMovieDto.getMediaID() + "\"", e);
-        }
-        return new ResponseEntity<>("Created Successfully", HttpStatus.OK);
     }
 
     /**
@@ -116,7 +114,7 @@ public class MovieController {
      * @return The ID of the updated movie.
      * @throws EntityNotFoundException If the movie with the specified media ID does not exist.
      */
-    @PostMapping("/update/{mediaID}")
+    @PostMapping("/{mediaID}")
     public Long updateMovie(@Valid @RequestBody CreateMovieDto createMovieDto) throws EntityNotFoundException {
         try {
             return movieService.updateMovie(createMovieDto);

@@ -55,7 +55,7 @@ public class GenreController {
      * @throws EntityAlreadyExistsException If a genre with the specified name already exists.
      * @throws EntityAdditionException If there is a problem adding the genre due to data access issues.
      */
-    @PostMapping("/create")
+    @PostMapping("/")
     public ResponseEntity<String> createGenre(@Valid @RequestBody String genreName) throws EntityAlreadyExistsException {
         try {
             genreService.createGenre(genreName);

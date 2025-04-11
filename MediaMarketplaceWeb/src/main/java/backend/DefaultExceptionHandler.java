@@ -19,6 +19,7 @@ import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityRemovalException;
 import backend.exceptions.JwtTokenNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
+import backend.exceptions.PurchaseOrderException;
 import backend.exceptions.UserAlreadyExistsException;
 import backend.exceptions.UserDoesNotExistsException;
 import backend.exceptions.UserPasswordIsIncorrectException;
@@ -45,7 +46,7 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 		LOGGER.error(ex);
 		Map<String, Object> bodyOfResponse = Map.of(
 				"error", ex.getMessage(),
-				"values_problems", ex.getUserLogInfo()
+				"values_problems", ex.getUserLogInfo().stream().map(Enum::name).toList()
 		);
 		return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
 	}
@@ -90,5 +91,11 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	public ResponseEntity<Object> handleEntityRemovalException(EntityRemovalException ex, WebRequest request) {
 		LOGGER.error(ex);
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.GONE, request);
+	}
+	
+	@ExceptionHandler(PurchaseOrderException.class)
+	public ResponseEntity<Object> handlePurchaseOrderException(PurchaseOrderException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
 	}
 }

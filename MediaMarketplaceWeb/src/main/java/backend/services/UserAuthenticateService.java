@@ -13,7 +13,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
@@ -73,7 +72,6 @@ public class UserAuthenticateService {
      * @return A success message if the registration is successful.
      * @throws UserAlreadyExistsException If a user with the same username already exists.
      * @throws LogValuesAreIncorrectException If the provided login values are incorrect.
-     * @throws UserPasswordIsIncorrectException If the password does not meet validation criteria.
      */
     @Transactional
     public String registerUser(UserInformationDto registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException {
@@ -368,14 +366,16 @@ public class UserAuthenticateService {
      * </p>
      * 
      * @param userDto The {@link UserInformationDto} object containing user information to be validated.
-     * @throws UserPasswordIsIncorrectException If the passwords do not match.
-     * @throws LogValuesAreIncorrectException If any of the provided values are incorrect.
+     * @throws LogValuesAreIncorrectException If any of the provided values are incorrect, or if the passwords do not match.
      */
-    private void validateUserDto(UserInformationDto userDto) throws UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
+    private void validateUserDto(UserInformationDto userDto) throws LogValuesAreIncorrectException {
         checkForException(userDto);
         String password = userDto.getPassword();
         if (!Objects.equals(password, userDto.getPasswordConfirm())) {
-            throw new UserPasswordIsIncorrectException("Password confirmation does not match");
+        	Set<UserLogInfo> logInfoSet = new HashSet<>();
+			logInfoSet.add(UserLogInfo.PASSWORD);
+        	logInfoSet.add(UserLogInfo.PASSWORD_CONFIRM);
+            throw new LogValuesAreIncorrectException(logInfoSet, "Password confirmation does not match");
         }
     }
 

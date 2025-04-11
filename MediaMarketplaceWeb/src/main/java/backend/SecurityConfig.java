@@ -134,7 +134,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(requests -> requests
             		//This is for swagger, remove when using javafx
             		.requestMatchers(AUTH_WHITELIST).permitAll()
-            		.requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+            		.requestMatchers("/api/users/login", "/api/users/register").permitAll()
             		.requestMatchers(HttpMethod.GET, "/api/main/**").permitAll()
             		.requestMatchers("/api/users/carts/**").hasAnyRole(RoleType.ROLE_USER.getRoleName())
             		.requestMatchers("/error").permitAll()

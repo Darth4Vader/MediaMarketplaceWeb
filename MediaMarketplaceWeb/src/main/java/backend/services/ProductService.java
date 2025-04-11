@@ -74,8 +74,8 @@ public class ProductService {
     public Long addProduct(ProductReference productReference) throws EntityNotFoundException {
         Movie movie = movieService.getMovieByID(productReference.getMovieId());
         Product product = getProductFromDto(productReference, movie);
-        productRepository.save(product);
-        return product.getId();
+        Product resultProduct = productRepository.save(product);
+        return resultProduct.getId();
     }
 
     /**
@@ -124,6 +124,17 @@ public class ProductService {
      */
     public ProductDto getProductOfMovie(Long movieId) throws EntityNotFoundException {
         return convertProductToDto(getProductByMovieId(movieId));
+    }
+    
+    /**
+     * Retrieves a product associated with a specific movie.
+     * 
+     * @param movieId The ID of the movie for which the product is to be retrieved.
+     * @return The {@link ProductDto} representing the product associated with the specified movie.
+     * @throws EntityNotFoundException if no product exists for the specified movie.
+     */
+    public ProductDto getProduct(Long productId) throws EntityNotFoundException {
+        return convertProductToDto(getProductByID(productId));
     }
     
     /**

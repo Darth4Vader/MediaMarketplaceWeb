@@ -3,14 +3,12 @@ package backend.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import backend.dtos.users.LogInDto;
@@ -31,7 +29,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * </p>
  */
 @RestController
-@RequestMapping("api/auth")
+@RequestMapping("api/users")
 public class UserAuthenticateController {
 
     @Autowired
@@ -98,7 +96,7 @@ public class UserAuthenticateController {
      * @throws UserPasswordIsIncorrectException If the provided password is incorrect.
      * @throws LogValuesAreIncorrectException If the provided values are incorrect.
      */
-    @PostMapping("/update")
+    @PutMapping("/current")
     public void updateUserInformation(@RequestBody UserInformationDto userDto) throws UserNotLoggedInException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
         try {
             userAuthService.updateUserInformation(userDto);
@@ -125,7 +123,7 @@ public class UserAuthenticateController {
      * This endpoint checks the current user's role to determine if they are an administrator.
      * </p>
      */
-    @GetMapping("/checkIfAdmin")
+    @GetMapping("/current/admin")
     public void checkIfCurrentUserIsAdmin() {
         userAuthService.checkIfCurrentUserIsAdmin();
     }
@@ -140,7 +138,7 @@ public class UserAuthenticateController {
      * @return The {@link UserInformationDto} object containing the current user's information.
      * @throws UserNotLoggedInException If the user is not logged in.
      */
-    @GetMapping("/get/current_user")
+    @GetMapping("/current")
     public UserInformationDto getCurrentUserDto() throws UserNotLoggedInException {
         return userAuthService.getCurrentUserDto();
     }
@@ -155,7 +153,7 @@ public class UserAuthenticateController {
      * @return {@code true} if the current user is an administrator, {@code false} otherwise.
      * @throws UserNotLoggedInException If the user is not logged in.
      */
-    @GetMapping("/is_admin/current_user")
+    @GetMapping("/current/is-admin")
     public boolean isCurrentUserAdmin() throws UserNotLoggedInException {
         return userAuthService.isCurrentUserAdmin();
     }

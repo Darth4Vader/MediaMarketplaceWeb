@@ -46,7 +46,7 @@ public class ActorController {
      * @return A list of {@link ActorDto} objects representing the actors of the specified movie.
      * @throws EntityNotFoundException If the movie with the given ID is not found.
      */
-    @GetMapping("/get/{movieId}")
+    @GetMapping("/{movieId}")
     public List<ActorDto> getActorsOfMovie(@PathVariable Long movieId) throws EntityNotFoundException {
         return actorService.getActorsOfMovie(movieId);
     }
@@ -65,7 +65,7 @@ public class ActorController {
      * @throws EntityAlreadyExistsException If the actor already exists in the movie.
      * @throws EntityAdditionException If there is a problem adding the actor due to data access issues.
      */
-    @PostMapping("/add")
+    @PostMapping("/")
     public ResponseEntity<String> addActor(@Valid @RequestBody ActorReference actorDto) 
             throws EntityNotFoundException, EntityAlreadyExistsException {
         try {
@@ -89,7 +89,7 @@ public class ActorController {
      * @throws EntityNotFoundException If the movie or actor is not found.
      * @throws EntityRemovalException If there is a problem removing the actor due to data access issues.
      */
-    @DeleteMapping("/remove")
+    @DeleteMapping("/")
     public ResponseEntity<String> removeActor(@Valid @RequestBody ActorReference actorDto) 
             throws EntityNotFoundException {
         try {
@@ -112,7 +112,7 @@ public class ActorController {
      * @throws EntityNotFoundException If the movie with the given ID is not found.
      * @throws EntityRemovalException If there is a problem removing all actors due to data access issues.
      */
-    @DeleteMapping("/remove_all/{movieId}")
+    @DeleteMapping("/{movieId}/")
     public ResponseEntity<String> removeAllActorsFromMovie(@PathVariable Long movieId) 
             throws EntityNotFoundException {
         try {

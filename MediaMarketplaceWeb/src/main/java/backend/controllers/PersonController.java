@@ -35,11 +35,6 @@ public class PersonController {
 
     @Autowired
     private PersonService personService;
-    
-    @GetMapping("/{id}")
-    public PersonDto getPerson(@PathVariable("id") Long id) throws EntityNotFoundException {
-		return personService.getPerson(id);
-	}
 
     /**
      * Adds a new person to the system.
@@ -69,6 +64,11 @@ public class PersonController {
             throw new EntityAdditionException("Unable to add the person with the media id: \"" + personDto.getPersonMediaID() + "\"", e);
         }
     }
+    
+    @GetMapping("/{id}")
+    public PersonDto getPerson(@PathVariable("id") Long id) throws EntityNotFoundException {
+		return personService.getPerson(id);
+	}
 
     /**
      * Removes a person from the system.
