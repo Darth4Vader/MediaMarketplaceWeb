@@ -1,7 +1,6 @@
 package backend;
 
 import java.util.Map;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.exception.JDBCConnectionException;
@@ -19,9 +18,11 @@ import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityRemovalException;
 import backend.exceptions.JwtTokenNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
+import backend.exceptions.MovieReviewValuesAreIncorrectException;
 import backend.exceptions.PurchaseOrderException;
 import backend.exceptions.UserAlreadyExistsException;
 import backend.exceptions.UserDoesNotExistsException;
+import backend.exceptions.UserNotLoggedInException;
 import backend.exceptions.UserPasswordIsIncorrectException;
 
 @RestControllerAdvice
@@ -97,5 +98,21 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	public ResponseEntity<Object> handlePurchaseOrderException(PurchaseOrderException ex, WebRequest request) {
 		LOGGER.error(ex);
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
+	}
+	
+	@ExceptionHandler(MovieReviewValuesAreIncorrectException.class)
+	public ResponseEntity<Object> handleMovieReviewValuesAreIncorrectException(MovieReviewValuesAreIncorrectException ex, WebRequest request) {
+		LOGGER.error(ex);
+		Map<String, Object> bodyOfResponse = Map.of(
+				"error", ex.getMessage(),
+				"values_problems", ex.getMap()
+		);
+		return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+	}
+	
+	@ExceptionHandler(UserNotLoggedInException.class)
+	public ResponseEntity<Object> handleUserNotLoggedInException(UserNotLoggedInException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
 	}
 }

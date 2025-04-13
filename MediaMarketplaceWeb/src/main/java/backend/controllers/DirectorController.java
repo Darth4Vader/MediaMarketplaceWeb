@@ -47,7 +47,7 @@ public class DirectorController {
      * @throws EntityNotFoundException If no directors are found for the given movie ID.
      */
     @GetMapping("/{movieId}")
-    public List<DirectorDto> getDirectorsOfMovie(@PathVariable Long movieId) throws EntityNotFoundException {
+    public List<DirectorDto> getDirectorsOfMovie(@PathVariable("movieId") Long movieId) throws EntityNotFoundException {
         return directorService.getDirectorsOfMovie(movieId);
     }
 
@@ -111,7 +111,7 @@ public class DirectorController {
      * @throws EntityRemovalException If there is a problem removing the directors due to data access issues.
      */
     @DeleteMapping("/{movieId}/")
-    public ResponseEntity<String> removeAllDirectorsFromMovie(@PathVariable Long movieId)
+    public ResponseEntity<String> removeAllDirectorsFromMovie(@PathVariable("movieId") Long movieId)
             throws EntityNotFoundException {
         try {
             directorService.removeAllDirectorsFromMovie(movieId);

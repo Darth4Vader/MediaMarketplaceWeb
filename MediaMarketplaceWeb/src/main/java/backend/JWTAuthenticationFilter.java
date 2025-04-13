@@ -48,7 +48,8 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 	        }
         }
         catch(Exception e) {
-        	LOGGER.error("Error in JWTAuthenticationFilter: " + e.getMessage());
+        	String uri = request.getRequestURI();
+        	LOGGER.error("Error in JWTAuthenticationFilter: " + request.getMethod() + " - " + uri);
         	e.printStackTrace();
         	if(resolver != null)
         		resolver.resolveException(request, response, null, e);

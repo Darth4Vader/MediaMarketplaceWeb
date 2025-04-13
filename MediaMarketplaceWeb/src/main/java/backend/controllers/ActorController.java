@@ -47,7 +47,7 @@ public class ActorController {
      * @throws EntityNotFoundException If the movie with the given ID is not found.
      */
     @GetMapping("/{movieId}")
-    public List<ActorDto> getActorsOfMovie(@PathVariable Long movieId) throws EntityNotFoundException {
+    public List<ActorDto> getActorsOfMovie(@PathVariable("movieId") Long movieId) throws EntityNotFoundException {
         return actorService.getActorsOfMovie(movieId);
     }
 
@@ -113,7 +113,7 @@ public class ActorController {
      * @throws EntityRemovalException If there is a problem removing all actors due to data access issues.
      */
     @DeleteMapping("/{movieId}/")
-    public ResponseEntity<String> removeAllActorsFromMovie(@PathVariable Long movieId) 
+    public ResponseEntity<String> removeAllActorsFromMovie(@PathVariable("movieId") Long movieId) 
             throws EntityNotFoundException {
         try {
             actorService.removeAllActorsFromMovie(movieId);

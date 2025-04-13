@@ -47,7 +47,7 @@ public class MovieReviewController {
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      */
     @GetMapping("/reviews/{movieId}")
-    public List<MovieReviewDto> getAllReviewOfMovie(@PathVariable Long movieId) throws EntityNotFoundException {
+    public List<MovieReviewDto> getAllReviewOfMovie(@PathVariable("movieId") Long movieId) throws EntityNotFoundException {
         return movieReviewService.getAllReviewOfMovie(movieId);
     }
     
@@ -64,8 +64,8 @@ public class MovieReviewController {
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      * @throws UserNotLoggedInException If the user is not logged in.
      */
-    @GetMapping("reviews/{movieId}/current-user")
-    public MovieReviewReference getMovieReviewOfUser(@PathVariable Long movieId) throws EntityNotFoundException, UserNotLoggedInException {
+    @GetMapping("/reviews/{movieId}/current-user")
+    public MovieReviewReference getMovieReviewOfUser(@PathVariable("movieId") Long movieId) throws EntityNotFoundException, UserNotLoggedInException {
         return movieReviewService.getMovieReviewOfUser(movieId);
     }
     
@@ -80,7 +80,7 @@ public class MovieReviewController {
      */
     @GetMapping("/ratings/{movieId}")
     @ResponseStatus(code = HttpStatus.OK)
-    public Integer getMovieRatings(@PathVariable Long movieId) {
+    public Integer getMovieRatings(@PathVariable("movieId") Long movieId) {
         return movieReviewService.getMovieRatings(movieId);
     }
 

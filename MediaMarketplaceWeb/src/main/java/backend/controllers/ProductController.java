@@ -62,8 +62,8 @@ public class ProductController {
      * @return The {@link ProductDto} object representing the product associated with the movie.
      * @throws EntityNotFoundException If the movie with the provided ID cannot be found.
      */
-    @GetMapping("/")
-    public ProductDto getProductOfMovie(@RequestParam Long movieId) throws EntityNotFoundException {
+    @GetMapping("")
+    public ProductDto getProductOfMovie(@RequestParam("movieId") Long movieId) throws EntityNotFoundException {
         return productService.getProductOfMovie(movieId);
     }
 
@@ -152,8 +152,8 @@ public class ProductController {
      * @return The {@link ProductReference} object representing the product reference associated with the movie.
      * @throws EntityNotFoundException If the movie with the provided ID cannot be found.
      */
-    @GetMapping("/references/")
-    public ProductReference getProductReferenceOfMovie(@RequestParam Long movieId) throws EntityNotFoundException {
+    @GetMapping("/references")
+    public ProductReference getProductReferenceOfMovie(@RequestParam("movieId") Long movieId) throws EntityNotFoundException {
         return productService.getProductReferenceOfMovie(movieId);
     }
 }
