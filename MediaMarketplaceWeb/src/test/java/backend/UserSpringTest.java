@@ -4,9 +4,10 @@ import backend.dtos.users.LogInDto;
 
 public class UserSpringTest extends BaseAuthenticationSpringTest {
 	
-	private static boolean setUpIsDone = false;
-	private static String authToken;
-	
+    private static boolean setUpIsDone = false;
+    private static String accessToken;
+    private static String refreshToken;
+    
 	@Override
 	protected LogInDto getLoginDto() {
 		LogInDto loginDto = new LogInDto();
@@ -21,17 +22,27 @@ public class UserSpringTest extends BaseAuthenticationSpringTest {
 	}
 
 	@Override
-	protected String getAuthToken() {
-		return authToken;
+	protected String getAccessToken() {
+		return accessToken;
 	}
 	
 	@Override
-	protected void setSetUpIsDone(boolean setUpIsDone) {
-		UserSpringTest.setUpIsDone = setUpIsDone;
+    protected String getRefreshToken() {
+		return refreshToken;
+	}
+	
+	@Override
+	protected void setSetUpIsDone(boolean setUpIsDone1) {
+		setUpIsDone = setUpIsDone1;
 	}
 
 	@Override
-	protected void setAuthToken(String authToken) {
-		UserSpringTest.authToken = authToken;
+	protected void setAccessToken(String accessToken1) {
+		accessToken = accessToken1;
 	}
+	
+	@Override
+    protected void setRefreshToken(String refreshToken1) {
+		refreshToken = refreshToken1;
+    }
 }

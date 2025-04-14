@@ -134,7 +134,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(requests -> requests
             		//This is for swagger, remove when using javafx
             		.requestMatchers(AUTH_WHITELIST).permitAll()
-            		.requestMatchers("/api/users/login", "/api/users/register").permitAll()
+            		.requestMatchers("/api/users/login", "/api/users/register", "/api/users/refresh").permitAll()
             		.requestMatchers(HttpMethod.GET, "/api/main/**").permitAll()
             		.requestMatchers("/api/users/carts/**").hasAnyRole(RoleType.ROLE_USER.getRoleName())
             		.requestMatchers("/error").permitAll()
@@ -158,8 +158,16 @@ public class SecurityConfig {
             );
         //used for moving the AccessDeny exception to the JavaFX
         http.exceptionHandling(cust -> cust
-                .accessDeniedHandler((_, _, accessDeniedException) -> {
-                    throw new RuntimeException(accessDeniedException);
+                .accessDeniedHandler((_, response, _) -> {
+                	response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                	response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+
+                    final Map<String, Object> body = new HashMap<>();
+                    body.put("code", HttpServletResponse.SC_FORBIDDEN);
+                    body.put("payload", "Access Denied");
+
+                    final ObjectMapper mapper = new ObjectMapper();
+                    mapper.writeValue(response.getOutputStream(), body);
                 })
                 .authenticationEntryPoint((_, response, _) -> {
                 	response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -207,7 +215,7 @@ public class SecurityConfig {
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
         jwtGrantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
-        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
+        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("");
         JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
         jwtConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
         return jwtConverter;

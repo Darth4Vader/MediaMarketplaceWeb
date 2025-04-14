@@ -2,8 +2,6 @@ package backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -12,8 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import backend.dtos.users.LogInDto;
+import backend.dtos.users.LoginResponse;
+import backend.dtos.users.RefreshTokenRequest;
 import backend.dtos.users.UserInformationDto;
 import backend.exceptions.EntityAdditionException;
+import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
 import backend.exceptions.UserAlreadyExistsException;
 import backend.exceptions.UserDoesNotExistsException;
@@ -49,10 +50,9 @@ public class UserAuthenticateController {
      * @throws UserPasswordIsIncorrectException If the password provided is incorrect.
      */
     @PostMapping(value = "/register")
-    public ResponseEntity<String> registerUser(@RequestBody UserInformationDto registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException {
+    public LoginResponse registerUser(@RequestBody UserInformationDto registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException {
         try {
-        	String s = userAuthService.registerUser(registerDto);
-        	return new ResponseEntity<>(s, HttpStatus.OK);
+        	return userAuthService.registerUser(registerDto);
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to register the user", e);
         }
@@ -72,16 +72,13 @@ public class UserAuthenticateController {
      * @throws LogValuesAreIncorrectException If the provided login values are incorrect.
      */
     @PostMapping(value = "/login")
-    public ResponseEntity<String> loginUser(@RequestBody LogInDto loginDto) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
-    	try {
-	    	System.out.println("Hello John");
-	    	String s = userAuthService.loginUser(loginDto);
-	    	System.out.println("Result: " + s);
-	    	return new ResponseEntity<>(s, HttpStatus.OK);
-    	} catch (Throwable e) {
-    		System.out.println(e);
-			throw e;
-		}
+    public LoginResponse loginUser(@RequestBody LogInDto loginDto) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
+    	return userAuthService.loginUser(loginDto);
+    }
+    
+    @PostMapping(value = "/refresh")
+    public LoginResponse refreshTokenRequest(@RequestBody RefreshTokenRequest refreshTokenRequest) throws EntityNotFoundException {
+    	return userAuthService.refreshLoginToken(refreshTokenRequest);
     }
     
     /**

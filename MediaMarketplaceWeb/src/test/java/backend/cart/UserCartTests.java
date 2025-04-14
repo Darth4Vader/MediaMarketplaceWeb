@@ -23,6 +23,7 @@ public class UserCartTests extends UserSpringTest {
     	cartProductReference.setBuying(true);
     	
     	// The product is already inside the cart
+    	Thread.sleep(3000);
     	addToCartTest(cartProductReference, status().isConflict());
     	
     	// Delete product from cart

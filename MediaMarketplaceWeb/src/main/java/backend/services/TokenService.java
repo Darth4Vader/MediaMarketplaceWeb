@@ -1,6 +1,9 @@
 package backend.services;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +39,13 @@ public class TokenService {
     
     @Autowired
     private JwtDecoder jwtDecoder;
+    
+    @Autowired
+    private UserServiceImpl userService;
+    
+    public String generateAccessToken(User auth) {
+		return generateJwtWithTime(auth, Duration.ofSeconds(2)).getTokenValue(); // Generate the JWT and return its string value
+	}
 
     /**
      * Generates a JWT for the given authentication object.
@@ -48,8 +58,7 @@ public class TokenService {
      * @param auth The {@link Authentication} object representing the authenticated user.
      * @return The generated JWT as a {@link String}.
      */
-    public String generateJwt(Authentication auth){
-
+    public Jwt generateJwtWithTime(User auth, TemporalAmount expirationTime) {
         Instant nowTime = Instant.now();
 
         String scope = auth.getAuthorities().stream()
@@ -59,20 +68,20 @@ public class TokenService {
         JwtClaimsSet claims = JwtClaimsSet.builder()
             .issuer("self")
             .issuedAt(nowTime)
-            .subject(auth.getName())
-            .claim("scope", scope)
+            .expiresAt(nowTime.plus(expirationTime)) // Set the expiration time
+            .subject(auth.getUsername())
+            .claim("roles", scope)
             .build();
-
-        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+        return jwtEncoder.encode(JwtEncoderParameters.from(claims));
     }
     
     public Jwt decodeJwt(String token) {
-    	try {
-    		return jwtDecoder.decode(token);
+		try {
+			return jwtDecoder.decode(token);
     	}
     	catch (BadJwtException e) {
     		throw new JwtTokenNotFoundException("Can't find user for the token", e);
-		}
+    	}
 	}
     
     public String extractUsername(String token) {
@@ -90,10 +99,11 @@ public class TokenService {
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
 		Jwt jwt = decodeJwt(token);
         Instant expiration = jwt.getExpiresAt(); // Retrieves the expiration claim (exp)
-        return expiration != null && expiration.isBefore(Instant.now()); // Compare expiration time with current time
+        Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+        return expiration != null && expiration.isBefore(now); // Compare expiration time with current time
     }
     
     /**
@@ -127,9 +137,15 @@ public class TokenService {
     	//then we will throw a runtime exception to notify the not logged user.
     	if(auth == null)
     		throw new UserNotLoggedInException();
+    	Object principal = auth.getPrincipal();
+    	if(principal instanceof Jwt) {
+    		Jwt jwt = (Jwt) principal;
+    		String username = jwt.getSubject();
+    		return userService.getUserByUsername(username);
+    	}
     	//The current user
-    	if(auth.getPrincipal() instanceof User)
-    		return (User) auth.getPrincipal();
+    	if(principal instanceof User)
+    		return (User) principal;
     	throw new UserNotLoggedInException();
     }
 }

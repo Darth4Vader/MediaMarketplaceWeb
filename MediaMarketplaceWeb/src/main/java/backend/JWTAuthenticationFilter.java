@@ -35,9 +35,11 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         try {
 	    	final String authorizationHeader = request.getHeader("Authorization");
 	        if (authorizationHeader != null) {
-				String jwt = authorizationHeader;
-	        	if(userAuthenticateController.loginUserFromToken(jwt, request))
-	        		LOGGER.info("User authenticated successfully");
+	        	if(authorizationHeader.startsWith("Bearer ")) {
+	        		String jwt = authorizationHeader.substring(7);
+		        	if(userAuthenticateController.loginUserFromToken(jwt, request))
+		        		LOGGER.info("User authenticated successfully");
+		        }
 	        }
 	        filterChain.doFilter(request, response);
 	        try {

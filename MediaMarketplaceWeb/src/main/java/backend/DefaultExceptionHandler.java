@@ -16,10 +16,13 @@ import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityRemovalException;
+import backend.exceptions.JwtTokenExpiredException;
 import backend.exceptions.JwtTokenNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
 import backend.exceptions.MovieReviewValuesAreIncorrectException;
 import backend.exceptions.PurchaseOrderException;
+import backend.exceptions.RefreshTokenExpiredException;
+import backend.exceptions.RevokedRefreshTokenAccessException;
 import backend.exceptions.UserAlreadyExistsException;
 import backend.exceptions.UserDoesNotExistsException;
 import backend.exceptions.UserNotLoggedInException;
@@ -112,6 +115,24 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	
 	@ExceptionHandler(UserNotLoggedInException.class)
 	public ResponseEntity<Object> handleUserNotLoggedInException(UserNotLoggedInException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
+	}
+	
+	@ExceptionHandler(RefreshTokenExpiredException.class)
+	public ResponseEntity<Object> handleRefreshTokenExpiredException(RefreshTokenExpiredException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
+	}
+	
+	@ExceptionHandler(RevokedRefreshTokenAccessException.class)
+	public ResponseEntity<Object> handleRevokedRefreshTokenAccessException(RevokedRefreshTokenAccessException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.FORBIDDEN, request);
+	}
+	
+	@ExceptionHandler(JwtTokenExpiredException.class)
+	public ResponseEntity<Object> handleJwtTokenExpiredException(JwtTokenExpiredException ex, WebRequest request) {
 		LOGGER.error(ex);
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
 	}

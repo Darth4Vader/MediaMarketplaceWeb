@@ -21,10 +21,15 @@ import org.springframework.transaction.annotation.Transactional;
 import backend.DataUtils;
 import backend.auth.AuthenticateAdmin;
 import backend.dtos.users.LogInDto;
+import backend.dtos.users.LoginResponse;
+import backend.dtos.users.RefreshTokenRequest;
 import backend.dtos.users.UserInformationDto;
+import backend.entities.RefreshToken;
 import backend.entities.Role;
 import backend.entities.User;
 import backend.entities.enums.RoleType;
+import backend.exceptions.EntityNotFoundException;
+import backend.exceptions.JwtTokenExpiredException;
 import backend.exceptions.LogValuesAreIncorrectException;
 import backend.exceptions.UserAlreadyExistsException;
 import backend.exceptions.UserDoesNotExistsException;
@@ -60,6 +65,9 @@ public class UserAuthenticateService {
 
     @Autowired
     private TokenService tokenService;
+    
+    @Autowired
+    private RefreshTokenService refreshTokenService;
 
     /**
      * Registers a new user with the provided information.
@@ -74,7 +82,7 @@ public class UserAuthenticateService {
      * @throws LogValuesAreIncorrectException If the provided login values are incorrect.
      */
     @Transactional
-    public String registerUser(UserInformationDto registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException {
+    public LoginResponse registerUser(UserInformationDto registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException {
         // Check that the username does not exist
         validateUserDto(registerDto);
         String username = registerDto.getUsername();
@@ -117,7 +125,7 @@ public class UserAuthenticateService {
      * @throws UserPasswordIsIncorrectException If the password is incorrect.
      * @throws LogValuesAreIncorrectException If the provided login values are incorrect.
      */
-    public String loginUser(LogInDto loginDto) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
+    public LoginResponse loginUser(LogInDto loginDto) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
         String username = loginDto.getUsername();
         String password = loginDto.getPassword();
         return loginUser(username, password);
@@ -136,7 +144,7 @@ public class UserAuthenticateService {
      * @throws UserPasswordIsIncorrectException If the password is incorrect.
      * @throws LogValuesAreIncorrectException If the provided login values are incorrect.
      */
-    private String loginUser(String username, String password) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
+    private LoginResponse loginUser(String username, String password) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
         checkForException(username, password);
         Optional<User> userOpt = userRepository.findByUsername(username);
 
@@ -152,8 +160,9 @@ public class UserAuthenticateService {
             // Set as the current authentication user
             setAuthentication(auth);
             // Generate the JWT token
-            String token = tokenService.generateJwt(auth);
-            return token;
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(userOpt.get());
+            String accessToken = tokenService.generateAccessToken(userOpt.get());
+            return new LoginResponse(accessToken, refreshToken.getToken());
         } catch (AuthenticationException e) {
             // If there is a problem with authenticating the user, the password is incorrect
         	// Because we check that the username exists, so it can only be the password.
@@ -211,19 +220,24 @@ public class UserAuthenticateService {
         //if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
         if(username != null) {
         	System.out.println(username);
-            Optional<User> userOpt = userRepository.findByUsername(username);
-            // If we can't find the user by their username, then they don't exist
-            if (userOpt.isEmpty()) {
-                throw new UserDoesNotExistsException();
-            }
-            if (tokenService.validateToken(token, userOpt.get())) {
-                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userOpt.get(), null, userOpt.get().getAuthorities());
+            User user = getUserByUsername(username);
+            if (tokenService.validateToken(token, user)) {
+                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 setAuthentication(authenticationToken);
                 return true;
             }
+            else if(tokenService.isTokenExpired(token)) {
+            	throw new JwtTokenExpiredException("Access Token Expired. Client must refresh token");
+            }
         }
         return false;
+    }
+    
+    public LoginResponse refreshLoginToken(RefreshTokenRequest refreshTokenRequest) throws EntityNotFoundException {
+    	RefreshToken refreshToken = refreshTokenService.refreshToken(refreshTokenRequest.getRefreshToken());
+        String accessToken = tokenService.generateAccessToken(refreshToken.getUser());
+        return new LoginResponse(accessToken, refreshToken.getToken());
     }
     
     /**
@@ -289,6 +303,11 @@ public class UserAuthenticateService {
     public UserInformationDto getCurrentUserDto() throws UserNotLoggedInException {
         return convertUserToDto(tokenService.getCurretUser());
     }
+    
+	public User getUserByUsername(String username) throws UserDoesNotExistsException {
+		return userRepository.findByUsername(username)
+				.orElseThrow(() -> new UserDoesNotExistsException());
+	}
     
     /**
      * Retrieves a {@link Role} by its type. If the role does not exist, it is created and saved to the repository.
