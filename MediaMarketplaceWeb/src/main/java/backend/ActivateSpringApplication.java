@@ -28,6 +28,8 @@ import backend.services.UserAuthenticateService;
 @EnableJpaAuditing
 @SpringBootApplication
 public class ActivateSpringApplication implements CommandLineRunner {
+	
+	public static final String IMAGES_FOLDER = "images";
 
     @Autowired
     private UserAuthenticateService userAuthenticateService;

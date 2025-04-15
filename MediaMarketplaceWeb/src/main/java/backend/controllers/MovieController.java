@@ -131,7 +131,7 @@ public class MovieController {
     }
     
     @GetMapping("")
-    public List<MovieReference> searchMoviesSort(@Validated @RequestParam SortDto sortDto) throws EntityNotFoundException {
+    public List<MovieReference> searchMoviesSort(@Validated @RequestParam("sortDto") SortDto sortDto) throws EntityNotFoundException {
     	List<MovieReference> movies = movieSearchService.searchMoviesSort(sortDto);
 		if (movies.isEmpty()) {
 			throw new EntityNotFoundException("No movies found");

@@ -133,6 +133,7 @@ public class SecurityConfig {
             )*/
             .authorizeHttpRequests(requests -> requests
             		//This is for swagger, remove when using javafx
+            		.requestMatchers("/images/**").permitAll()
             		.requestMatchers(AUTH_WHITELIST).permitAll()
             		.requestMatchers("/api/users/login", "/api/users/register", "/api/users/refresh").permitAll()
             		.requestMatchers(HttpMethod.GET, "/api/main/**").permitAll()

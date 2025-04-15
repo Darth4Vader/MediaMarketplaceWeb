@@ -16,6 +16,7 @@ import backend.entities.Movie;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.MovieRepository;
+import backend.utils.UrlUtils;
 
 /**
  * Service class for managing movies.
@@ -201,7 +202,7 @@ public class MovieService {
         MovieReference movieReference = new MovieReference();
         movieReference.setId(movie.getId());
         movieReference.setName(movie.getName());
-        movieReference.setPosterPath(movie.getPosterPath());
+        movieReference.setPosterPath(UrlUtils.getFullImageURL(movie.getPosterPath()));
         return movieReference;
     }
 
@@ -215,8 +216,8 @@ public class MovieService {
         MovieDto movieDto = new MovieDto();
         movieDto.setId(movie.getId());
         movieDto.setSynopsis(movie.getSynopsis());
-        movieDto.setPosterPath(movie.getPosterPath());
-        movieDto.setBackdropPath(movie.getBackdropPath());
+        movieDto.setPosterPath(UrlUtils.getFullImageURL(movie.getPosterPath()));
+        movieDto.setBackdropPath(UrlUtils.getFullImageURL(movie.getBackdropPath()));
         movieDto.setRuntime(movie.getRuntime());
         movieDto.setName(movie.getName());
         List<Genre> genres = movie.getGenres();

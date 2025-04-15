@@ -16,6 +16,7 @@ import backend.exceptions.EntityNotFoundException;
 import backend.repositories.ActorRepository;
 import backend.repositories.DirectorRepository;
 import backend.repositories.PersonRepository;
+import backend.utils.UrlUtils;
 
 /**
  * Service class for managing person entities.
@@ -149,7 +150,7 @@ public class PersonService {
     public static PersonDto convertPersonToDto(Person person) {
         PersonDto personDto = new PersonDto();
         personDto.setPersonMediaID(person.getMediaId());
-        personDto.setImagePath(person.getImagePath());
+        personDto.setImagePath(UrlUtils.getFullImageURL(person.getImagePath()));
         personDto.setName(person.getName());
         personDto.setBirthDate(person.getBirthDate());
         return personDto;
