@@ -1,6 +1,26 @@
 import logo from './logo.svg';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
+import HomePage from "./components/HomePage";
+import LoadMoviePage from "./components/MoviePage";
 
+
+function App() {
+  return (
+      <div className="App">
+        <header className="App-header">
+          <Router>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/movie/:id" element={<LoadMoviePage />} />
+            </Routes>
+          </Router>
+        </header>
+      </div>
+  );
+}
+
+/*
 function App() {
   return (
     <div className="App">
@@ -17,9 +37,11 @@ function App() {
         >
           Learn React
         </a>
+          <HomePage></HomePage>
       </header>
     </div>
   );
 }
+*/
 
 export default App;
