@@ -13,12 +13,12 @@ public class MovieReviewReference extends MovieRatingReference {
     /**
      * The title of the movie review.
      */
-    private String reviewTitle;
+    private String title;
 
     /**
      * The content of the movie review.
      */
-    private String review;
+    private String content;
 
     /**
      * The date and time when the review was created.
@@ -32,17 +32,17 @@ public class MovieReviewReference extends MovieRatingReference {
      * 
      * @return the title of the review
      */
-    public String getReviewTitle() {
-        return reviewTitle;
+    public String getTitle() {
+        return title;
     }
 
     /**
      * Sets the title of the movie review.
      * 
-     * @param reviewTitle the title of the review
+     * @param title the title of the review
      */
-    public void setReviewTitle(String reviewTitle) {
-        this.reviewTitle = reviewTitle;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     /**
@@ -50,17 +50,17 @@ public class MovieReviewReference extends MovieRatingReference {
      * 
      * @return the content of the review
      */
-    public String getReview() {
-        return review;
+    public String getContent() {
+        return content;
     }
 
     /**
      * Sets the content of the movie review.
      * 
-     * @param review the content of the review
+     * @param content the content of the review
      */
-    public void setReview(String review) {
-        this.review = review;
+    public void setContent(String content) {
+        this.content = content;
     }
 
     /**

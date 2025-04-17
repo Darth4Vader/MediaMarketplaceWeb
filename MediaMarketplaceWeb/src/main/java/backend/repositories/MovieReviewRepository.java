@@ -3,6 +3,8 @@ package backend.repositories;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -56,4 +58,6 @@ public interface MovieReviewRepository extends JpaRepository<MovieReview, Long> 
      * @return an {@link Optional} containing the {@link MovieReview}, or {@link Optional#empty()} if no review is found
      */
     Optional<MovieReview> findByMovieAndUser(Movie movie, User user);
+    
+    Optional<Page<MovieReview>> findByMovie(Movie movie, Pageable pageable);
 }

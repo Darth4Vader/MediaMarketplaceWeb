@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,8 +49,8 @@ public class MovieReviewController {
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      */
     @GetMapping("/reviews/{movieId}")
-    public List<MovieReviewDto> getAllReviewOfMovie(@PathVariable("movieId") Long movieId) throws EntityNotFoundException {
-        return movieReviewService.getAllReviewOfMovie(movieId);
+    public Page<MovieReviewDto> getAllReviewOfMovie(@PathVariable("movieId") Long movieId, Pageable pageable) throws EntityNotFoundException {
+        return movieReviewService.getReviewsOfMovieByPage(movieId, pageable);
     }
     
     /**

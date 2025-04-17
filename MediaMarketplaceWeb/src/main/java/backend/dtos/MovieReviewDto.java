@@ -1,5 +1,7 @@
 package backend.dtos;
 
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+
 import backend.dtos.references.MovieReviewReference;
 
 /**
@@ -10,12 +12,13 @@ public class MovieReviewDto {
     /**
      * Reference to the movie review.
      */
+	@JsonUnwrapped
     private MovieReviewReference movieReview;
 
     /**
      * The username of the person who wrote the review.
      */
-    private String userName;
+    private String username;
 
     /**
      * Gets the reference to the movie review.
@@ -40,16 +43,16 @@ public class MovieReviewDto {
      * 
      * @return the username of the reviewer
      */
-    public String getUserName() {
-        return userName;
+    public String getUsername() {
+        return username;
     }
 
     /**
      * Sets the username of the person who wrote the review.
      * 
-     * @param userName the username of the reviewer
+     * @param username the username of the reviewer
      */
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

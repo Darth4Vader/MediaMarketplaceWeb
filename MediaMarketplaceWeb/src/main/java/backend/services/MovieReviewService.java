@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,21 +59,15 @@ public class MovieReviewService {
      * @throws EntityNotFoundException if the movie with the given ID does not exist, 
      *                                  or if no reviews exist for the specified movie.
      */
-    public List<MovieReviewDto> getAllReviewOfMovie(Long movieId) throws EntityNotFoundException {
+    public Page<MovieReviewDto> getReviewsOfMovieByPage(Long movieId, Pageable pageable) throws EntityNotFoundException {
         // First load the movie reviews of the given movie.
         Movie movie = movieService.getMovieByID(movieId);
-        List<MovieReview> movieReviews = getAllReviewOfMovies(movie);
+        Page<MovieReview> movieReviewsPage = getMovieReviewOfMovie(movie, pageable);
         // Then convert them to DTOs.
-        List<MovieReviewDto> movieReviewDtos = new ArrayList<>();
-        if (movieReviews != null) {
-            for (MovieReview movieReview : movieReviews) {
-                if (movieReview != null) {
-                    MovieReviewDto movieReviewDto = convertMovieReviewToDto(movieReview);
-                    movieReviewDtos.add(movieReviewDto);
-                }
-            }
-        }
-        return movieReviewDtos;
+        Page<MovieReviewDto> movieReviewsDtoPage = movieReviewsPage.map(movieReview -> {
+        	return convertMovieReviewToDto(movieReview);
+		});
+        return movieReviewsDtoPage;
     }
 
     /**
@@ -173,22 +170,24 @@ public class MovieReviewService {
      * @return The average rating of the movie, or null if no ratings exist.
      */
     public Integer getMovieRatings(Long movieId) {
-        List<MovieReview> movieReviews;
         try {
             // Load the movie and get all its reviews.
             Movie movie = movieService.getMovieByID(movieId);
-            movieReviews = getAllReviewOfMovies(movie);
+            Pageable pageable = PageRequest.of(0, 5000);
+            Page<MovieReview> page = getMovieReviewOfMovie(movie, pageable);
+            // Calculate the average rating.
+            double sum = 0;
+            sum += page.getContent().stream().mapToDouble(MovieReview::getRating).sum();
+            while(page.hasNext()) {
+				pageable = page.nextPageable();
+				page = getMovieReviewOfMovie(movie, pageable);
+				sum += page.getContent().stream().mapToDouble(MovieReview::getRating).sum();
+            }
+            return (int) (sum / page.getTotalElements());
         } catch (EntityNotFoundException e) {
             // If there are no reviews for the movie, return null.
             return null;
         }
-        // Calculate the average rating.
-        double size = movieReviews.size();
-        double sum = 0;
-        for (MovieReview review : movieReviews) {
-            sum += review.getRating();
-        }
-        return (int) (sum / size);
     }
 
     /**
@@ -202,8 +201,8 @@ public class MovieReviewService {
      * @return A list of {@link MovieReview} entities for the specified movie.
      * @throws EntityNotFoundException if no reviews exist for the specified movie.
      */
-    private List<MovieReview> getAllReviewOfMovies(Movie movie) throws EntityNotFoundException {
-        return movieReviewRepository.findAllByMovie(movie)
+    private Page<MovieReview> getMovieReviewOfMovie(Movie movie, Pageable pageable) throws EntityNotFoundException {
+    	return movieReviewRepository.findByMovie(movie, pageable)
                 .orElseThrow(() -> new EntityNotFoundException("There are no reviews of the given movie"));
     }
 
@@ -242,8 +241,8 @@ public class MovieReviewService {
      */
     private void setMovieReviewFromDto(MovieReview movieReview, MovieReviewReference movieReviewRef) {
         setMovieRatingFromDto(movieReview, movieReviewRef);
-        movieReview.setReviewTitle(movieReviewRef.getReviewTitle());
-        movieReview.setReview(movieReviewRef.getReview());
+        movieReview.setReviewTitle(movieReviewRef.getTitle());
+        movieReview.setReview(movieReviewRef.getContent());
     }
     
     /**
@@ -257,7 +256,7 @@ public class MovieReviewService {
         MovieReviewReference movieReviewRef = convertMovieReviewToReference(movieReview);
         movieReviewDto.setMovieReview(movieReviewRef);
         User user = movieReview.getUser();
-        movieReviewDto.setUserName(user.getUsername());
+        movieReviewDto.setUsername(user.getUsername());
         return movieReviewDto;
     }
 
@@ -270,9 +269,9 @@ public class MovieReviewService {
     private MovieReviewReference convertMovieReviewToReference(MovieReview movieReview) {
         MovieReviewReference movieReviewRef = new MovieReviewReference();
         movieReviewRef.setMovieId(movieReview.getMovie().getId());
-        movieReviewRef.setReview(movieReview.getReview());
+        movieReviewRef.setContent(movieReview.getReview());
         movieReviewRef.setCreatedDate(movieReview.getCreatedDate());
-        movieReviewRef.setReviewTitle(movieReview.getReviewTitle());
+        movieReviewRef.setTitle(movieReview.getReviewTitle());
         movieReviewRef.setRating(movieReview.getRating());
         return movieReviewRef;
     }
@@ -334,8 +333,8 @@ public class MovieReviewService {
      */
     private void exceptionMapReview(MovieReviewReference movieReviewRef, Map<MovieReviewTypes, String> map) {
         exceptionMapRatings(movieReviewRef, map);
-        String reviewTitle = movieReviewRef.getReviewTitle();
-        String review = movieReviewRef.getReview();
+        String reviewTitle = movieReviewRef.getTitle();
+        String review = movieReviewRef.getContent();
         if (DataUtils.isBlank(reviewTitle))
             map.put(MovieReviewTypes.TITLE, "Required field, the title must be written");
         else if (reviewTitle.length() > REVIEW_TITLE_MAX_LENGTH)
