@@ -19,7 +19,7 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(length = 1024)
+    @Column(length = 600, unique = true, nullable = false)
     private String token;
     
     private Instant issuedAt;
