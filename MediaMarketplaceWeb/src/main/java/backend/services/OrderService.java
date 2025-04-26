@@ -20,6 +20,7 @@ import backend.entities.User;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.PurchaseOrderException;
 import backend.repositories.OrderRepository;
+import backend.utils.PurchaseType;
 
 /**
  * Service class for managing orders.
@@ -112,18 +113,19 @@ public class OrderService {
         // Convert CartProducts to MoviePurchased items and calculate the total price.
         for (CartProduct cartProduct : cartProducts) {
             Product product = cartProduct.getProduct();
-            boolean isBuy = cartProduct.isBuying();
-            double price = CartService.calculateCartProductPrice(product, isBuy);
+            String purchaseType = cartProduct.getPurchaseType();
+            double price = CartService.calculateCartProductPrice(product, purchaseType);
             Movie movie = product.getMovie();
 
             // Create the movie purchased item from the cart product.
             MoviePurchased orderItem = new MoviePurchased();
             orderItem.setMovie(movie);
             orderItem.setPurchasePrice(price);
-            orderItem.setRented(!isBuy);
+            PurchaseType purchaseTypeEnum = PurchaseType.fromString(purchaseType);
+            orderItem.setRented(purchaseTypeEnum == PurchaseType.RENT);
             
             // Check if it is a rent or a purchase.
-            if (!isBuy) {
+            if (purchaseTypeEnum == PurchaseType.RENT) {
                 orderItem.setRentTime(Duration.ofMinutes(RENT_TIME)); // Setting default rent time
             }
 

@@ -2,6 +2,7 @@ package backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -14,6 +15,7 @@ import backend.dtos.users.LoginResponse;
 import backend.dtos.users.RefreshTokenRequest;
 import backend.dtos.users.UserInformationDto;
 import backend.exceptions.EntityAdditionException;
+import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
 import backend.exceptions.UserAlreadyExistsException;
@@ -77,8 +79,15 @@ public class UserAuthenticateController {
     }
     
     @PostMapping(value = "/refresh")
-    public LoginResponse refreshTokenRequest(@RequestBody RefreshTokenRequest refreshTokenRequest) throws EntityNotFoundException {
-    	return userAuthService.refreshLoginToken(refreshTokenRequest);
+    public LoginResponse refreshTokenRequest(@RequestBody RefreshTokenRequest refreshTokenRequest) throws EntityNotFoundException, EntityAlreadyExistsException {
+    	try {
+    		return userAuthService.refreshLoginToken(refreshTokenRequest);
+    	}
+    	catch (DataIntegrityViolationException e) {
+    		// catch if the token already exists
+    		// if so don't create it (React development call the server twice for every loading request)
+			throw new EntityAlreadyExistsException("Token already exists");
+		}
     }
     
     /**

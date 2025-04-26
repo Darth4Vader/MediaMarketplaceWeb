@@ -13,7 +13,7 @@ public class CartProductDto {
     /**
      * Indicates whether the product is being bought or rented.
      */
-    private boolean isBuying;
+    private String purchaseType;
 
     /**
      * The price of the product.
@@ -37,23 +37,13 @@ public class CartProductDto {
     public void setProduct(ProductDto product) {
         this.product = product;
     }
-
-    /**
-     * Checks if the product is being bought.
-     * 
-     * @return {@code true} if the product is being bought; {@code false} otherwise
-     */
-    public boolean isBuying() {
-        return isBuying;
+    
+    public String getPurchaseType() {
+		return purchaseType;
     }
-
-    /**
-     * Sets whether the product is being bought or rented.
-     * 
-     * @param isBuying {@code true} if the product is being bought; {@code false} otherwise
-     */
-    public void setBuying(boolean isBuying) {
-        this.isBuying = isBuying;
+    
+    public void setPurchaseType(String purchaseType) {
+		this.purchaseType = purchaseType;
     }
 
     /**

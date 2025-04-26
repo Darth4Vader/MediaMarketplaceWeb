@@ -66,6 +66,9 @@ public class CartProduct {
      */
     @JoinColumn(name = "is_buying", nullable = false)
     private boolean isBuying;
+    
+    @JoinColumn(name = "purchase_type", nullable = false)
+    private String purchaseType;
 
     /**
      * Gets the unique identifier for this cart product.
@@ -120,24 +123,12 @@ public class CartProduct {
     public void setCart(Cart cart) {
         this.cart = cart;
     }
-
-    /**
-     * Checks whether the product is being bought.
-     * 
-     * @return {@code true} if the product is being bought, 
-     * {@code false} if the product is being rented.
-     */
-    public boolean isBuying() {
-        return isBuying;
+    
+    public String getPurchaseType() {
+		return purchaseType;
     }
-
-    /**
-     * Sets whether the product is being bought.
-     * 
-     * @param isBuying {@code true} to indicate that the product is being bought, 
-     * {@code false} to indicate that it is rented.
-     */
-    public void setBuying(boolean isBuying) {
-        this.isBuying = isBuying;
+    
+    public void setPurchaseType(String purchaseType) {
+		this.purchaseType = purchaseType;
     }
 }

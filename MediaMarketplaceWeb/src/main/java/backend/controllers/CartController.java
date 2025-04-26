@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +19,7 @@ import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityRemovalException;
+import backend.exceptions.EntityUnprocessableException;
 import backend.services.CartService;
 
 /**
@@ -58,11 +60,12 @@ public class CartController {
      * @return A {@link ResponseEntity} with a success message if the product is added successfully.
      * @throws EntityNotFoundException If the product or cart is not found.
      * @throws EntityAlreadyExistsException If the product already exists in the cart.
+     * @throws EntityUnprocessableException 
      * @throws EntityAdditionException If there is a problem adding the product due to data access issues.
      */
     @PostMapping("/")
     public ResponseEntity<?> addProductToCart(@RequestBody CartProductReference dto) 
-            throws EntityNotFoundException, EntityAlreadyExistsException {
+            throws EntityNotFoundException, EntityAlreadyExistsException, EntityUnprocessableException {
         try {
             cartService.addProductToCart(dto);
         } catch (DataAccessException e) {
@@ -90,6 +93,17 @@ public class CartController {
             cartService.removeProductFromCart(productId);
         } catch (DataAccessException e) {
             throw new EntityRemovalException("Unable to remove the product \"" + productId + "\" from the cart", e);
+        }
+        return new ResponseEntity<>("Removed Successfully", HttpStatus.OK);
+    }
+    
+    @PutMapping("/{productId}")
+    public ResponseEntity<String> updateCartProduct(@PathVariable("productId") Long productId, CartProductReference dto) 
+            throws EntityNotFoundException, EntityUnprocessableException {
+        try {
+            cartService.updateCartProduct(productId, dto);
+        } catch (DataAccessException e) {
+            throw new EntityAdditionException("Unable to update the product \"" + productId + "\" in the cart", e);
         }
         return new ResponseEntity<>("Removed Successfully", HttpStatus.OK);
     }

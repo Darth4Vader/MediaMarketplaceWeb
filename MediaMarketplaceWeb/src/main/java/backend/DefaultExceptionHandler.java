@@ -16,6 +16,7 @@ import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityRemovalException;
+import backend.exceptions.EntityUnprocessableException;
 import backend.exceptions.JwtTokenExpiredException;
 import backend.exceptions.JwtTokenNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
@@ -135,5 +136,11 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	public ResponseEntity<Object> handleJwtTokenExpiredException(JwtTokenExpiredException ex, WebRequest request) {
 		LOGGER.error(ex);
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
+	}
+	
+	@ExceptionHandler(EntityUnprocessableException.class)
+	public ResponseEntity<Object> handleEntityUnprocessableException(EntityUnprocessableException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
 	}
 }

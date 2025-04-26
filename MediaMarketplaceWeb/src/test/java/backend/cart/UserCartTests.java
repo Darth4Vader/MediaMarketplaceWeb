@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import backend.UserSpringTest;
 import backend.dtos.CartDto;
 import backend.dtos.references.CartProductReference;
+import backend.utils.PurchaseType;
 
 @Transactional
 public class UserCartTests extends UserSpringTest {
@@ -20,7 +21,7 @@ public class UserCartTests extends UserSpringTest {
     	final Long productId = 30L;
     	CartProductReference cartProductReference = new CartProductReference();
     	cartProductReference.setProductId(productId);
-    	cartProductReference.setBuying(true);
+    	cartProductReference.setPurchaseType(PurchaseType.BUY.getType());
     	
     	// The product is already inside the cart
     	Thread.sleep(3000);
@@ -42,7 +43,7 @@ public class UserCartTests extends UserSpringTest {
     	// add the product back to the cart
     	CartProductReference cartProductReference2 = new CartProductReference();
     	cartProductReference2.setProductId(productId);
-    	cartProductReference2.setBuying(true);
+    	cartProductReference2.setPurchaseType(PurchaseType.BUY.getType());
     	addToCartTest(cartProductReference2, status().isCreated());
     }
     

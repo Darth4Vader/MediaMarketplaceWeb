@@ -17,7 +17,7 @@ public class CartProductReference {
     /**
      * Indicates whether the product is being bought.
      */
-    private boolean isBuying;
+    private String purchaseType;
 
     /**
      * Gets the unique identifier for the product.
@@ -36,22 +36,12 @@ public class CartProductReference {
     public void setProductId(Long productId) {
         this.productId = productId;
     }
-
-    /**
-     * Checks if the product is being bought.
-     * 
-     * @return true if the product is being bought, false if the product is being rented.
-     */
-    public boolean isBuying() {
-        return isBuying;
+    
+    public String getPurchaseType() {
+		return purchaseType;
     }
-
-    /**
-     * Sets whether the product is being bought.
-     * 
-     * @param isBuying true if the product is being bought, false if the product is being rented.
-     */
-    public void setBuying(boolean isBuying) {
-        this.isBuying = isBuying;
+    
+    public void setPurchaseType(String purchaseType) {
+		this.purchaseType = purchaseType;
     }
 }

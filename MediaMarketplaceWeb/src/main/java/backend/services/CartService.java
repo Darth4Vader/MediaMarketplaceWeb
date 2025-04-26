@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException.UnprocessableEntity;
 
 import backend.dtos.CartDto;
 import backend.dtos.CartProductDto;
@@ -17,8 +18,10 @@ import backend.entities.Product;
 import backend.entities.User;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
+import backend.exceptions.EntityUnprocessableException;
 import backend.repositories.CartProductRepository;
 import backend.repositories.CartRepository;
+import backend.utils.PurchaseType;
 
 /**
  * Service class for managing user shopping carts.
@@ -74,9 +77,9 @@ public class CartService {
                     Product product = cartProduct.getProduct();
                     ProductDto productDto = ProductService.convertProductToDto(product);
                     cartProductDto.setProduct(productDto);
-                    boolean isBuy = cartProduct.isBuying();
-                    cartProductDto.setBuying(isBuy);
-                    double price = calculateCartProductPrice(product, isBuy);
+                    String purchaseType = cartProduct.getPurchaseType();
+                    cartProductDto.setPurchaseType(purchaseType);
+                    double price = calculateCartProductPrice(product, purchaseType);
                     cartProductDto.setPrice(price);
                     totalPrice += price;
                     cartProductsDtos.add(cartProductDto);
@@ -100,9 +103,13 @@ public class CartService {
      *                             buying type.
      * @throws EntityNotFoundException if the product is not found.
      * @throws EntityAlreadyExistsException if the product is already in the cart with the same purchase type.
+     * @throws EntityUnprocessableException 
+     * @throws  
      */
     @Transactional
-    public void addProductToCart(CartProductReference cartProductReference) throws EntityNotFoundException, EntityAlreadyExistsException {
+    public void addProductToCart(CartProductReference cartProductReference) throws EntityNotFoundException, EntityAlreadyExistsException, EntityUnprocessableException {
+    	// check that the request content is valid
+    	validateCartProductReference(cartProductReference);
     	// First load or create the user's cart.
     	User user = tokenService.getCurretUser();
         Product product = productService.getProductByID(cartProductReference.getProductId());
@@ -117,7 +124,7 @@ public class CartService {
         // First check if the product is already inside the cart with the same purchase type
         CartProduct productInCart = getProductInCart(cart, product);
         if (productInCart != null) {
-            if (cartProductReference.isBuying() == productInCart.isBuying()) {
+            if (PurchaseType.fromString(cartProductReference.getPurchaseType()) == PurchaseType.fromString(productInCart.getPurchaseType())) {
                 throw new EntityAlreadyExistsException("The Product is already in the Cart");
             }
             // If we want to buy instead of rent, or vice versa, then we will remove the current product in cart, and then add it as new with the purchase type
@@ -127,7 +134,7 @@ public class CartService {
         CartProduct cartProduct = new CartProduct();
         cartProduct.setProduct(product);
         cartProduct.setCart(cart);
-        cartProduct.setBuying(cartProductReference.isBuying());
+        cartProduct.setPurchaseType(cartProductReference.getPurchaseType());
         addProductToCart(cart, cartProduct);
     }
     
@@ -151,6 +158,25 @@ public class CartService {
         removeProductFromCart(cart, product);
     }
     
+    @Transactional
+    public void updateCartProduct(Long productId, CartProductReference cartProductReference) throws EntityNotFoundException, EntityUnprocessableException {
+    	// check that the request content is valid
+    	validateCartProductReference(cartProductReference);
+    	// Load the cart and the product
+    	User user = tokenService.getCurretUser();
+        Cart cart = getCartByUser(user);
+        Product product = productService.getProductByID(productId);
+        CartProduct cartProduct = getProductInCart(cart, product);
+        if (cartProduct != null) {
+			// Update the cart product as needed
+			// For example, you can change the buying type or other properties
+			cartProduct.setPurchaseType(cartProductReference.getPurchaseType());
+			cartProductRepository.save(cartProduct);
+		} else {
+			throw new EntityNotFoundException("Product not found in the cart");
+		}
+	}
+    
     /**
      * Creates a new cart for the specified user.
      * <p>
@@ -165,6 +191,13 @@ public class CartService {
         Cart cart = new Cart(user);
         return cartRepository.save(cart);
     }
+    
+    private void validateCartProductReference(CartProductReference cartProductReference) throws UnprocessableEntity, EntityUnprocessableException {
+		String type = cartProductReference.getPurchaseType();
+    	if (PurchaseType.fromString(type) == null) {
+			throw new EntityUnprocessableException(type + " is not a valid purchase type");
+		}
+	}
     
     /**
      * Retrieves the cart associated with the specified user.
@@ -285,13 +318,11 @@ public class CartService {
      * @param isBuying Whether the product is being bought or rented.
      * @return The price of the product based on the buying status.
      */
-    public static double calculateCartProductPrice(Product product, boolean isBuying) {
-        double price;
-        if (isBuying) {
-            price = product.getBuyPrice();
-        } else {
-            price = product.getRentPrice();
-        }
-        return price;
+    public static double calculateCartProductPrice(Product product, String purchaseType) {
+        return switch(PurchaseType.fromString(purchaseType)) {
+			case BUY -> product.getBuyPrice();
+			case RENT -> product.getRentPrice();
+			default -> 0;
+		};
     }
 }
