@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,7 +49,7 @@ public class DirectorController {
      * @throws EntityNotFoundException If no directors are found for the given movie ID.
      */
     @GetMapping()
-    public List<DirectorDto> getDirectorsOfMovie(@Validated @RequestParam("movieId") Long movieId) throws EntityNotFoundException {
+    public List<DirectorDto> getDirectorsOfMovie(@NonNull @RequestParam("movieId") Long movieId) throws EntityNotFoundException {
         return directorService.getDirectorsOfMovie(movieId);
     }
 

@@ -143,4 +143,16 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 		LOGGER.error(ex);
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
 	}
+	
+	/**
+	 * The ExceptionHandler disables the default exception handler
+	 * so we will return Internal Server Error for every unhandled exception
+	 * @param ex
+	 * @return
+	 */
+    /*@ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> handleGenericException(Exception ex) {
+    	LOGGER.error(ex);
+    	return new ResponseEntity<>("Server encountered an internal error", HttpStatus.INTERNAL_SERVER_ERROR);
+    }*/
 }

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -87,7 +88,7 @@ public class CartController {
      * @throws EntityRemovalException If there is a problem removing the product due to data access issues.
      */
     @DeleteMapping("/{productId}")
-    public ResponseEntity<String> removeProductFromCart(@PathVariable("productId") Long productId) 
+    public ResponseEntity<String> removeProductFromCart(@NonNull @PathVariable("productId") Long productId) 
             throws EntityNotFoundException {
         try {
             cartService.removeProductFromCart(productId);
@@ -98,7 +99,7 @@ public class CartController {
     }
     
     @PutMapping("/{productId}")
-    public ResponseEntity<String> updateCartProduct(@PathVariable("productId") Long productId, CartProductReference dto) 
+    public ResponseEntity<String> updateCartProduct(@NonNull @PathVariable("productId") Long productId, @RequestBody CartProductReference dto) 
             throws EntityNotFoundException, EntityUnprocessableException {
         try {
             cartService.updateCartProduct(productId, dto);

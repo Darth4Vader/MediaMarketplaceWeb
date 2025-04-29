@@ -41,6 +41,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 		        		LOGGER.info("User authenticated successfully");
 		        }
 	        }
+	        System.out.println(request.getRequestURI());
 	        filterChain.doFilter(request, response);
 	        try {
 	        	userAuthenticateController.signOutFromCurrentUser();
@@ -57,6 +58,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         		resolver.resolveException(request, response, null, e);
         	else
         		LOGGER.error("Exception Resolver is null");
+        	//throw e;
         }
     }
     
