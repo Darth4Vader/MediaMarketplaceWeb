@@ -58,15 +58,6 @@ public class CartProduct {
     @JoinColumn(name = "cart_id", referencedColumnName = "id", nullable = false)
     private Cart cart;
     
-    /**
-     * Indicates whether the product is being bought.
-     * This field maps to the 'is_buying' column in the 'cart_products' table.
-     * 
-     * @return {@code true} if the product is being bought, {@code false} otherwise
-     */
-    @JoinColumn(name = "is_buying", nullable = false)
-    private boolean isBuying;
-    
     @JoinColumn(name = "purchase_type", nullable = false)
     private String purchaseType;
 

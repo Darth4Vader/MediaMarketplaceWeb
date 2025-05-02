@@ -3,6 +3,8 @@ package backend.dtos;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import backend.dtos.references.MovieReference;
 
 /**
@@ -24,7 +26,7 @@ public class MoviePurchasedDto {
      * The date and time when the movie was purchased.
      */
     private LocalDateTime purchaseDate;
-
+    
     /**
      * Indicates whether the movie is rented.
      */
@@ -113,6 +115,7 @@ public class MoviePurchasedDto {
      * 
      * @param isRented true if the movie is rented, false otherwise
      */
+    @JsonProperty("isRented")
     public void setRented(boolean isRented) {
         this.isRented = isRented;
     }

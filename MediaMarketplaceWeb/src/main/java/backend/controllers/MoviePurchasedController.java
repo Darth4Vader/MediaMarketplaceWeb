@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import backend.dtos.MoviePurchasedDto;
+import backend.dtos.orders.UserActiveMoviePurchaseInfo;
 import backend.dtos.references.MovieReference;
 import backend.exceptions.EntityNotFoundException;
 import backend.services.MoviePurchasedService;
@@ -55,7 +56,7 @@ public class MoviePurchasedController {
      * @throws EntityNotFoundException If the movie with the specified ID does not exist or if the user has not purchased the movie.
      */
     @GetMapping("/actives/{movieId}")
-    public List<MoviePurchasedDto> getActiveListUserMovie(@PathVariable Long movieId) throws EntityNotFoundException {
+    public UserActiveMoviePurchaseInfo getActiveListUserMovie(@PathVariable("movieId") Long movieId) throws EntityNotFoundException {
         return moviePurchasedService.getActiveListUserMovie(movieId);
     }
     

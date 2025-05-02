@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import backend.DataUtils;
 import backend.dtos.MoviePurchasedDto;
+import backend.dtos.orders.UserActiveMoviePurchaseInfo;
 import backend.dtos.references.MovieReference;
 import backend.entities.Movie;
 import backend.entities.MoviePurchased;
@@ -83,7 +84,7 @@ public class MoviePurchasedService {
      * @return A list of MoviePurchasedDto objects representing active purchases of the specified movie.
      * @throws EntityNotFoundException if the movie with the given ID does not exist or if the user has never purchased the movie.
      */
-    public List<MoviePurchasedDto> getActiveListUserMovie(Long movieId) throws EntityNotFoundException {
+    public UserActiveMoviePurchaseInfo getActiveListUserMovie(Long movieId) throws EntityNotFoundException {
         // First load all times the user purchased the given movie
         User user = tokenService.getCurretUser();
         Movie movie = movieService.getMovieByID(movieId);
@@ -95,7 +96,9 @@ public class MoviePurchasedService {
                 moviePurchasedDtos.add(convertMoviePurchasedtoDto(purchased));
             }
         }
-        return moviePurchasedDtos;
+        UserActiveMoviePurchaseInfo userActiveMoviePurchaseInfo = new UserActiveMoviePurchaseInfo();
+        userActiveMoviePurchaseInfo.setActivePurchases(moviePurchasedDtos);
+        return userActiveMoviePurchaseInfo;
     }
     
     /**
