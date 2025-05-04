@@ -1,5 +1,6 @@
 package backend.exceptions;
 
+import java.util.Map;
 import java.util.Set;
 import backend.exceptions.enums.UserLogInfo;
 
@@ -20,7 +21,7 @@ public class LogValuesAreIncorrectException extends Exception {
     /**
      * A set of {@link UserLogInfo} enums representing which login values are incorrect or missing.
      */
-	private Set<UserLogInfo> logInfoSet;
+	private Map<UserLogInfo, String> logInfo;
 
     /**
      * Constructs a new {@code LogValuesAreIncorrectException} with the specified detail message and a set of
@@ -29,9 +30,9 @@ public class LogValuesAreIncorrectException extends Exception {
      * @param logInfoSet A set of {@link UserLogInfo} enums representing which login values are incorrect or missing.
      * @param message A detail message explaining the exception.
      */
-    public LogValuesAreIncorrectException(Set<UserLogInfo> logInfoSet, String message) {
+    public LogValuesAreIncorrectException(Map<UserLogInfo, String> logInfo, String message) {
         super(message);
-        this.logInfoSet = logInfoSet;
+        this.logInfo = logInfo;
     }
 
     /**
@@ -39,7 +40,7 @@ public class LogValuesAreIncorrectException extends Exception {
      * 
      * @return A set of {@link UserLogInfo} enums.
      */
-    public Set<UserLogInfo> getUserLogInfo() {
-        return this.logInfoSet;
+    public Map<UserLogInfo, String> getUserLogInfo() {
+        return this.logInfo;
     }
 }

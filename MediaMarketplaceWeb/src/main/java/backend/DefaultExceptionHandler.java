@@ -51,7 +51,7 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 		LOGGER.error(ex);
 		Map<String, Object> bodyOfResponse = Map.of(
 				"error", ex.getMessage(),
-				"values_problems", ex.getUserLogInfo().stream().map(Enum::name).toList()
+				"fields", ex.getUserLogInfo() //ex.getUserLogInfo().stream().map(e -> e.getValue()).toList()
 		);
 		return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
 	}

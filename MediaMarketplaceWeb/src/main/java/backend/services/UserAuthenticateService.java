@@ -1,7 +1,9 @@
 package backend.services;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -391,10 +393,10 @@ public class UserAuthenticateService {
         checkForException(userDto);
         String password = userDto.getPassword();
         if (!Objects.equals(password, userDto.getPasswordConfirm())) {
-        	Set<UserLogInfo> logInfoSet = new HashSet<>();
-			logInfoSet.add(UserLogInfo.PASSWORD);
-        	logInfoSet.add(UserLogInfo.PASSWORD_CONFIRM);
-            throw new LogValuesAreIncorrectException(logInfoSet, "Password confirmation does not match");
+        	Map<UserLogInfo, String> logInfo = new HashMap<>();
+        	logInfo.put(UserLogInfo.PASSWORD, "Field is not matching");
+        	logInfo.put(UserLogInfo.PASSWORD_CONFIRM, "Field is not matching");
+            throw new LogValuesAreIncorrectException(logInfo, "Password confirmation does not match");
         }
     }
 
@@ -437,10 +439,10 @@ public class UserAuthenticateService {
      * @throws LogValuesAreIncorrectException if any of the values (username or password) are missing or incorrect.
      */
     public static void checkForException(String username, String password) throws LogValuesAreIncorrectException {
-        Set<UserLogInfo> logInfoSet = new HashSet<>();
-        loadExceptions(username, password, logInfoSet);
-        if (!logInfoSet.isEmpty()) {
-            throw new LogValuesAreIncorrectException(logInfoSet, "One or more values are missing");
+        Map<UserLogInfo, String> logInfo = new HashMap<>();
+        loadExceptions(username, password, logInfo);
+        if (!logInfo.isEmpty()) {
+            throw new LogValuesAreIncorrectException(logInfo, "One or more values are missing");
         }
     }
 
@@ -456,16 +458,16 @@ public class UserAuthenticateService {
      * @throws LogValuesAreIncorrectException if any of the values (username, password, or password confirmation) are missing or incorrect.
      */
     public static void checkForException(UserInformationDto userInformationDto) throws LogValuesAreIncorrectException {
-        Set<UserLogInfo> logInfoSet = new HashSet<>();
+    	Map<UserLogInfo, String> logInfo = new HashMap<>();
         String username = userInformationDto.getUsername();
         String password = userInformationDto.getPassword();
         String passwordConfirm = userInformationDto.getPasswordConfirm();
-        loadExceptions(username, password, logInfoSet);
+        loadExceptions(username, password, logInfo);
         if (DataUtils.isBlank(passwordConfirm)) {
-            logInfoSet.add(UserLogInfo.PASSWORD_CONFIRM);
+        	logInfo.put(UserLogInfo.PASSWORD_CONFIRM, "Please fill this field");
         }
-        if (!logInfoSet.isEmpty()) {
-            throw new LogValuesAreIncorrectException(logInfoSet, "One or more values are missing or incorrect");
+        if (!logInfo.isEmpty()) {
+            throw new LogValuesAreIncorrectException(logInfo, "One or more values are missing or incorrect");
         }
     }
 
@@ -480,12 +482,12 @@ public class UserAuthenticateService {
      * @param password The password to be checked.
      * @param logInfoSet The set to be populated with missing value information.
      */
-    private static void loadExceptions(String username, String password, Set<UserLogInfo> logInfoSet) {
+    private static void loadExceptions(String username, String password, Map<UserLogInfo, String> logInfo) {
         if (DataUtils.isBlank(username)) {
-            logInfoSet.add(UserLogInfo.NAME);
+        	logInfo.put(UserLogInfo.USERNAME, "Please fill this field");
         }
         if (DataUtils.isBlank(password)) {
-            logInfoSet.add(UserLogInfo.PASSWORD);
+        	logInfo.put(UserLogInfo.PASSWORD, "Please fill this field");
         }
     }
 }
