@@ -11,6 +11,7 @@ import org.springframework.web.client.HttpClientErrorException.UnprocessableEnti
 import backend.dtos.CartDto;
 import backend.dtos.CartProductDto;
 import backend.dtos.ProductDto;
+import backend.dtos.carts.UpdatedCartProductDto;
 import backend.dtos.references.CartProductReference;
 import backend.entities.Cart;
 import backend.entities.CartProduct;
@@ -73,21 +74,15 @@ public class CartService {
         if (cartProducts != null) {
             for (CartProduct cartProduct : cartProducts) {
                 if (cartProduct != null) {
-                    CartProductDto cartProductDto = new CartProductDto();
-                    Product product = cartProduct.getProduct();
-                    ProductDto productDto = ProductService.convertProductToDto(product);
-                    cartProductDto.setProduct(productDto);
-                    String purchaseType = cartProduct.getPurchaseType();
-                    cartProductDto.setPurchaseType(purchaseType);
-                    double price = calculateCartProductPrice(product, purchaseType);
-                    cartProductDto.setPrice(price);
-                    totalPrice += price;
+                    CartProductDto cartProductDto = convertCartProductToDto(cartProduct);
+                    totalPrice += cartProductDto.getPrice();
                     cartProductsDtos.add(cartProductDto);
                 }
             }
         }
         cartDto.setCartProducts(cartProductsDtos);
         cartDto.setTotalPrice(totalPrice);
+        cartDto.setTotalItems(calculateCartProductTotalItems(cart));
         return cartDto;
     }
     
@@ -159,7 +154,7 @@ public class CartService {
     }
     
     @Transactional
-    public void updateCartProduct(Long productId, CartProductReference cartProductReference) throws EntityNotFoundException, EntityUnprocessableException {
+    public UpdatedCartProductDto updateCartProduct(Long productId, CartProductReference cartProductReference) throws EntityNotFoundException, EntityUnprocessableException {
     	// check that the request content is valid
     	validateCartProductReference(cartProductReference);
     	// Load the cart and the product
@@ -171,7 +166,12 @@ public class CartService {
 			// Update the cart product as needed
 			// For example, you can change the buying type or other properties
 			cartProduct.setPurchaseType(cartProductReference.getPurchaseType());
-			cartProductRepository.save(cartProduct);
+			CartProduct updatedCartProduct = cartProductRepository.save(cartProduct);
+			UpdatedCartProductDto dto = new UpdatedCartProductDto();
+			dto.setCartProduct(convertCartProductToDto(updatedCartProduct));
+			dto.setTotalItems(calculateCartProductTotalItems(cart));
+			dto.setTotalPrice(calculateCartTotalPrice(cart));
+			return dto;
 		} else {
 			throw new EntityNotFoundException("Product not found in the cart");
 		}
@@ -309,6 +309,43 @@ public class CartService {
     @Transactional
     public void removeCartFromUser(Cart cart) {
 		cartRepository.delete(cart);
+    }
+    
+    public static CartProductDto convertCartProductToDto(CartProduct cartProduct) {
+		CartProductDto cartProductDto = new CartProductDto();
+		Product product = cartProduct.getProduct();
+		ProductDto productDto = ProductService.convertProductToDto(product);
+		cartProductDto.setProduct(productDto);
+		String purchaseType = cartProduct.getPurchaseType();
+		cartProductDto.setPurchaseType(purchaseType);
+		double price = calculateCartProductPrice(product, purchaseType);
+		cartProductDto.setPrice(price);
+		return cartProductDto;
+	}
+    
+    public static int calculateCartProductTotalItems(Cart cart) {
+		int totalItems = 0;
+		List<CartProduct> cartProducts = cart.getCartProducts();
+		if (cartProducts != null) {
+			totalItems = cartProducts.size();
+		}
+		return totalItems;
+	}
+    
+    public static double calculateCartTotalPrice(Cart cart) {
+        double totalPrice = 0;
+        List<CartProduct> cartProducts = cart.getCartProducts();
+        if (cartProducts != null) {
+            for (CartProduct cartProduct : cartProducts) {
+                if (cartProduct != null) {
+                    Product product = cartProduct.getProduct();
+                    String purchaseType = cartProduct.getPurchaseType();
+                    double price = calculateCartProductPrice(product, purchaseType);
+                    totalPrice += price;
+                }
+            }
+        }
+        return totalPrice;
     }
     
     /**

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import backend.dtos.CartDto;
+import backend.dtos.carts.UpdatedCartProductDto;
 import backend.dtos.references.CartProductReference;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
@@ -99,13 +100,12 @@ public class CartController {
     }
     
     @PutMapping("/{productId}")
-    public ResponseEntity<String> updateCartProduct(@NonNull @PathVariable("productId") Long productId, @RequestBody CartProductReference dto) 
+    public UpdatedCartProductDto updateCartProduct(@NonNull @PathVariable("productId") Long productId, @RequestBody CartProductReference dto) 
             throws EntityNotFoundException, EntityUnprocessableException {
         try {
-            cartService.updateCartProduct(productId, dto);
+            return cartService.updateCartProduct(productId, dto);
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to update the product \"" + productId + "\" in the cart", e);
         }
-        return new ResponseEntity<>("Removed Successfully", HttpStatus.OK);
     }
 }

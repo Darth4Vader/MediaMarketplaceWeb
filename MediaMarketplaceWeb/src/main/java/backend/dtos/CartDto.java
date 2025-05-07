@@ -16,6 +16,8 @@ public class CartDto {
      * The total price of all products in the cart.
      */
     private double totalPrice;
+    
+    private int totalItems;
 
     /**
      * Gets the list of products in the cart.
@@ -52,4 +54,12 @@ public class CartDto {
     public void setTotalPrice(double totalPrice) {
         this.totalPrice = totalPrice;
     }
+    
+	public int getTotalItems() {
+		return totalItems;
+	}
+	
+	public void setTotalItems(int totalItems) {
+		this.totalItems = totalItems;
+	}
 }
