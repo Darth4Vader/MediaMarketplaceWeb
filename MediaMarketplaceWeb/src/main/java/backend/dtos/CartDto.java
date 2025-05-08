@@ -2,6 +2,8 @@ package backend.dtos;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+
 /**
  * Data Transfer Object for representing a shopping cart.
  */
@@ -10,7 +12,7 @@ public class CartDto {
     /**
      * The list of products in the cart.
      */
-    private List<CartProductDto> cartProducts;
+    private Page<CartProductDto> cartProducts;
 
     /**
      * The total price of all products in the cart.
@@ -24,7 +26,7 @@ public class CartDto {
      * 
      * @return a {@link List} of {@link CartProductDto} representing the products in the cart
      */
-    public List<CartProductDto> getCartProducts() {
+    public Page<CartProductDto> getCartProducts() {
         return cartProducts;
     }
 
@@ -33,7 +35,7 @@ public class CartDto {
      * 
      * @param cartProducts a {@link List} of {@link CartProductDto} to set as the products in the cart
      */
-    public void setCartProducts(List<CartProductDto> cartProducts) {
+    public void setCartProducts(Page<CartProductDto> cartProducts) {
         this.cartProducts = cartProducts;
     }
 

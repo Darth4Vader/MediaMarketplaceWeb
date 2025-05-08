@@ -2,6 +2,7 @@ package backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
@@ -46,9 +47,9 @@ public class CartController {
      * @return A {@link CartDto} object representing the current cart.
      * @throws EntityNotFoundException If the cart is not found.
      */
-    @GetMapping("/")
-    public CartDto getCart() throws EntityNotFoundException {
-        return cartService.getCart();
+    @GetMapping("")
+    public CartDto getCart(Pageable pageable) throws EntityNotFoundException {
+        return cartService.getCart(pageable);
     }
 
     /**

@@ -1,9 +1,10 @@
 package backend.services;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException.UnprocessableEntity;
@@ -62,26 +63,19 @@ public class CartService {
      * @return A {@link CartDto} representing the user's cart.
      * @throws EntityNotFoundException if the user does not have a cart.
      */
-    public CartDto getCart() throws EntityNotFoundException {
+    public CartDto getCart(Pageable pageable) throws EntityNotFoundException {
     	// First we load the current user's cart
     	User user = tokenService.getCurretUser();
         Cart cart = getCartByUser(user);
+        // load the cart products for the requested page
+        Page<CartProduct> cartProductsPage = getCartProductOfCart(cart, pageable);
         // And then we convert it to a cart DTO
         CartDto cartDto = new CartDto();
-        List<CartProduct> cartProducts = cart.getCartProducts();
-        List<CartProductDto> cartProductsDtos = new ArrayList<>();
-        double totalPrice = 0;
-        if (cartProducts != null) {
-            for (CartProduct cartProduct : cartProducts) {
-                if (cartProduct != null) {
-                    CartProductDto cartProductDto = convertCartProductToDto(cartProduct);
-                    totalPrice += cartProductDto.getPrice();
-                    cartProductsDtos.add(cartProductDto);
-                }
-            }
-        }
-        cartDto.setCartProducts(cartProductsDtos);
-        cartDto.setTotalPrice(totalPrice);
+        Page<CartProductDto> cartProductsDtoPage = cartProductsPage.map(cartProduct -> {
+        	return convertCartProductToDto(cartProduct);
+		});
+        cartDto.setCartProducts(cartProductsDtoPage);
+        cartDto.setTotalPrice(calculateCartTotalPrice(cart));
         cartDto.setTotalItems(calculateCartProductTotalItems(cart));
         return cartDto;
     }
@@ -309,6 +303,11 @@ public class CartService {
     @Transactional
     public void removeCartFromUser(Cart cart) {
 		cartRepository.delete(cart);
+    }
+    
+    private Page<CartProduct> getCartProductOfCart(Cart cart, Pageable pageable) throws EntityNotFoundException {
+    	return cartProductRepository.findByCart(cart, pageable)
+                .orElseThrow(() -> new EntityNotFoundException("There are no product in the cart"));
     }
     
     public static CartProductDto convertCartProductToDto(CartProduct cartProduct) {

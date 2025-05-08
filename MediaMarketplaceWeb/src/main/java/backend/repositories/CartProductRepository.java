@@ -1,8 +1,13 @@
 package backend.repositories;
 
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import backend.entities.Cart;
 import backend.entities.CartProduct;
 
 /**
@@ -14,5 +19,7 @@ import backend.entities.CartProduct;
  */
 @Repository
 public interface CartProductRepository extends JpaRepository<CartProduct, Long> {
+
 	
+	Optional<Page<CartProduct>> findByCart(Cart cart, Pageable pageable);
 }
