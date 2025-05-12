@@ -1,5 +1,7 @@
 package backend.controllers;
 
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -14,16 +16,17 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.WebUtils;
 
+import backend.CookieNames;
 import backend.dtos.users.LogInDto;
 import backend.dtos.users.LoginResponse;
-import backend.dtos.users.RefreshTokenRequest;
 import backend.dtos.users.UserInformationDto;
-import backend.entities.RefreshToken;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
+import backend.exceptions.MissingCookieException;
 import backend.exceptions.UserAlreadyExistsException;
 import backend.exceptions.UserDoesNotExistsException;
 import backend.exceptions.UserNotLoggedInException;
@@ -33,7 +36,6 @@ import backend.services.TokenService;
 import backend.services.UserAuthenticateService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * REST controller for user authentication and management.
@@ -50,29 +52,43 @@ public class UserAuthenticateController {
     private UserAuthenticateService userAuthService;
     
     private static ResponseEntity<?> createAuthenticationResponse(LoginResponse loginResponse) {
-    	HttpCookie accessTokenCookie = ResponseCookie.from("accessToken", loginResponse.getAccessToken())
-			.path("/")
-			.maxAge(TokenService.ACCESS_TOKEN_EXPIRATION_TIME)
-			.httpOnly(true)
-			.secure(true)
-			.sameSite("None")
-			//.sameSite("Strict")
-			.build();
+    	HttpCookie accessTokenCookie = createAccessTokenCookie(
+    			loginResponse.getAccessToken(), TokenService.ACCESS_TOKEN_EXPIRATION_TIME);
     	
-    	HttpCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken())
-			.path("/")
-			.maxAge(RefreshTokenService.REFRESH_TOKEN_EXPIRATION_TIME)
-			.httpOnly(true)
-			.secure(true)
-			.sameSite("None")
-			//.sameSite("Strict")
-			.build();
+    	HttpCookie refreshTokenCookie = createRefreshTokenCookie(
+    			loginResponse.getRefreshToken(), RefreshTokenService.REFRESH_TOKEN_EXPIRATION_TIME);
     	
     	return ResponseEntity.ok()
 				.header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
 				.header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
 				.build();
 	}
+    
+    private static HttpCookie createAccessTokenCookie(String accessToken, Duration maxAge) {
+    	HttpCookie accessTokenCookie = ResponseCookie.from(CookieNames.ACCESS_TOKEN, accessToken)
+			.path("/")
+			//.path("/")
+			.maxAge(maxAge)
+			.httpOnly(true)
+			.secure(true)
+			.sameSite("None")
+			//.sameSite("Strict")
+			.build();
+    	return accessTokenCookie;
+    }
+    
+    private static HttpCookie createRefreshTokenCookie(String refreshToken, Duration maxAge) {
+    	HttpCookie refreshTokenCookie = ResponseCookie.from(CookieNames.REFRESH_TOKEN, refreshToken)
+			.path("/api/users/refresh")
+			//.path("/")
+			.maxAge(maxAge)
+			.httpOnly(true)
+			.secure(true)
+			.sameSite("None")
+			//.sameSite("Strict")
+			.build();
+    	return refreshTokenCookie;
+    }
     
     /**
      * Registers a new user.
@@ -124,10 +140,10 @@ public class UserAuthenticateController {
     }
     
     @PostMapping(value = "/refresh")
-    public ResponseEntity<?> refreshTokenRequest(@RequestBody RefreshTokenRequest refreshTokenRequest) throws EntityNotFoundException, EntityAlreadyExistsException {
+    public ResponseEntity<?> refreshTokenRequest(HttpServletRequest request) throws EntityNotFoundException, EntityAlreadyExistsException {
     	try {
-    		System.out.println("y\ny\ny\n");
-    		LoginResponse loginResponse = userAuthService.refreshLoginToken(refreshTokenRequest);
+    		Cookie refreshTokenCookie = getRefreshTokenCookie(request);
+    		LoginResponse loginResponse = userAuthService.refreshLoginToken(refreshTokenCookie.getValue());
         	return createAuthenticationResponse(loginResponse);
     	}
     	catch (DataIntegrityViolationException e) {
@@ -152,7 +168,7 @@ public class UserAuthenticateController {
     @PutMapping("/current")
     public void updateUserInformation(@RequestBody UserInformationDto userDto) throws UserNotLoggedInException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
         try {
-            userAuthService.updateUserInformation(userDto);
+        	userAuthService.updateUserInformation(userDto);
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to update the user information", e);
         }
@@ -163,11 +179,21 @@ public class UserAuthenticateController {
      * <p>
      * This endpoint triggers the user sign-out process by calling the {@link UserAuthService#signOutFromCurrentUser()} method.
      * </p>
+     * @throws EntityNotFoundException 
      * @throws UserNotLoggedInException if no user is currently logged in
      */
-    @GetMapping("/sign_out")
-    public void signOutFromCurrentUser() throws UserNotLoggedInException {
-    	userAuthService.signOutFromCurrentUser();
+    @PostMapping("/refresh/logout")
+    public ResponseEntity<?> logoutRefreshToken(HttpServletRequest request) throws EntityNotFoundException {
+    	// first revoke the refresh token
+    	Cookie refreshTokenCookie = getRefreshTokenCookie(request);
+    	userAuthService.logoutRefreshToken(refreshTokenCookie.getValue());
+    	// create empty cookie to delete the refresh token cookie and access token cookie
+    	HttpCookie emptyRefreshTokenCookie = createRefreshTokenCookie(null, Duration.ZERO);
+    	HttpCookie emptyAccessTokenCookie = createAccessTokenCookie(null, Duration.ZERO);
+    	return ResponseEntity.ok()
+				.header(HttpHeaders.SET_COOKIE, emptyRefreshTokenCookie.toString())
+				.header(HttpHeaders.SET_COOKIE, emptyAccessTokenCookie.toString())
+				.build();
     }
     
     /**
@@ -225,6 +251,16 @@ public class UserAuthenticateController {
         userAuthService.authenticateLoggedUser();
     }
     
+    private Cookie getRefreshTokenCookie(HttpServletRequest request) {
+    	Cookie refreshTokenCookie = WebUtils.getCookie(request, CookieNames.REFRESH_TOKEN);
+    	if (refreshTokenCookie == null) {
+			throw new MissingCookieException("Refresh token Cookie is missing");
+    	}
+    	return refreshTokenCookie;
+	}
+    
+    // for authentication filter
+    
     public boolean loginUserFromToken(String token, HttpServletRequest request) {
     	try {
     		return userAuthService.loginUserFromToken(token, request);
@@ -233,4 +269,8 @@ public class UserAuthenticateController {
     		throw new RuntimeException(e);
 		}
 	}
+    
+    public void logoutFromCurrentUser() throws UserNotLoggedInException {
+    	userAuthService.logoutFromCurrentUser();
+    }
 }

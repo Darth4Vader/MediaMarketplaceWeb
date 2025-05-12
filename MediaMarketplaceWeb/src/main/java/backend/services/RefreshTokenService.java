@@ -82,5 +82,12 @@ public class RefreshTokenService {
 		refreshTokenRepository.save(refreshToken);
 		return createRefreshToken(refreshToken.getUser());
     }
+    
+    @Transactional
+    public void revokeRefreshToken(String token) throws EntityNotFoundException {
+		RefreshToken refreshToken = findByToken(token);
+		refreshToken.setRevoked(true);
+		refreshTokenRepository.save(refreshToken);
+    }
 
 }

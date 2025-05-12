@@ -1,8 +1,6 @@
 package backend;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Enumeration;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -11,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.util.WebUtils;
 
 import backend.controllers.UserAuthenticateController;
 import backend.exceptions.UserNotLoggedInException;
@@ -36,37 +35,15 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         try {
-        	System.out.println(request.getRequestURI());
-        	System.out.println(request.getCookies() != null ? Arrays.asList(request.getCookies()) : null);
-        	Cookie[] cookies = request.getCookies();
-			if (cookies != null) {
-				for (Cookie cookie : cookies) {
-					System.out.println(cookie.getName() + " : " + cookie.getValue());
-				}
+			Cookie accessTokenCookie = WebUtils.getCookie(request, CookieNames.ACCESS_TOKEN);
+			if(accessTokenCookie != null) {
+				String accessToken = accessTokenCookie.getValue();
+	        	if(userAuthenticateController.loginUserFromToken(accessToken, request))
+	        		LOGGER.info("User authenticated successfully");
 			}
-        	//System.out.println(request.getHeaderNames().nextElement());
-			/*for (String header : request.getHeaderNames().) {
-				System.out.println(header + " : " + request.getHeader(header));
-			}*/
-        	/*Enumeration<String> headerNames = request.getHeaderNames();
-			while (headerNames.hasMoreElements()) {
-				String header = headerNames.nextElement();
-				System.out.println(header + " : " + request.getHeader(header));
-			}*/
-        	
-        	/*
-	    	final String authorizationHeader = request.getHeader("Authorization");
-	        if (authorizationHeader != null) {
-	        	if(authorizationHeader.startsWith("Bearer ")) {
-	        		String jwt = authorizationHeader.substring(7);
-		        	if(userAuthenticateController.loginUserFromToken(jwt, request))
-		        		LOGGER.info("User authenticated successfully");
-		        }
-	        }
-	        */
 	        filterChain.doFilter(request, response);
 	        try {
-	        	userAuthenticateController.signOutFromCurrentUser();
+	        	userAuthenticateController.logoutFromCurrentUser();
 	        }
 	        catch(UserNotLoggedInException e) {
 	        	// ignore, not every method need authentication

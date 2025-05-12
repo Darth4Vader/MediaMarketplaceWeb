@@ -24,7 +24,6 @@ import backend.DataUtils;
 import backend.auth.AuthenticateAdmin;
 import backend.dtos.users.LogInDto;
 import backend.dtos.users.LoginResponse;
-import backend.dtos.users.RefreshTokenRequest;
 import backend.dtos.users.UserInformationDto;
 import backend.entities.RefreshToken;
 import backend.entities.Role;
@@ -236,10 +235,10 @@ public class UserAuthenticateService {
         return false;
     }
     
-    public LoginResponse refreshLoginToken(RefreshTokenRequest refreshTokenRequest) throws EntityNotFoundException {
-    	RefreshToken refreshToken = refreshTokenService.refreshToken(refreshTokenRequest.getRefreshToken());
-        String accessToken = tokenService.generateAccessToken(refreshToken.getUser());
-        return new LoginResponse(accessToken, refreshToken.getToken());
+    public LoginResponse refreshLoginToken(String refreshToken) throws EntityNotFoundException {
+    	RefreshToken newRefreshToken = refreshTokenService.refreshToken(refreshToken);
+        String accessToken = tokenService.generateAccessToken(newRefreshToken.getUser());
+        return new LoginResponse(accessToken, newRefreshToken.getToken());
     }
     
     /**
@@ -252,10 +251,15 @@ public class UserAuthenticateService {
      * 
      * @throws UserNotLoggedInException if no user is currently logged in
      */
-    public void signOutFromCurrentUser() throws UserNotLoggedInException {
+    public void logoutFromCurrentUser() throws UserNotLoggedInException {
         // Check if there is a logged user in order to allow sign out.
         tokenService.getCurretUser();
         setAuthentication(null);
+    }
+    
+    public void logoutRefreshToken(String refreshToken) throws EntityNotFoundException {
+        // Check if there is a logged user in order to allow sign out.
+        refreshTokenService.revokeRefreshToken(refreshToken);
     }
 
     /**

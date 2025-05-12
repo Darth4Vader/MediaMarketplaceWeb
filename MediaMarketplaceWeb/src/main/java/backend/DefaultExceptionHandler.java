@@ -20,6 +20,7 @@ import backend.exceptions.EntityUnprocessableException;
 import backend.exceptions.JwtTokenExpiredException;
 import backend.exceptions.JwtTokenNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
+import backend.exceptions.MissingCookieException;
 import backend.exceptions.MovieReviewValuesAreIncorrectException;
 import backend.exceptions.PurchaseOrderException;
 import backend.exceptions.RefreshTokenExpiredException;
@@ -142,6 +143,12 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	public ResponseEntity<Object> handleEntityUnprocessableException(EntityUnprocessableException ex, WebRequest request) {
 		LOGGER.error(ex);
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
+	}
+	
+	@ExceptionHandler(MissingCookieException.class)
+	public ResponseEntity<Object> handleMissingCookieException(MissingCookieException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
 	}
 	
 	/**

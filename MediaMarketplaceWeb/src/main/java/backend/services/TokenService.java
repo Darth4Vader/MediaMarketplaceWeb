@@ -34,7 +34,7 @@ import backend.exceptions.UserNotLoggedInException;
 @Service
 public class TokenService {
 	
-	public static final Duration ACCESS_TOKEN_EXPIRATION_TIME = Duration.ofSeconds(30); // 5 seconds
+	public static final Duration ACCESS_TOKEN_EXPIRATION_TIME = Duration.ofSeconds(50); // 5 seconds
 	
     @Autowired
     private JwtEncoder jwtEncoder;
