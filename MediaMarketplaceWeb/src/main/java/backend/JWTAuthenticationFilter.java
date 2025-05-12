@@ -1,6 +1,8 @@
 package backend;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Enumeration;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -14,6 +16,7 @@ import backend.controllers.UserAuthenticateController;
 import backend.exceptions.UserNotLoggedInException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -33,6 +36,25 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         try {
+        	System.out.println(request.getRequestURI());
+        	System.out.println(request.getCookies() != null ? Arrays.asList(request.getCookies()) : null);
+        	Cookie[] cookies = request.getCookies();
+			if (cookies != null) {
+				for (Cookie cookie : cookies) {
+					System.out.println(cookie.getName() + " : " + cookie.getValue());
+				}
+			}
+        	//System.out.println(request.getHeaderNames().nextElement());
+			/*for (String header : request.getHeaderNames().) {
+				System.out.println(header + " : " + request.getHeader(header));
+			}*/
+        	/*Enumeration<String> headerNames = request.getHeaderNames();
+			while (headerNames.hasMoreElements()) {
+				String header = headerNames.nextElement();
+				System.out.println(header + " : " + request.getHeader(header));
+			}*/
+        	
+        	/*
 	    	final String authorizationHeader = request.getHeader("Authorization");
 	        if (authorizationHeader != null) {
 	        	if(authorizationHeader.startsWith("Bearer ")) {
@@ -41,7 +63,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 		        		LOGGER.info("User authenticated successfully");
 		        }
 	        }
-	        System.out.println(request.getRequestURI());
+	        */
 	        filterChain.doFilter(request, response);
 	        try {
 	        	userAuthenticateController.signOutFromCurrentUser();

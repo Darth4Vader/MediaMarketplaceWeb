@@ -34,6 +34,8 @@ import backend.exceptions.UserNotLoggedInException;
 @Service
 public class TokenService {
 	
+	public static final Duration ACCESS_TOKEN_EXPIRATION_TIME = Duration.ofSeconds(30); // 5 seconds
+	
     @Autowired
     private JwtEncoder jwtEncoder;
     
@@ -44,7 +46,7 @@ public class TokenService {
     private UserServiceImpl userService;
     
     public String generateAccessToken(User auth) {
-		return generateJwtWithTime(auth, Duration.ofSeconds(5) /*Duration.ofSeconds(2)*/).getTokenValue(); // Generate the JWT and return its string value
+		return generateJwtWithTime(auth, ACCESS_TOKEN_EXPIRATION_TIME /*Duration.ofSeconds(2)*/).getTokenValue(); // Generate the JWT and return its string value
 	}
 
     /**

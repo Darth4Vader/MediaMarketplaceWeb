@@ -19,6 +19,8 @@ import backend.repositories.RefreshTokenRepository;
 @Service
 public class RefreshTokenService {
 	
+	public static final Duration REFRESH_TOKEN_EXPIRATION_TIME = Duration.ofMinutes(5);
+	
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
     
@@ -43,7 +45,7 @@ public class RefreshTokenService {
     
     @Transactional
     public RefreshToken createRefreshToken(User user) {
-		Jwt jwt = tokenService.generateJwtWithTime(user, Duration.ofMinutes(5));
+		Jwt jwt = tokenService.generateJwtWithTime(user, REFRESH_TOKEN_EXPIRATION_TIME);
 		RefreshToken refreshToken = new RefreshToken();
 		refreshToken.setUser(user);
 		refreshToken.setToken(jwt.getTokenValue());

@@ -3,6 +3,11 @@ package backend.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpCookie;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -14,6 +19,7 @@ import backend.dtos.users.LogInDto;
 import backend.dtos.users.LoginResponse;
 import backend.dtos.users.RefreshTokenRequest;
 import backend.dtos.users.UserInformationDto;
+import backend.entities.RefreshToken;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
@@ -22,8 +28,12 @@ import backend.exceptions.UserAlreadyExistsException;
 import backend.exceptions.UserDoesNotExistsException;
 import backend.exceptions.UserNotLoggedInException;
 import backend.exceptions.UserPasswordIsIncorrectException;
+import backend.services.RefreshTokenService;
+import backend.services.TokenService;
 import backend.services.UserAuthenticateService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * REST controller for user authentication and management.
@@ -33,10 +43,36 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 @RestController
 @RequestMapping("api/users")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class UserAuthenticateController {
 
     @Autowired
     private UserAuthenticateService userAuthService;
+    
+    private static ResponseEntity<?> createAuthenticationResponse(LoginResponse loginResponse) {
+    	HttpCookie accessTokenCookie = ResponseCookie.from("accessToken", loginResponse.getAccessToken())
+			.path("/")
+			.maxAge(TokenService.ACCESS_TOKEN_EXPIRATION_TIME)
+			.httpOnly(true)
+			.secure(true)
+			.sameSite("None")
+			//.sameSite("Strict")
+			.build();
+    	
+    	HttpCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken())
+			.path("/")
+			.maxAge(RefreshTokenService.REFRESH_TOKEN_EXPIRATION_TIME)
+			.httpOnly(true)
+			.secure(true)
+			.sameSite("None")
+			//.sameSite("Strict")
+			.build();
+    	
+    	return ResponseEntity.ok()
+				.header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
+				.header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+				.build();
+	}
     
     /**
      * Registers a new user.
@@ -52,9 +88,10 @@ public class UserAuthenticateController {
      * @throws UserPasswordIsIncorrectException If the password provided is incorrect.
      */
     @PostMapping(value = "/register")
-    public LoginResponse registerUser(@RequestBody UserInformationDto registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException {
+    public ResponseEntity<?> registerUser(@RequestBody UserInformationDto registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException {
         try {
-        	return userAuthService.registerUser(registerDto);
+        	LoginResponse loginResponse = userAuthService.registerUser(registerDto);
+        	return createAuthenticationResponse(loginResponse);
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to register the user", e);
         }
@@ -74,14 +111,24 @@ public class UserAuthenticateController {
      * @throws LogValuesAreIncorrectException If the provided login values are incorrect.
      */
     @PostMapping(value = "/login")
-    public LoginResponse loginUser(@RequestBody LogInDto loginDto) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
-    	return userAuthService.loginUser(loginDto);
+    public ResponseEntity<?> loginUser(@RequestBody LogInDto loginDto/*, HttpServletResponse response*/) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
+    	LoginResponse loginResponse = userAuthService.loginUser(loginDto);
+    	/*Cookie cookie = new Cookie("accessToken", null);
+    	cookie.setPath("/");
+    	cookie.setMaxAge((int) TokenService.ACCESS_TOKEN_EXPIRATION_TIME.toSeconds());
+    	cookie.setHttpOnly(true);
+    	cookie.setSecure(true);
+    	response.addCookie(cookie);*/
+    	
+    	return createAuthenticationResponse(loginResponse);
     }
     
     @PostMapping(value = "/refresh")
-    public LoginResponse refreshTokenRequest(@RequestBody RefreshTokenRequest refreshTokenRequest) throws EntityNotFoundException, EntityAlreadyExistsException {
+    public ResponseEntity<?> refreshTokenRequest(@RequestBody RefreshTokenRequest refreshTokenRequest) throws EntityNotFoundException, EntityAlreadyExistsException {
     	try {
-    		return userAuthService.refreshLoginToken(refreshTokenRequest);
+    		System.out.println("y\ny\ny\n");
+    		LoginResponse loginResponse = userAuthService.refreshLoginToken(refreshTokenRequest);
+        	return createAuthenticationResponse(loginResponse);
     	}
     	catch (DataIntegrityViolationException e) {
     		// catch if the token already exists
