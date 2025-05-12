@@ -1,11 +1,16 @@
 package backend;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -61,16 +66,14 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         }
     }
     
-    /*
     private final List<RequestMatcher> uriMatcher = Arrays.asList(
-		new AntPathRequestMatcher("/api/main/**", HttpMethod.GET.name()),
-		new AntPathRequestMatcher("/api/auth/login"),
-		new AntPathRequestMatcher("/api/auth/register")
+		//new AntPathRequestMatcher("/api/main/**", HttpMethod.GET.name()),
+		new AntPathRequestMatcher("/api/users/login", HttpMethod.POST.name()),
+		new AntPathRequestMatcher("/api/users/register", HttpMethod.POST.name())
 	);
     
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
     	return uriMatcher.stream().anyMatch(matcher -> matcher.matches(request));
     }
-    */
 }
