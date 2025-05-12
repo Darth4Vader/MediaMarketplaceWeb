@@ -69,11 +69,18 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private final List<RequestMatcher> uriMatcher = Arrays.asList(
 		//new AntPathRequestMatcher("/api/main/**", HttpMethod.GET.name()),
 		new AntPathRequestMatcher("/api/users/login", HttpMethod.POST.name()),
-		new AntPathRequestMatcher("/api/users/register", HttpMethod.POST.name())
+		new AntPathRequestMatcher("/api/users/register", HttpMethod.POST.name()),
+		new AntPathRequestMatcher("/api/users/refresh", HttpMethod.POST.name()),
+		new AntPathRequestMatcher("/api/users/refresh/logout", HttpMethod.POST.name())
 	);
     
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-    	return uriMatcher.stream().anyMatch(matcher -> matcher.matches(request));
+    	for(RequestMatcher matcher : uriMatcher) {
+			if(matcher.matches(request)) {
+				return true;
+			}
+		}
+    	return false;
     }
 }
