@@ -17,6 +17,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.util.WebUtils;
 
 import backend.controllers.UserAuthenticateController;
+import backend.exceptions.JwtTokenExpiredException;
 import backend.exceptions.UserNotLoggedInException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -40,12 +41,39 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         try {
-			Cookie accessTokenCookie = WebUtils.getCookie(request, CookieNames.ACCESS_TOKEN);
-			if(accessTokenCookie != null) {
-				String accessToken = accessTokenCookie.getValue();
-	        	if(userAuthenticateController.loginUserFromToken(accessToken, request))
-	        		LOGGER.info("User authenticated successfully");
-			}
+			// try log user by access token
+        	// also check if access token i missingg or expired
+        	// if so try to refresh it
+        	boolean refreshToken = false;
+        	try {
+	        	Cookie accessTokenCookie = WebUtils.getCookie(request, CookieNames.ACCESS_TOKEN);
+				if(accessTokenCookie != null) {
+					String accessToken = accessTokenCookie.getValue();
+		        	if(userAuthenticateController.loginUserFromToken(accessToken, request))
+		        		LOGGER.info("User authenticated successfully");
+				}
+				else {
+					// maybe missing becuase expired and removed
+					// ty to refresh token
+					refreshToken = true;
+				}
+        	}
+        	catch(JwtTokenExpiredException e) {
+        		// try to refresh token
+        		refreshToken = true;
+        	}
+        	try {
+	        	if(refreshToken) {
+	        		Cookie refreshTokenCookie = WebUtils.getCookie(request, CookieNames.REFRESH_TOKEN);
+	        		if(refreshTokenCookie != null) {
+						LOGGER.info("Trying to refresh token");
+						String accessToken = userAuthenticateController.refreshTokenRequestForFilter(request, response, refreshTokenCookie);
+			        	if(userAuthenticateController.loginUserFromToken(accessToken, request))
+			        		LOGGER.info("User authenticated successfully");
+					}
+	        	}
+        	}
+        	catch(Exception e) {}
 	        filterChain.doFilter(request, response);
 	        try {
 	        	userAuthenticateController.logoutFromCurrentUser();

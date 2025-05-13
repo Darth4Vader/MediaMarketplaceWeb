@@ -56,7 +56,7 @@ public class Cart {
 	 * @return the user associated with this cart
 	 */
 	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
+	@JoinColumn(name = "user_id", referencedColumnName = "id", nullable = true, unique = true)
 	private User user;
 
 	/**

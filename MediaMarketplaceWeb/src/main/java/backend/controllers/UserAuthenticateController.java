@@ -36,6 +36,7 @@ import backend.services.TokenService;
 import backend.services.UserAuthenticateService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * REST controller for user authentication and management.
@@ -64,8 +65,8 @@ public class UserAuthenticateController {
 				.build();
 	}
     
-    private static HttpCookie createAccessTokenCookie(String accessToken, Duration maxAge) {
-    	HttpCookie accessTokenCookie = ResponseCookie.from(CookieNames.ACCESS_TOKEN, accessToken)
+    private static ResponseCookie createAccessTokenCookie(String accessToken, Duration maxAge) {
+    	ResponseCookie accessTokenCookie = ResponseCookie.from(CookieNames.ACCESS_TOKEN, accessToken)
 			.path("/")
 			//.path("/")
 			.maxAge(maxAge)
@@ -77,10 +78,10 @@ public class UserAuthenticateController {
     	return accessTokenCookie;
     }
     
-    private static HttpCookie createRefreshTokenCookie(String refreshToken, Duration maxAge) {
-    	HttpCookie refreshTokenCookie = ResponseCookie.from(CookieNames.REFRESH_TOKEN, refreshToken)
-			.path("/api/users/refresh")
-			//.path("/")
+    private static ResponseCookie createRefreshTokenCookie(String refreshToken, Duration maxAge) {
+    	ResponseCookie refreshTokenCookie = ResponseCookie.from(CookieNames.REFRESH_TOKEN, refreshToken)
+			//.path("/api/users/refresh")
+			.path("/")
 			.maxAge(maxAge)
 			.httpOnly(true)
 			.secure(true)
@@ -260,6 +261,32 @@ public class UserAuthenticateController {
 	}
     
     // for authentication filter
+    
+    public String refreshTokenRequestForFilter(HttpServletRequest request, HttpServletResponse response, Cookie refreshTokenCookie) throws EntityNotFoundException, EntityAlreadyExistsException {
+		LoginResponse loginResponse = userAuthService.refreshLoginToken(refreshTokenCookie.getValue());
+		ResponseCookie newAccessTokenCookie = createAccessTokenCookie(
+    			loginResponse.getAccessToken(), TokenService.ACCESS_TOKEN_EXPIRATION_TIME);
+    	
+		ResponseCookie newRefreshTokenCookie = createRefreshTokenCookie(
+    			loginResponse.getRefreshToken(), RefreshTokenService.REFRESH_TOKEN_EXPIRATION_TIME);
+		
+		Cookie accessToken = convertResponseCookieToCookie(newAccessTokenCookie);
+		Cookie refreshToken = convertResponseCookieToCookie(newRefreshTokenCookie);
+		
+		response.addCookie(accessToken);
+		response.addCookie(refreshToken);
+		
+		return loginResponse.getAccessToken();
+    }
+    
+    private static final Cookie convertResponseCookieToCookie(ResponseCookie responseCookie) {
+		Cookie cookie = new Cookie(responseCookie.getName(), responseCookie.getValue());
+		cookie.setPath(responseCookie.getPath());
+		cookie.setMaxAge((int) responseCookie.getMaxAge().getSeconds());
+		cookie.setHttpOnly(responseCookie.isHttpOnly());
+		cookie.setSecure(responseCookie.isSecure());
+		return cookie;
+	}
     
     public boolean loginUserFromToken(String token, HttpServletRequest request) {
     	try {

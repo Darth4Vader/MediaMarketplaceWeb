@@ -24,6 +24,7 @@ import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityRemovalException;
 import backend.exceptions.EntityUnprocessableException;
 import backend.services.CartService;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * REST controller for managing the cart in the system.
@@ -48,8 +49,8 @@ public class CartController {
      * @throws EntityNotFoundException If the cart is not found.
      */
     @GetMapping("")
-    public CartDto getCart(Pageable pageable) throws EntityNotFoundException {
-        return cartService.getCart(pageable);
+    public CartDto getCart(Pageable pageable, HttpSession session) throws EntityNotFoundException {
+        return cartService.getCart(pageable, session);
     }
 
     /**
@@ -67,10 +68,10 @@ public class CartController {
      * @throws EntityAdditionException If there is a problem adding the product due to data access issues.
      */
     @PostMapping("/")
-    public ResponseEntity<?> addProductToCart(@RequestBody CartProductReference dto) 
+    public ResponseEntity<?> addProductToCart(@RequestBody CartProductReference dto, HttpSession session) 
             throws EntityNotFoundException, EntityAlreadyExistsException, EntityUnprocessableException {
         try {
-            cartService.addProductToCart(dto);
+            cartService.addProductToCart(dto, session);
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to add the product \"" + dto.getProductId() + "\" to the cart", e);
         }
@@ -90,10 +91,10 @@ public class CartController {
      * @throws EntityRemovalException If there is a problem removing the product due to data access issues.
      */
     @DeleteMapping("/{productId}")
-    public ResponseEntity<String> removeProductFromCart(@NonNull @PathVariable("productId") Long productId) 
+    public ResponseEntity<String> removeProductFromCart(@NonNull @PathVariable("productId") Long productId, HttpSession session) 
             throws EntityNotFoundException {
         try {
-            cartService.removeProductFromCart(productId);
+            cartService.removeProductFromCart(productId, session);
         } catch (DataAccessException e) {
             throw new EntityRemovalException("Unable to remove the product \"" + productId + "\" from the cart", e);
         }
@@ -101,10 +102,10 @@ public class CartController {
     }
     
     @PutMapping("/{productId}")
-    public UpdatedCartProductDto updateCartProduct(@NonNull @PathVariable("productId") Long productId, @RequestBody CartProductReference dto) 
+    public UpdatedCartProductDto updateCartProduct(@NonNull @PathVariable("productId") Long productId, @RequestBody CartProductReference dto, HttpSession session) 
             throws EntityNotFoundException, EntityUnprocessableException {
         try {
-            return cartService.updateCartProduct(productId, dto);
+            return cartService.updateCartProduct(productId, dto, session);
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to update the product \"" + productId + "\" in the cart", e);
         }

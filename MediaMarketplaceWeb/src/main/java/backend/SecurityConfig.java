@@ -138,7 +138,7 @@ public class SecurityConfig {
             		.requestMatchers(AUTH_WHITELIST).permitAll()
             		.requestMatchers("/api/users/login", "/api/users/register", "/api/users/refresh").permitAll()
             		.requestMatchers(HttpMethod.GET, "/api/main/**").permitAll()
-            		.requestMatchers("/api/users/carts/**").hasAnyRole(RoleType.ROLE_USER.getRoleName())
+            		.requestMatchers("/api/users/carts/**").permitAll()
             		.requestMatchers("/error").permitAll()
             		.anyRequest().authenticated()
                 /*

@@ -1,6 +1,7 @@
 package backend.services;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,9 +22,11 @@ import backend.entities.User;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityUnprocessableException;
+import backend.exceptions.UserNotLoggedInException;
 import backend.repositories.CartProductRepository;
 import backend.repositories.CartRepository;
 import backend.utils.PurchaseType;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Service class for managing user shopping carts.
@@ -63,10 +66,9 @@ public class CartService {
      * @return A {@link CartDto} representing the user's cart.
      * @throws EntityNotFoundException if the user does not have a cart.
      */
-    public CartDto getCart(Pageable pageable) throws EntityNotFoundException {
-    	// First we load the current user's cart
-    	User user = tokenService.getCurretUser();
-        Cart cart = getCartByUser(user);
+    public CartDto getCart(Pageable pageable, HttpSession session) throws EntityNotFoundException {
+    	// first we load the cart of the current session
+        Cart cart = getCartOfSession(session);
         // load the cart products for the requested page
         Page<CartProduct> cartProductsPage = getCartProductOfCart(cart, pageable);
         // And then we convert it to a cart DTO
@@ -96,20 +98,13 @@ public class CartService {
      * @throws  
      */
     @Transactional
-    public void addProductToCart(CartProductReference cartProductReference) throws EntityNotFoundException, EntityAlreadyExistsException, EntityUnprocessableException {
+    public void addProductToCart(CartProductReference cartProductReference, HttpSession session) throws EntityNotFoundException, EntityAlreadyExistsException, EntityUnprocessableException {
     	// check that the request content is valid
     	validateCartProductReference(cartProductReference);
     	// First load or create the user's cart.
-    	User user = tokenService.getCurretUser();
         Product product = productService.getProductByID(cartProductReference.getProductId());
-        Cart cart;
-        try {
-        	// Load the cart
-        	cart = getCartByUser(user);
-        } catch (EntityNotFoundException e) {
-        	// This happens when the user does not have a cart, so we will create one for him
-        	cart = createCart(user);
-        }
+    	// load the cart of the current session
+        Cart cart = getCartOfSession(session);
         // First check if the product is already inside the cart with the same purchase type
         CartProduct productInCart = getProductInCart(cart, product);
         if (productInCart != null) {
@@ -138,22 +133,20 @@ public class CartService {
      * @throws EntityNotFoundException if the product is not found or the user does not have a cart.
      */
     @Transactional
-    public void removeProductFromCart(Long productId) throws EntityNotFoundException {
-    	// Load the cart and the product
-    	User user = tokenService.getCurretUser();
-        Cart cart = getCartByUser(user);
+    public void removeProductFromCart(Long productId, HttpSession session) throws EntityNotFoundException {
+    	// first we load the cart of the current session
+        Cart cart = getCartOfSession(session);
         Product product = productService.getProductByID(productId);
         // Now remove the product from the cart.
         removeProductFromCart(cart, product);
     }
     
     @Transactional
-    public UpdatedCartProductDto updateCartProduct(Long productId, CartProductReference cartProductReference) throws EntityNotFoundException, EntityUnprocessableException {
+    public UpdatedCartProductDto updateCartProduct(Long productId, CartProductReference cartProductReference, HttpSession session) throws EntityNotFoundException, EntityUnprocessableException {
     	// check that the request content is valid
     	validateCartProductReference(cartProductReference);
-    	// Load the cart and the product
-    	User user = tokenService.getCurretUser();
-        Cart cart = getCartByUser(user);
+    	// load the cart of the current session and the product
+        Cart cart = getCartOfSession(session);
         Product product = productService.getProductByID(productId);
         CartProduct cartProduct = getProductInCart(cart, product);
         if (cartProduct != null) {
@@ -203,6 +196,89 @@ public class CartService {
     public Cart getCartByUser(User user) throws EntityNotFoundException {
         return cartRepository.findByUser(user)
                 .orElseThrow(() -> new EntityNotFoundException("The user does not have a cart"));
+    }
+    
+    @Transactional
+    public Cart getCartOfSession(HttpSession session) {
+    	// first check if the session have a cart, otherwise create one
+    	//String sessionId = session.getId();
+    	Cart sessionCart = null;
+    	Cart userCart = null;
+    	User user = null;
+    	try {
+    		user = tokenService.getCurretUser();
+        	// now check if user already have a cart, if so then we will merge it with the session cart
+        	if(user != null) {
+        		Optional<Cart> userCartOpt = cartRepository.findByUser(user);
+        		if(userCartOpt.isPresent()) {
+        			userCart = userCartOpt.get();
+    			}
+        	}
+    	}
+    	catch(UserNotLoggedInException e) {}
+    	Long cartId = (Long) session.getAttribute("Cart");
+    	if(cartId != null) {
+    		Optional<Cart> cartOptional = cartRepository.findById(cartId);
+    		sessionCart = cartOptional.orElse(null);
+    	}
+    	Cart cart = null;
+    	if(sessionCart == null) {
+    		// if user have cart, then let's use it
+    		if(userCart != null) {
+				cart = userCart;
+			}
+			else {
+				// if user does not have a cart, then we will create one
+				cart = createCart(user);
+			}
+    	}
+    	else {
+    		// have session cart and user logged
+    		if(user != null) {
+    			// check if the user cart is the same as the session cart
+    			// otherwise let's merge
+    			if(userCart != null) {
+					if(!userCart.getId().equals(sessionCart.getId())) {
+						// merge the two carts
+						// user cart remains, session cart is removed, and merged into the user cart
+						List<CartProduct> sessionCartProducts = sessionCart.getCartProducts();
+						for (CartProduct cartProduct : sessionCartProducts) {
+							// check if the product is already in the user cart
+							CartProduct productInUserCart = getProductInCart(userCart, cartProduct.getProduct());
+							if (productInUserCart == null) {
+								// if not, add it to the user cart
+								addProductToCart(userCart, cartProduct);
+							}
+						}
+						// now remove the session cart
+						removeCartFromUser(sessionCart);
+						cart = userCart;
+					}
+					else {
+						// if the user cart is the same as the session cart, then we can use it
+						cart = userCart;
+					}
+    			}
+    			else {
+    				// otherwise user does not have a cart, let's give him session cart
+    				cart = sessionCart;
+    				sessionCart.setUser(user);
+    			}
+    		}
+    		else {
+    			// user is not logged, let's check if the session cart is not connected to any user
+    			User sessionCartUser = sessionCart.getUser();
+    			if(sessionCartUser != null) {
+    				// if it is connected to a user, create empty cart
+    				cart = createCart(user);
+    			}
+    			else {
+    				cart = sessionCart;
+    			}
+    		}
+    	}
+    	session.setAttribute("Cart", cart.getId());
+    	return cart;
     }
     
     /**
