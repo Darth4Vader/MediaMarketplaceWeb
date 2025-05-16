@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,23 +58,14 @@ public class OrderService {
      * 
      * @return A list of {@link OrderDto} objects representing the orders made by the current user.
      */
-    public List<OrderDto> getUserOrders() {
+    public Page<OrderDto> getUserOrders(Pageable pageable) {
         User user = tokenService.getCurretUser();
-        List<OrderDto> orderDtos = new ArrayList<>();
-        try {
-            List<Order> orders = getOrdersMadeByUser(user);
-            if (orders != null) {
-                for (Order order : orders) {
-                    if (order != null) {
-                        OrderDto orderDto = convertOrderToDto(order);
-                        orderDtos.add(orderDto);
-                    }
-                }
-            }
-        } catch (EntityNotFoundException e) {
-            // If the user didn't make an order, then we will return an empty list.
-        }
-        return orderDtos;
+        Page<Order> ordersPage = getOrdersMadeByUser(user, pageable);
+        // Then convert them to DTOs.
+        Page<OrderDto> ordersDtoPage = ordersPage.map(order -> {
+        	return convertOrderToDto(order);
+		});
+        return ordersDtoPage;
     }
 
     /**
@@ -182,7 +175,7 @@ public class OrderService {
      * @return A list of {@link Order} entities associated with the user.
      * @throws EntityNotFoundException if no orders are found for the user.
      */
-    private List<Order> getOrdersMadeByUser(User user) throws EntityNotFoundException {
-        return orderRepository.findByUser(user).orElseThrow(() -> new EntityNotFoundException("No orders found for the user"));
+    private Page<Order> getOrdersMadeByUser(User user, Pageable pageable) {
+        return orderRepository.findByUser(user, pageable).orElse(null);
     }
 }

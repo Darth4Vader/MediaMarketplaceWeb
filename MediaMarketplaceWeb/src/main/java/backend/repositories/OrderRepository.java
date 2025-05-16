@@ -1,8 +1,8 @@
 package backend.repositories;
-
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -28,5 +28,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * @param user the {@link User} for whom to find orders
      * @return an {@link Optional} containing a list of {@link Order} entities, or {@link Optional#empty()} if no orders are found
      */
-    Optional<List<Order>> findByUser(User user);
+    Optional<Page<Order>> findByUser(User user, Pageable pageable);
 }

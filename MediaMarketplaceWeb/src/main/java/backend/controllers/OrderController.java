@@ -1,9 +1,9 @@
 package backend.controllers;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,9 +35,9 @@ public class OrderController {
      *
      * @return A list of {@link OrderDto} objects representing the user's orders.
      */
-    @GetMapping("/")
-    public List<OrderDto> getUserOrders() {
-        return orderService.getUserOrders();
+    @GetMapping("")
+    public Page<OrderDto> getUserOrders(Pageable pageable) {
+        return orderService.getUserOrders(pageable);
     }
 
     /**

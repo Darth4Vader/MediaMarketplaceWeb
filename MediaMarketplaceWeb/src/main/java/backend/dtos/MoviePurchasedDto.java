@@ -46,6 +46,8 @@ public class MoviePurchasedDto {
      * Reference to the movie that was purchased.
      */
     private MovieReference movie;
+    
+    private boolean isUseable;
 
     /**
      * Gets the unique identifier for the purchased movie.
@@ -173,4 +175,14 @@ public class MoviePurchasedDto {
     public void setMovie(MovieReference movie) {
         this.movie = movie;
     }
+
+	public boolean isUseable() {
+		return isUseable;
+	}
+
+	@JsonProperty("isUseable")
+	public void setUseable(boolean isUseable) {
+		this.isUseable = isUseable;
+	}
+    
 }

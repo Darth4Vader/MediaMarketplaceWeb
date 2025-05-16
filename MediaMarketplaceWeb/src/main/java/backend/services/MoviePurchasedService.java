@@ -156,6 +156,7 @@ public class MoviePurchasedService {
         Duration rentTime = moviePurchased.getRentTime();
         moviePurchasedDto.setRentTime(rentTime);
         moviePurchasedDto.setRentTimeSincePurchase(getCurrentRentTime(isRented, purchaseDate, rentTime));
+        moviePurchasedDto.setUseable(DataUtils.isUseable(moviePurchasedDto));
         return moviePurchasedDto;
     }
 
