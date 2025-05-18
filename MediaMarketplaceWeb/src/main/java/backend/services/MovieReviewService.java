@@ -1,8 +1,6 @@
 package backend.services;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +21,7 @@ import backend.exceptions.MovieReviewValuesAreIncorrectException;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.enums.MovieReviewTypes;
 import backend.repositories.MovieReviewRepository;
+import backend.utils.TimezoneUtils;
 
 /**
  * Service class for managing movie reviews.
@@ -270,7 +269,7 @@ public class MovieReviewService {
         MovieReviewReference movieReviewRef = new MovieReviewReference();
         movieReviewRef.setMovieId(movieReview.getMovie().getId());
         movieReviewRef.setContent(movieReview.getReview());
-        movieReviewRef.setCreatedDate(movieReview.getCreatedDate());
+        movieReviewRef.setCreatedDate(TimezoneUtils.convertToRequestTimezone(movieReview.getCreatedDate()));
         movieReviewRef.setTitle(movieReview.getReviewTitle());
         movieReviewRef.setRating(movieReview.getRating());
         return movieReviewRef;

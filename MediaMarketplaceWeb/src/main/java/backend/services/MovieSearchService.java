@@ -59,6 +59,8 @@ public class MovieSearchService {
 		if(!sortDto.isSortEmpty()) {
 			//we get references in order to decrease the space complexity, because we load a list of all the movies in the database
 			//so we load all of their references, and then we will load every on of the movies separately (one by one)
+			
+			/*
 			List<MovieReference> list = movieService.getAllMovies();
 	    	if(list != null) 
 	    		for(MovieReference media : list) if(media != null) {
@@ -71,6 +73,7 @@ public class MovieSearchService {
 						//if the problem is not found (which shouldn't happen because we just asked for all the movies in the database, then ignore it
 					}
 	    		}
+	    		*/
 		}
         return movieList;
 	}

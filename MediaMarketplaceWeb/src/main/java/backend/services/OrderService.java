@@ -23,6 +23,7 @@ import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.PurchaseOrderException;
 import backend.repositories.OrderRepository;
 import backend.utils.PurchaseType;
+import backend.utils.TimezoneUtils;
 
 /**
  * Service class for managing orders.
@@ -146,7 +147,7 @@ public class OrderService {
     private OrderDto convertOrderToDto(Order order) {
         OrderDto orderDto = new OrderDto();
         orderDto.setId(order.getId());
-        orderDto.setPurchasedDate(order.getPurchasedDate());
+        orderDto.setPurchasedDate(TimezoneUtils.convertToRequestTimezone(order.getPurchasedDate()));
         orderDto.setTotalPrice(order.getTotalPrice());
         List<MoviePurchased> moviePurchasedList = order.getPurchasedItems();
         List<MoviePurchasedDto> moviePurchasedDtoList = new ArrayList<>();

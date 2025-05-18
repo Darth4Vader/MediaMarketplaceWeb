@@ -1,28 +1,24 @@
 package backend.controllers;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import backend.dtos.CreateMovieDto;
 import backend.dtos.MovieDto;
 import backend.dtos.references.MovieReference;
-import backend.dtos.search.SortDto;
+import backend.dtos.search.MovieFilter;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
-import backend.services.MovieSearchService;
 import backend.services.MovieService;
 import jakarta.validation.Valid;
 
@@ -38,9 +34,6 @@ public class MovieController {
 
     @Autowired
     private MovieService movieService;
-    
-    @Autowired
-    private MovieSearchService movieSearchService;
 
     /**
      * Retrieves all movies.
@@ -50,9 +43,11 @@ public class MovieController {
      *
      * @return A list of {@link MovieReference} objects.
      */
-    @GetMapping("/")
-    public List<MovieReference> getAllMovies() {
-        return movieService.getAllMovies();
+    @GetMapping("/search")
+    public Page<MovieReference> searchMovies(MovieFilter movieFilter) {
+    	//PageRequest pageable = PageRequest.of(movieFilter.getPage(), movieFilter.getSize());
+        //return movieService.searchMovies(movieFilter);
+    	return movieService.searchMovies(movieFilter);
     }
     
     /**
@@ -128,14 +123,5 @@ public class MovieController {
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to update the movie with the media id: \"" + createMovieDto.getMediaID() + "\"", e);
         }
-    }
-    
-    @GetMapping("")
-    public List<MovieReference> searchMoviesSort(@Validated @RequestParam("sortDto") SortDto sortDto) throws EntityNotFoundException {
-    	List<MovieReference> movies = movieSearchService.searchMoviesSort(sortDto);
-		if (movies.isEmpty()) {
-			throw new EntityNotFoundException("No movies found");
-		}
-		return movies;
     }
 }

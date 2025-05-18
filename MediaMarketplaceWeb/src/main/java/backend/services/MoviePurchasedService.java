@@ -17,6 +17,7 @@ import backend.entities.MoviePurchased;
 import backend.entities.User;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.MoviePurchasedRepository;
+import backend.utils.TimezoneUtils;
 
 /**
  * Service class for managing purchased movies.
@@ -152,10 +153,10 @@ public class MoviePurchasedService {
         boolean isRented = moviePurchased.isRented();
         moviePurchasedDto.setRented(isRented);
         LocalDateTime purchaseDate = moviePurchased.getPurchaseDate();
-        moviePurchasedDto.setPurchaseDate(purchaseDate);
+        moviePurchasedDto.setPurchaseDate(TimezoneUtils.convertToRequestTimezone(purchaseDate));
         Duration rentTime = moviePurchased.getRentTime();
         moviePurchasedDto.setRentTime(rentTime);
-        moviePurchasedDto.setRentTimeSincePurchase(getCurrentRentTime(isRented, purchaseDate, rentTime));
+        moviePurchasedDto.setRentTimeSincePurchase(TimezoneUtils.convertToRequestTimezone(getCurrentRentTime(isRented, purchaseDate, rentTime)));
         moviePurchasedDto.setUseable(DataUtils.isUseable(moviePurchasedDto));
         return moviePurchasedDto;
     }

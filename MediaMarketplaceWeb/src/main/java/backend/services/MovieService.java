@@ -1,9 +1,13 @@
 package backend.services;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,12 +15,19 @@ import backend.auth.AuthenticateAdmin;
 import backend.dtos.CreateMovieDto;
 import backend.dtos.MovieDto;
 import backend.dtos.references.MovieReference;
+import backend.dtos.search.MovieFilter;
 import backend.entities.Genre;
 import backend.entities.Movie;
+import backend.entities.MovieReview;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.MovieRepository;
 import backend.utils.UrlUtils;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
 
 /**
  * Service class for managing movies.
@@ -49,17 +60,93 @@ public class MovieService {
      * 
      * @return A list of {@link MovieReference} objects representing all movies.
      */
-    public List<MovieReference> getAllMovies() {
-        // Load all of the movies
-        List<Movie> movies = movieRepository.findAll();
-        // Convert them into references
-        List<MovieReference> movieReferencesList = new ArrayList<>();
-        for (Movie movie : movies) {
-            MovieReference movieReference = convertMovieToReference(movie);
-            movieReferencesList.add(movieReference);
-        }
-        return movieReferencesList;
+    public Page<MovieReference> searchMovies(MovieFilter movieFilter) {
+    	PageRequest pageable = PageRequest.of(movieFilter.getPage(), movieFilter.getSize());
+    	Specification<Movie> specification = createMovieSearchSpecification(movieFilter);
+		Page<Movie> moviePage = movieRepository.findAll(specification, pageable);
+		
+        // Then convert them to DTOs.
+        Page<MovieReference> movieReferencesPage = moviePage.map(movie -> {
+        	return MovieService.convertMovieToReference(movie);
+		});
+        return movieReferencesPage;
     }
+    
+	public Specification<Movie> createMovieSearchSpecification(MovieFilter params) {
+	    Specification<Movie> spec = (root, query, cb) -> {
+	        List<Predicate> predicates = new ArrayList<>();
+	        if(params.getRatingAbove() != null || params.getRatingBelow() != null) {
+	            Join<Movie, MovieReview> reviews = root.join("movieReviews", JoinType.LEFT);
+	            query.groupBy(root.get("id"));
+
+	            Expression<Double> rating = cb.avg(reviews.get("rating"));
+	        	
+	            List<Predicate> havingPredicates = new ArrayList<>();
+	            if (params.getRatingAbove() != null) {
+	                havingPredicates.add(cb.greaterThan(rating, params.getRatingAbove()));
+	            }
+	            if (params.getRatingBelow() != null) {
+	                havingPredicates.add(cb.lessThan(rating, params.getRatingBelow()));
+	            }
+
+	            // Apply HAVING clause
+	            query.having(cb.and(havingPredicates.toArray(new Predicate[0])));
+	        }
+	        if(params.getName() != null) {
+	            Expression<Integer> differenceName = cb.function("levenshtein_ratio", Integer.class, root.get("name"), cb.literal(params.getName()));
+	            // You can compare if the difference is greater than a threshold value, e.g., 3
+	            predicates.add(cb.lessThan(differenceName, 70)); // Adjust the threshold as needed
+	            
+	            // order by closest matching
+	            query.orderBy(cb.asc(differenceName));
+	        }
+            if (params.getYearAbove() != null) {
+            	LocalDate year = LocalDate.of(params.getYearAbove(), 1, 1);
+            	Path<LocalDate> releaseDate = root.get("releaseDate");
+            	predicates.add(cb.greaterThanOrEqualTo(releaseDate, year));
+            }
+            if (params.getRatingBelow() != null) {
+            	LocalDate year = LocalDate.of(params.getYearBelow(), 12, 31);
+            	Path<LocalDate> releaseDate = root.get("releaseDate");
+            	predicates.add(cb.lessThanOrEqualTo(releaseDate, year));
+            }
+            
+            if(params.getGenres() != null) {
+				Join<Movie, Genre> genres = root.join("genres", JoinType.LEFT);
+				
+				List<String> requestedGenres = params.getGenres();
+				
+			    // 3) Prevent duplicate root results
+			    query.distinct(true);
+				
+			    Predicate inList = genres.get("name").in(requestedGenres);
+			    query.where(inList);
+			    //genres.on(inList);
+
+			    // 4) Group by movie ID (or full PK if composite)
+			    query.groupBy(root.get("id"));
+
+			    // 5) Only keep movies where the count of *distinct* matched names == wanted.size()
+			    Expression<Long> countDistinctNames = cb.countDistinct(genres.get("name"));
+			    query.having(cb.equal(countDistinctNames, requestedGenres.size()));
+				
+				
+			    /*
+			    This is the mysql query, if there is a problem, because the code is not true
+				    SELECT m.* 
+				    FROM movies m
+				    JOIN movie_genres mg ON m.id = mg.movie_id
+				    JOIN genres g ON mg.genre_id = g.id 
+				       AND g.name IN ('Action','Drama','Sci‑Fi','Adventure')
+				  GROUP BY m.id
+				  HAVING COUNT(DISTINCT g.name) = 4
+			    */
+			}
+            	
+	        return cb.and(predicates.toArray(new Predicate[predicates.size()]));
+	    };
+	    return spec;
+	}
 
     /**
      * Retrieves details of a specific movie.
