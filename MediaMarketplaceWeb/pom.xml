@@ -151,8 +151,21 @@
 
 
 
+<!--
+<dependency>
+    <groupId>com.integralblue</groupId>
+    <artifactId>log4jdbc-spring-boot-starter</artifactId>
+    <version>1.0.2</version>
+</dependency>
+-->
 
-
+<!--
+<dependency>
+    <groupId>ru.vasiand</groupId>
+    <artifactId>spring-boot-starter-log4jdbc</artifactId>
+    <version>1.1.0</version>
+</dependency>
+-->
 
 
   </dependencies>

@@ -75,22 +75,17 @@ public class MovieService {
 	public Specification<Movie> createMovieSearchSpecification(MovieFilter params) {
 	    Specification<Movie> spec = (root, query, cb) -> {
 	        List<Predicate> predicates = new ArrayList<>();
+	        List<Predicate> having = new ArrayList<>();
 	        if(params.getRatingAbove() != null || params.getRatingBelow() != null) {
 	            Join<Movie, MovieReview> reviews = root.join("movieReviews", JoinType.LEFT);
 	            query.groupBy(root.get("id"));
-
 	            Expression<Double> rating = cb.avg(reviews.get("rating"));
-	        	
-	            List<Predicate> havingPredicates = new ArrayList<>();
 	            if (params.getRatingAbove() != null) {
-	                havingPredicates.add(cb.greaterThan(rating, params.getRatingAbove()));
+	                having.add(cb.greaterThan(rating, params.getRatingAbove()));
 	            }
 	            if (params.getRatingBelow() != null) {
-	                havingPredicates.add(cb.lessThan(rating, params.getRatingBelow()));
+	                having.add(cb.lessThan(rating, params.getRatingBelow()));
 	            }
-
-	            // Apply HAVING clause
-	            query.having(cb.and(havingPredicates.toArray(new Predicate[0])));
 	        }
 	        if(params.getName() != null) {
 	            Expression<Integer> differenceName = cb.function("levenshtein_ratio", Integer.class, root.get("name"), cb.literal(params.getName()));
@@ -113,23 +108,21 @@ public class MovieService {
             
             if(params.getGenres() != null) {
 				Join<Movie, Genre> genres = root.join("genres", JoinType.LEFT);
-				
 				List<String> requestedGenres = params.getGenres();
+				System.out.println("Requested genres: " + requestedGenres);
 				
 			    // 3) Prevent duplicate root results
 			    query.distinct(true);
 				
 			    Predicate inList = genres.get("name").in(requestedGenres);
-			    query.where(inList);
-			    //genres.on(inList);
+			    predicates.add(inList);
 
 			    // 4) Group by movie ID (or full PK if composite)
 			    query.groupBy(root.get("id"));
 
 			    // 5) Only keep movies where the count of *distinct* matched names == wanted.size()
-			    Expression<Long> countDistinctNames = cb.countDistinct(genres.get("name"));
-			    query.having(cb.equal(countDistinctNames, requestedGenres.size()));
-				
+			    Expression<Long> countDistinctNames = cb.countDistinct(genres.get("name"));	
+			    having.add(cb.equal(countDistinctNames, requestedGenres.size()));
 				
 			    /*
 			    This is the mysql query, if there is a problem, because the code is not true
@@ -141,6 +134,9 @@ public class MovieService {
 				  GROUP BY m.id
 				  HAVING COUNT(DISTINCT g.name) = 4
 			    */
+			}
+            if(having.size() > 0) {
+            	query.having(cb.and(having.toArray(new Predicate[0])));
 			}
             	
 	        return cb.and(predicates.toArray(new Predicate[predicates.size()]));
