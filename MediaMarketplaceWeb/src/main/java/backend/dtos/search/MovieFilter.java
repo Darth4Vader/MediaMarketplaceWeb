@@ -2,7 +2,7 @@ package backend.dtos.search;
 
 import java.util.List;
 
-public class MovieFilter extends PageableDto {
+public class MovieFilter /*extends PageableDto*/ {
 	
     /**
      * The name of the movie to search for.

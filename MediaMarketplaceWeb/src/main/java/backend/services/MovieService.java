@@ -2,11 +2,14 @@ package backend.services;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,8 +63,9 @@ public class MovieService {
      * 
      * @return A list of {@link MovieReference} objects representing all movies.
      */
-    public Page<MovieReference> searchMovies(MovieFilter movieFilter) {
-    	PageRequest pageable = PageRequest.of(movieFilter.getPage(), movieFilter.getSize());
+    public Page<MovieReference> searchMovies(MovieFilter movieFilter, Pageable pageable) {
+    	System.out.println(movieFilter);
+    	//PageRequest pageable = PageRequestUtils.getPageRequest(pageableDto);
     	Specification<Movie> specification = createMovieSearchSpecification(movieFilter);
 		Page<Movie> moviePage = movieRepository.findAll(specification, pageable);
 		
@@ -72,6 +76,55 @@ public class MovieService {
         return movieReferencesPage;
     }
     
+    public List<String> getMoviesSearchCategories(MovieFilter movieFilter) {
+    	Set<String> genres = new HashSet<>();
+        Pageable pageable = PageRequest.of(0, 5000);
+        Page<MovieDto> page = getSearchMoviesDto(movieFilter, pageable);
+        boolean hasNext = true;
+        while(hasNext) {
+			pageable = page.nextPageable();
+			page = getSearchMoviesDto(movieFilter, pageable);
+			hasNext = page.hasNext();
+			genres.addAll(page.getContent().stream().map(MovieDto::getGenres).flatMap(List::stream).toList());
+        }
+        return new ArrayList<>(genres);
+    }
+    
+    private Page<MovieDto> getSearchMoviesDto(MovieFilter movieFilter, Pageable pageable) {
+		Specification<Movie> specification = createMovieSearchSpecification(movieFilter);
+		Page<Movie> moviePage = movieRepository.findAll(specification, pageable);
+		
+		// Then convert them to DTOs.
+		Page<MovieDto> movieDtosPage = moviePage.map(movie -> {
+			return MovieService.convertMovieToDto(movie);
+		});
+		return movieDtosPage;
+	}
+    
+    /*
+	public Specification<Genre> getMovieGenreCategories(MovieFilter params) {
+	    Specification<Genre> spec = (root, query, cb) -> {
+	        //Subquery<Long> movieSubquery = query.subquery(Long.class);
+	    	Specification<Movie> movieSpec = createMovieSearchSpecification(params);
+	    	CriteriaQuery<Object> movieSubquery = cb.createQuery();
+	        Root<Movie> movieRoot = movieSubquery.from(Movie.class);
+	    	//movieSpec.
+	    	
+	    	//dummyQuery.from
+	    	Predicate moviePredicate = movieSpec.toPredicate(movieRoot, movieSubquery, cb);
+	    	movieSubquery.select(movieRoot.get("id")).where(moviePredicate);
+	    	//movieSpec.
+	    	
+	    	//Predicate genrePredicate = root.get("id").in(moviePredicate);
+	    	
+	    	System.out.println("Movie predicate: " + moviePredicate);
+	    	//query.where(moviePredicate);
+	    	return root.get("id").in(movieSubquery);
+	    			//cb.and(moviePredicate);
+	    };
+	    return spec;
+	}
+    */
 	public Specification<Movie> createMovieSearchSpecification(MovieFilter params) {
 	    Specification<Movie> spec = (root, query, cb) -> {
 	        List<Predicate> predicates = new ArrayList<>();

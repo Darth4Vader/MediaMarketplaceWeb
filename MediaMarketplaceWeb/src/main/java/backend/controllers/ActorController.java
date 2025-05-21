@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -18,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import backend.dtos.ActorDto;
 import backend.dtos.references.ActorReference;
+import backend.dtos.references.PersonReference;
+import backend.dtos.search.PersonFilter;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
@@ -37,6 +41,11 @@ public class ActorController {
 
     @Autowired
     private ActorService actorService;
+    
+    @GetMapping("/search")
+    public Page<PersonReference> searchActors(PersonFilter personFilter, Pageable pageable) {
+    	return actorService.searchActors(personFilter, pageable);
+    }
 
     /**
      * Retrieves a list of actors associated with a specific movie.

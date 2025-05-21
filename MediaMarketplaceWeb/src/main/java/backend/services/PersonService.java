@@ -3,11 +3,15 @@ package backend.services;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import backend.auth.AuthenticateAdmin;
 import backend.dtos.PersonDto;
+import backend.dtos.references.PersonReference;
 import backend.entities.Actor;
 import backend.entities.Director;
 import backend.entities.Person;
@@ -125,6 +129,10 @@ public class PersonService {
         return personRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("The Person with ID: \"" + id + "\" does not exist"));
     }
+    
+    public Page<Person> searchPeople(Specification<Person> specification, Pageable pageable) {
+		return personRepository.findAll(specification, pageable);
+	}
 
     /**
      * Converts a {@link PersonDto} to a {@link Person} entity.
@@ -154,5 +162,13 @@ public class PersonService {
         personDto.setName(person.getName());
         personDto.setBirthDate(person.getBirthDate());
         return personDto;
+    }
+    
+    public static PersonReference convertPersonToReference(Person person) {
+        PersonReference personReference = new PersonReference();
+        personReference.setId(person.getId());
+        personReference.setName(person.getName());
+        personReference.setImagePath(UrlUtils.getFullImageURL(person.getImagePath()));
+        return personReference;
     }
 }

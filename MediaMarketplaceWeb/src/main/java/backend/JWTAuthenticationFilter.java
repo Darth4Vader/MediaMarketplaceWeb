@@ -3,6 +3,7 @@ package backend;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -74,7 +75,17 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 	        	}
         	}
         	catch(Exception e) {}
+        	// DEBUG REMOVE
+        	System.out.println(request.getRequestURI());
+        	//System.out.println(request.getParameterMap());
+        	Map<String, String[]> params = request.getParameterMap();
+        	for (Map.Entry<String, String[]> entry : params.entrySet()) {
+				String key = entry.getKey();
+				String[] values = entry.getValue();
+				System.out.println(key + ": " + Arrays.toString(values));
+			}
 	        filterChain.doFilter(request, response);
+	        System.out.println("Filter chain passed");
 	        try {
 	        	userAuthenticateController.logoutFromCurrentUser();
 	        }

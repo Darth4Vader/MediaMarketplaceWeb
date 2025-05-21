@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +44,11 @@ public class GenreService {
      */
     public List<String> getAllGenres() {
         List<Genre> genres = genreRepository.findAll();
+        return convertGenresToDto(genres);
+    }
+    
+    public List<String> getAllGenres(Specification<Genre> spec) {
+        List<Genre> genres = genreRepository.findAll(spec);
         return convertGenresToDto(genres);
     }
 

@@ -3,6 +3,7 @@ package backend.repositories;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -19,7 +20,7 @@ import backend.entities.Person;
  * entity based on their IMDB ID.</p>
  */
 @Repository
-public interface PersonRepository extends JpaRepository<Person, Long> {
+public interface PersonRepository extends JpaRepository<Person, Long>, JpaSpecificationExecutor<Person> {
 
     /**
      * Finds a {@link Person} entity by their Media TMDB ID.

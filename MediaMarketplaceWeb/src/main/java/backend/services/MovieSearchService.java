@@ -56,11 +56,11 @@ public class MovieSearchService {
      */
 	public List<MovieReference> searchMoviesSort(SortDto sortDto) {
 		List<MovieReference> movieList = new ArrayList<>();
+		/*
 		if(!sortDto.isSortEmpty()) {
 			//we get references in order to decrease the space complexity, because we load a list of all the movies in the database
 			//so we load all of their references, and then we will load every on of the movies separately (one by one)
 			
-			/*
 			List<MovieReference> list = movieService.getAllMovies();
 	    	if(list != null) 
 	    		for(MovieReference media : list) if(media != null) {
@@ -73,8 +73,8 @@ public class MovieSearchService {
 						//if the problem is not found (which shouldn't happen because we just asked for all the movies in the database, then ignore it
 					}
 	    		}
-	    		*/
 		}
+		*/
         return movieList;
 	}
 	
@@ -85,6 +85,7 @@ public class MovieSearchService {
      * @param sortDto The sorting and filtering criteria.
      * @return {@code true} if the movie matches the criteria; {@code false} otherwise.
      */
+	/*
 	private boolean searchMovie(MovieDto media, SortDto sortDto) {
 		if(sortDto.isSortEmpty())
 			return false;
@@ -114,6 +115,7 @@ public class MovieSearchService {
 		}
 		return false;
 	}
+	*/
 	
     /**
      * Checks if any actor's name or role name matches the search criteria.
@@ -154,6 +156,7 @@ public class MovieSearchService {
      * @param sortDto The sorting and filtering criteria.
      * @return {@code true} if the movie meets the criteria; {@code false} otherwise.
      */
+	/*
 	private boolean sortMovie(MovieDto movie, SortDto sortDto) {
 		boolean check = true;
 		check &= checkBetween(movie.getYear(), sortDto.getYearAbove(), sortDto.getYearBelow());
@@ -161,6 +164,7 @@ public class MovieSearchService {
 		return check
 				&& checkBetween(movierReviewService.getMovieRatings(movie.getId()), sortDto.getRatingAbove(), sortDto.getRatingBelow());
 	}
+	*/
 	
     /**
      * Checks if a movie's genres match the specified genres in the sorting criteria.
@@ -170,14 +174,14 @@ public class MovieSearchService {
      * @return {@code true} if the genres match; {@code false} otherwise.
      */
 	private static boolean checkGenres(MovieDto movie, SortDto sortDto) {
-		List<String> genres = sortDto.getGenres();
+		/*List<String> genres = sortDto.getGenres();
 		List<String> movieGenres = movie.getGenres();
 		if(movieGenres == null)
 			return false;
 		if(genres != null) for(String genre : genres) {
 			if(movieGenres.stream().noneMatch(g -> DataUtils.equalsIgnoreCase(g, genre)))
 				return false;
-		}
+		}*/
 		return true;
 	}
 	

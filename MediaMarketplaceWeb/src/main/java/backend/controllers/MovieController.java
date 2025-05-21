@@ -1,8 +1,11 @@
 package backend.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,10 +47,21 @@ public class MovieController {
      * @return A list of {@link MovieReference} objects.
      */
     @GetMapping("/search")
-    public Page<MovieReference> searchMovies(MovieFilter movieFilter) {
+    public Page<MovieReference> searchMovies(MovieFilter movieFilter/*, PageableDto pageableDto*/, Pageable pageable) {
+    	//System.out.println(movieFilter);
     	//PageRequest pageable = PageRequest.of(movieFilter.getPage(), movieFilter.getSize());
         //return movieService.searchMovies(movieFilter);
-    	return movieService.searchMovies(movieFilter);
+    	//System.out.println("Sorti: " + sortt);
+    	return movieService.searchMovies(movieFilter, pageable);
+    }
+    
+    @GetMapping("/search/categories")
+    public List<String> getMoviesSearchCategories(MovieFilter movieFilter) {
+    	//System.out.println(movieFilter);
+    	//PageRequest pageable = PageRequest.of(movieFilter.getPage(), movieFilter.getSize());
+        //return movieService.searchMovies(movieFilter);
+    	//System.out.println("Sorti: " + sortt);
+    	return movieService.getMoviesSearchCategories(movieFilter);
     }
     
     /**
