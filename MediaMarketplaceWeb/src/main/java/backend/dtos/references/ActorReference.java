@@ -7,48 +7,21 @@ import jakarta.validation.constraints.NotBlank;
  * Data Transfer Object for referencing an actor and their role in a movie, using their id.
  */
 public class ActorReference {
-
+	
     /**
-     * The unique media identifier for the person (actor).
+     * The unique identifier for the person (actor).
      */
-    @NotBlank
-    private String personMediaID;
+    @Nonnull
+    private Long personId;
+    
+    @Nonnull
+    private Long movieId;
 
     /**
      * The name of the role played by the actor.
      */
     @NotBlank
     private String roleName;
-
-    /**
-     * The unique media identifier for the movie in which the actor played.
-     */
-    @Nonnull
-    private String movieMediaId;
-
-    /**
-     * The unique identifier for the person (actor).
-     */
-    @Nonnull
-    private Long personId;
-
-    /**
-     * Gets the unique media identifier for the person (actor).
-     * 
-     * @return the unique media identifier of the person
-     */
-    public String getPersonMediaID() {
-        return personMediaID;
-    }
-
-    /**
-     * Sets the unique media identifier for the person (actor).
-     * 
-     * @param personMediaID the unique media identifier of the person
-     */
-    public void setPersonMediaID(String personMediaID) {
-        this.personMediaID = personMediaID;
-    }
 
     /**
      * Gets the name of the role played by the actor.
@@ -66,24 +39,6 @@ public class ActorReference {
      */
     public void setRoleName(String roleName) {
         this.roleName = roleName;
-    }
-
-    /**
-     * Gets the unique media identifier for the movie in which the actor played.
-     * 
-     * @return the unique media identifier of the movie
-     */
-    public String getMovieMediaId() {
-        return movieMediaId;
-    }
-
-    /**
-     * Sets the unique media identifier for the movie in which the actor played.
-     * 
-     * @param movieMediaId the unique media identifier of the movie
-     */
-    public void setMovieMediaId(String movieMediaId) {
-        this.movieMediaId = movieMediaId;
     }
 
     /**

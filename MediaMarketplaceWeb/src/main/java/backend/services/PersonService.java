@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import backend.auth.AuthenticateAdmin;
 import backend.dtos.PersonDto;
+import backend.dtos.admin.PersonAdminDto;
 import backend.dtos.references.PersonReference;
 import backend.entities.Actor;
 import backend.entities.Director;
@@ -64,17 +65,17 @@ public class PersonService {
      */
     @AuthenticateAdmin
     @Transactional
-    public Long addPerson(PersonDto personDto) throws EntityAlreadyExistsException {
+    public Long addPerson(PersonAdminDto personAdminDto) throws EntityAlreadyExistsException {
         try {
             // Load the person by media ID.
-            Person person = getPersonByMediaID(personDto.getPersonMediaID());
+            Person person = getPersonByMediaID(personAdminDto.getPersonMediaID());
             // If found, the person already exists in the database, so we notify the user.
             throw new EntityAlreadyExistsException("The Person \"" + person.getMediaId() + "\" already exists");
         } catch (EntityNotFoundException e) {
             // Expected exception if the person does not already exist
         }
         // Convert the DTO to a Person entity and save it to the database.
-        Person person = getPersonFromDto(personDto);
+        Person person = getPersonFromAdminDto(personAdminDto);
         Person resultPerson = personRepository.save(person);
         return resultPerson.getId();
     }
@@ -142,10 +143,15 @@ public class PersonService {
      */
     public static Person getPersonFromDto(PersonDto personDto) {
         Person person = new Person();
-        person.setMediaId(personDto.getPersonMediaID());
         person.setImagePath(personDto.getImagePath());
         person.setName(personDto.getName());
         person.setBirthDate(personDto.getBirthDate());
+        return person;
+    }
+    
+    public static Person getPersonFromAdminDto(PersonAdminDto personAdminDto) {
+        Person person = getPersonFromDto(personAdminDto);
+        person.setMediaId(personAdminDto.getPersonMediaID());
         return person;
     }
     
@@ -157,6 +163,14 @@ public class PersonService {
      */
     public static PersonDto convertPersonToDto(Person person) {
         PersonDto personDto = new PersonDto();
+        personDto.setImagePath(UrlUtils.getFullImageURL(person.getImagePath()));
+        personDto.setName(person.getName());
+        personDto.setBirthDate(person.getBirthDate());
+        return personDto;
+    }
+    
+    public static PersonDto convertPersonToAdminDto(Person person) {
+        PersonAdminDto personDto = new PersonAdminDto();
         personDto.setPersonMediaID(person.getMediaId());
         personDto.setImagePath(UrlUtils.getFullImageURL(person.getImagePath()));
         personDto.setName(person.getName());

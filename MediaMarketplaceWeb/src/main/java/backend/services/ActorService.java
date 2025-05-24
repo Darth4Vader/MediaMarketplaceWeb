@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import backend.auth.AuthenticateAdmin;
 import backend.dtos.ActorDto;
+import backend.dtos.admin.ActorAdminReference;
 import backend.dtos.references.ActorReference;
 import backend.dtos.references.PersonReference;
 import backend.dtos.search.PersonFilter;
@@ -83,7 +84,7 @@ public class ActorService {
 	            predicates.add(cb.lessThan(differenceName, 70)); // Adjust the threshold as needed
 	            
 	            // order by closest matching
-	            query.orderBy(cb.asc(differenceName));
+	            query.orderBy(cb.asc(differenceName), cb.asc(root.get("name")));
 	        }
             if(having.size() > 0) {
             	query.having(cb.and(having.toArray(new Predicate[0])));
@@ -137,9 +138,9 @@ public class ActorService {
      */
     @AuthenticateAdmin
     @Transactional
-    public void addActorRole(ActorReference actorReference) throws EntityNotFoundException, EntityAlreadyExistsException {
-        Person person = personService.getPersonByMediaID(actorReference.getPersonMediaID());
-        Movie movie = movieService.getMovieByNameID(actorReference.getMovieMediaId());
+    public void addActorRole(ActorAdminReference actorAdminReference) throws EntityNotFoundException, EntityAlreadyExistsException {
+        Person person = personService.getPersonByMediaID(actorAdminReference.getPersonMediaID());
+        Movie movie = movieService.getMovieByNameID(actorAdminReference.getMovieMediaId());
         try {
             // Check if the actor already exists in the movie
             getActorByMovie(movie.getId(), person.getId());
@@ -148,7 +149,7 @@ public class ActorService {
         } catch (EntityNotFoundException e) {
             // Actor does not exist, so we can add them
             Actor actor = new Actor();
-            actor.setRoleName(actorReference.getRoleName());
+            actor.setRoleName(actorAdminReference.getRoleName());
             actor.setPerson(person);
             actor.setMovie(movie);
             //we will save the actor
@@ -171,9 +172,9 @@ public class ActorService {
      */
     @AuthenticateAdmin
     @Transactional
-    public void removeActor(ActorReference actorReference) throws EntityNotFoundException {
-        Person person = personService.getPersonByMediaID(actorReference.getPersonMediaID());
-        Movie movie = movieService.getMovieByNameID(actorReference.getMovieMediaId());
+    public void removeActor(ActorAdminReference actorAdminReference) throws EntityNotFoundException {
+        Person person = personService.getPersonByMediaID(actorAdminReference.getPersonMediaID());
+        Movie movie = movieService.getMovieByNameID(actorAdminReference.getMovieMediaId());
         Actor actor = getActorByMovie(movie.getId(), person.getId());
         List<Actor> actors = movie.getActorsRoles();
         // Remove the actor from the movie and the database

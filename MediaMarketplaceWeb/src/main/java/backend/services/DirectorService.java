@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import backend.auth.AuthenticateAdmin;
 import backend.dtos.DirectorDto;
+import backend.dtos.admin.DirectorAdminReference;
 import backend.dtos.references.DirectorReference;
 import backend.entities.Director;
 import backend.entities.Movie;
@@ -79,9 +80,9 @@ public class DirectorService {
      */
     @AuthenticateAdmin
     @Transactional
-    public void addDirector(DirectorReference directorReference) throws EntityNotFoundException, EntityAlreadyExistsException {
-    	Person person = personService.getPersonByMediaID(directorReference.getPersonMediaID());
-    	Movie movie = movieService.getMovieByNameID(directorReference.getMovieMediaId());
+    public void addDirector(DirectorAdminReference directorAdminReference) throws EntityNotFoundException, EntityAlreadyExistsException {
+    	Person person = personService.getPersonByMediaID(directorAdminReference.getPersonMediaID());
+    	Movie movie = movieService.getMovieByNameID(directorAdminReference.getMovieMediaId());
     	try {
     		// If the director exists, then he can't be added
     		getDirectorByMovie(movie.getId(), person.getId());
@@ -111,9 +112,9 @@ public class DirectorService {
      */
     @AuthenticateAdmin
     @Transactional
-    public void removeDirector(DirectorReference directorReference) throws EntityNotFoundException {
-    	Person person = personService.getPersonByMediaID(directorReference.getPersonMediaID());
-    	Movie movie = movieService.getMovieByNameID(directorReference.getMovieMediaId());
+    public void removeDirector(DirectorAdminReference directorAdminReference) throws EntityNotFoundException {
+    	Person person = personService.getPersonByMediaID(directorAdminReference.getPersonMediaID());
+    	Movie movie = movieService.getMovieByNameID(directorAdminReference.getMovieMediaId());
     	Director director = getDirectorByMovie(movie.getId(), person.getId());
     	List<Director> directors = movie.getDirectors();
     	// First we will remove the director from the movie

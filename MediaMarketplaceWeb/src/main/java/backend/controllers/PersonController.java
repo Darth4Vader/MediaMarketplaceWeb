@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import backend.dtos.PersonDto;
+import backend.dtos.admin.PersonAdminDto;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
@@ -49,7 +50,7 @@ public class PersonController {
      * @throws EntityAlreadyExistsException If a person with the same media ID already exists.
      */
     @PostMapping("/")
-    public ResponseEntity<?> addPerson(@Valid @RequestBody PersonDto personDto) throws EntityAlreadyExistsException {
+    public ResponseEntity<?> addPerson(@Valid @RequestBody PersonAdminDto personDto) throws EntityAlreadyExistsException {
         try {
         	// create the person and get the ID
         	final Long id = personService.addPerson(personDto);

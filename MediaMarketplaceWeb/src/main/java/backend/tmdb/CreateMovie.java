@@ -27,8 +27,9 @@ import backend.controllers.PersonController;
 import backend.dtos.CreateMovieDto;
 import backend.dtos.MovieDto;
 import backend.dtos.PersonDto;
-import backend.dtos.references.ActorReference;
-import backend.dtos.references.DirectorReference;
+import backend.dtos.admin.ActorAdminReference;
+import backend.dtos.admin.DirectorAdminReference;
+import backend.dtos.admin.PersonAdminDto;
 import backend.dtos.references.MovieReference;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
@@ -425,8 +426,8 @@ public class CreateMovie {
             for (PersonCrew personCrew : crew) {
                 String job = personCrew.getJob();
                 if (DataUtils.equalsIgnoreCase(job, DIRECTOR)) {
-                    PersonDto personDto = getPersonDto(personCrew, exceptionList);
-                    DirectorReference directorDto = new DirectorReference();
+                    PersonAdminDto personDto = getPersonAdminDto(personCrew, exceptionList);
+                    DirectorAdminReference directorDto = new DirectorAdminReference();
                     directorDto.setMovieMediaId(movieMediaID);
                     directorDto.setPersonMediaID(personDto.getPersonMediaID());
                     try {
@@ -456,8 +457,8 @@ public class CreateMovie {
         int count = 0;
         if (cast != null) {
             for (PersonCast personCast : cast) {
-                PersonDto personDto = getPersonDto(personCast, exceptionList);
-                ActorReference actorDto = new ActorReference();
+                PersonAdminDto personDto = getPersonAdminDto(personCast, exceptionList);
+                ActorAdminReference actorDto = new ActorAdminReference();
                 actorDto.setRoleName(personCast.getCharacter());
                 actorDto.setMovieMediaId(movieMediaID);
                 actorDto.setPersonMediaID(personDto.getPersonMediaID());
@@ -537,8 +538,8 @@ public class CreateMovie {
      * @param exceptionList the list to store any exceptions encountered
      * @return the {@link PersonDto} object
      */
-    private PersonDto getPersonDto(Person person, List<NameAndException> exceptionList) {
-        PersonDto personDto = new PersonDto();
+    private PersonAdminDto getPersonAdminDto(Person person, List<NameAndException> exceptionList) {
+    	PersonAdminDto personDto = new PersonAdminDto();
         personDto.setName(person.getName());
         personDto.setPersonMediaID("" + person.getId());
         personDto.setImagePath(PEOPLE_PATH + personDto.getPersonMediaID() + ".jpg");

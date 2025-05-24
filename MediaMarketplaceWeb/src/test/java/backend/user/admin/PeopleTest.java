@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import backend.AdminSpringTest;
 import backend.dtos.PersonDto;
+import backend.dtos.admin.PersonAdminDto;
 
 @TestInstance(Lifecycle.PER_CLASS)
 @Transactional
@@ -22,12 +23,12 @@ public class PeopleTest extends AdminSpringTest {
 	
 	private Long personId = 824L;
 	
-	private static PersonDto testPerson;
+	private static PersonAdminDto testPerson;
 	
 	@BeforeAll
 	public void getPersonTest() throws Exception {
 		ResultActions a = getPersonTest(personId, status().isOk());
-		testPerson = asObject(a.andReturn().getResponse().getContentAsString(), PersonDto.class);
+		testPerson = asObject(a.andReturn().getResponse().getContentAsString(), PersonAdminDto.class);
 	}
 	
 	@BeforeEach
@@ -38,7 +39,7 @@ public class PeopleTest extends AdminSpringTest {
 	@Test
 	public void addPersonTests() throws Exception {
 		// Create person dto
-		PersonDto personDto = cloneDto(testPerson, PersonDto.class);
+		PersonAdminDto personDto = cloneDto(testPerson, PersonAdminDto.class);
 		personDto.setId(null);
 		
 		// The person already exists (same media type)

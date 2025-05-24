@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import backend.dtos.ActorDto;
+import backend.dtos.admin.ActorAdminReference;
 import backend.dtos.references.ActorReference;
 import backend.dtos.references.PersonReference;
 import backend.dtos.search.PersonFilter;
@@ -77,7 +78,7 @@ public class ActorController {
      * @throws EntityAdditionException If there is a problem adding the actor due to data access issues.
      */
     @PostMapping("/")
-    public ResponseEntity<String> addActor(@Valid @RequestBody ActorReference actorDto) 
+    public ResponseEntity<String> addActor(@Valid @RequestBody ActorAdminReference actorDto) 
             throws EntityNotFoundException, EntityAlreadyExistsException {
         try {
             actorService.addActorRole(actorDto);
@@ -101,7 +102,7 @@ public class ActorController {
      * @throws EntityRemovalException If there is a problem removing the actor due to data access issues.
      */
     @DeleteMapping("/")
-    public ResponseEntity<String> removeActor(@Valid @RequestBody ActorReference actorDto) 
+    public ResponseEntity<String> removeActor(@Valid @RequestBody ActorAdminReference actorDto) 
             throws EntityNotFoundException {
         try {
             actorService.removeActor(actorDto);

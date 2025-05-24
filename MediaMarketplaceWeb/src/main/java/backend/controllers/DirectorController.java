@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import backend.dtos.DirectorDto;
+import backend.dtos.admin.DirectorAdminReference;
 import backend.dtos.references.DirectorReference;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
@@ -67,10 +68,10 @@ public class DirectorController {
      * @throws EntityAdditionException If there is a problem adding the director due to data access issues.
      */
     @PostMapping("/{movieMediaId}/{personMediaID}")
-    public ResponseEntity<String> addDirector(@Valid @RequestBody DirectorReference directorDto)
+    public ResponseEntity<String> addDirector(@Valid @RequestBody DirectorAdminReference directorAdminReference)
             throws EntityNotFoundException, EntityAlreadyExistsException {
         try {
-            directorService.addDirector(directorDto);
+            directorService.addDirector(directorAdminReference);
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to add the director to the movie", e);
         }
@@ -90,10 +91,10 @@ public class DirectorController {
      * @throws EntityRemovalException If there is a problem removing the director due to data access issues.
      */
     @DeleteMapping("/{movieMediaId}/{personMediaID}")
-    public ResponseEntity<String> removeDirector(@Valid @RequestBody DirectorReference directorDto)
+    public ResponseEntity<String> removeDirector(@Valid @RequestBody DirectorAdminReference directorAdminReference)
             throws EntityNotFoundException {
         try {
-            directorService.removeDirector(directorDto);
+            directorService.removeDirector(directorAdminReference);
         } catch (DataAccessException e) {
             throw new EntityRemovalException("Unable to remove the director from the movie", e);
         }

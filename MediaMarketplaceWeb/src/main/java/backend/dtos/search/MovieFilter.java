@@ -33,6 +33,10 @@ public class MovieFilter /*extends PageableDto*/ {
      * The maximum rating for filtering movies.
      */
     private Double ratingBelow;
+    
+    private List<Long> actors;
+    
+    private List<Long> directors;
 
     /**
      * Default constructor.
@@ -103,6 +107,14 @@ public class MovieFilter /*extends PageableDto*/ {
     public Double getRatingBelow() {
         return ratingBelow;
     }
+    
+    public List<Long> getActors() {
+		return actors;
+	}
+    
+    public List<Long> getDirectors() {
+		return directors;
+	}
 
     /**
      * Sets the name of the movie to search for.
@@ -157,5 +169,12 @@ public class MovieFilter /*extends PageableDto*/ {
     public void setRatingBelow(Double ratingBelow) {
         this.ratingBelow = ratingBelow;
     }
-
+    
+    public void setActors(List<Long> actors) {
+		this.actors = actors;
+    }
+    
+    public void setDirectors(List<Long> directors) {
+		this.directors = directors;
+    }
 }

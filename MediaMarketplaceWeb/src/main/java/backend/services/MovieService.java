@@ -19,6 +19,8 @@ import backend.dtos.CreateMovieDto;
 import backend.dtos.MovieDto;
 import backend.dtos.references.MovieReference;
 import backend.dtos.search.MovieFilter;
+import backend.entities.Actor;
+import backend.entities.Director;
 import backend.entities.Genre;
 import backend.entities.Movie;
 import backend.entities.MovieReview;
@@ -146,7 +148,7 @@ public class MovieService {
 	            predicates.add(cb.lessThan(differenceName, 70)); // Adjust the threshold as needed
 	            
 	            // order by closest matching
-	            query.orderBy(cb.asc(differenceName));
+	            query.orderBy(cb.asc(differenceName), cb.asc(root.get("name"))); // Ascending order by name
 	        }
             if (params.getYearAbove() != null) {
             	LocalDate year = LocalDate.of(params.getYearAbove(), 1, 1);
@@ -188,6 +190,61 @@ public class MovieService {
 				  HAVING COUNT(DISTINCT g.name) = 4
 			    */
 			}
+            
+            if(params.getActors() != null) {
+            	List<Long> requestedActors = params.getActors();
+            	if(requestedActors.size() > 0) {
+            		
+    				Join<Movie, Actor> actors = root.join("actorsRoles", JoinType.LEFT);
+    				
+    			    // 3) Prevent duplicate root results
+    			    query.distinct(true);
+    				
+    			    Predicate inList = actors.get("person").get("id").in(requestedActors);
+    			    predicates.add(inList);
+
+    			    // 4) Group by movie ID (or full PK if composite)
+    			    query.groupBy(root.get("id"));
+
+    			    // 5) Only keep movies where the count of *distinct* matched num of actors == wanted.size()
+    			    Expression<Long> countDistinctActors = cb.countDistinct(actors.get("person").get("id"));	
+    			    having.add(cb.equal(countDistinctActors, requestedActors.size()));
+    			    
+            		
+            		/*
+            		//this is for OR
+        	        Subquery<?> subquery = query.subquery(Long.class);
+        	        Root<Actor> subqueryRoot = subquery.from(Actor.class);
+        	        subquery.where(
+        	        		subqueryRoot.get("person").get("id").in(requestedActorsIds),
+        	        		cb.equal(subqueryRoot.get("movie").get("id"), root.get("id"))
+        	        );
+        	        predicates.add(cb.exists(subquery));
+        	        */
+				}
+            }
+            
+            if(params.getDirectors() != null) {
+            	List<Long> requestedDirectors = params.getDirectors();
+            	if(requestedDirectors.size() > 0) {
+            		
+    				Join<Movie, Director> directors = root.join("directors", JoinType.LEFT);
+    				
+    			    // 3) Prevent duplicate root results
+    			    query.distinct(true);
+    				
+    			    Predicate inList = directors.get("person").get("id").in(requestedDirectors);
+    			    predicates.add(inList);
+
+    			    // 4) Group by movie ID (or full PK if composite)
+    			    query.groupBy(root.get("id"));
+
+    			    // 5) Only keep movies where the count of *distinct* matched num of directors == wanted.size()
+    			    Expression<Long> countDistinctActors = cb.countDistinct(directors.get("person").get("id"));	
+    			    having.add(cb.equal(countDistinctActors, requestedDirectors.size()));
+				}
+            }
+            
             if(having.size() > 0) {
             	query.having(cb.and(having.toArray(new Predicate[0])));
 			}
