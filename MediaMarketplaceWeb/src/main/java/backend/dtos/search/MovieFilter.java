@@ -12,7 +12,7 @@ public class MovieFilter /*extends PageableDto*/ {
     /**
      * The list of genres to filter by.
      */
-    private List<String> genres;
+    private List<Long> genres;
 
     /**
      * The minimum year for filtering movies.
@@ -68,7 +68,7 @@ public class MovieFilter /*extends PageableDto*/ {
      * 
      * @return the list of genres.
      */
-    public List<String> getGenres() {
+    public List<Long> getGenres() {
         return genres;
     }
 
@@ -130,7 +130,7 @@ public class MovieFilter /*extends PageableDto*/ {
      * 
      * @param genres the list of genres.
      */
-    public void setGenres(List<String> genres) {
+    public void setGenres(List<Long> genres) {
         this.genres = genres;
     }
 

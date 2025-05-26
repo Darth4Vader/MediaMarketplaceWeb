@@ -1,9 +1,9 @@
 package backend.controllers;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import backend.dtos.references.GenreReference;
+import backend.dtos.search.GenreFilter;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.services.GenreService;
@@ -29,18 +31,10 @@ public class GenreController {
 
     @Autowired
     private GenreService genreService;
-
-    /**
-     * Retrieves all genres available in the system.
-     * <p>
-     * This method fetches a list of all genre names.
-     * </p>
-     *
-     * @return A list of genre names as {@link String}.
-     */
-    @GetMapping("/")
-    public List<String> getAllGenres() {
-        return genreService.getAllGenres();
+    
+    @GetMapping("/search")
+    public Page<GenreReference> searchGenres(GenreFilter genreFilter, Pageable pageable) {
+    	return genreService.searchGenres(genreFilter, pageable);
     }
 
     /**

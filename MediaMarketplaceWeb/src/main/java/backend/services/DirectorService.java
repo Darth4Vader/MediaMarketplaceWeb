@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,12 +14,18 @@ import backend.auth.AuthenticateAdmin;
 import backend.dtos.DirectorDto;
 import backend.dtos.admin.DirectorAdminReference;
 import backend.dtos.references.DirectorReference;
+import backend.dtos.references.PersonReference;
+import backend.dtos.search.PersonFilter;
 import backend.entities.Director;
 import backend.entities.Movie;
 import backend.entities.Person;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.DirectorRepository;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 /**
  * Service class for managing directors.
@@ -40,6 +49,46 @@ public class DirectorService {
     
     @Autowired
     private MovieService movieService;
+    
+    public Page<PersonReference> searchDirectors(PersonFilter personFilter, Pageable pageable) {
+    	System.out.println(personFilter);
+    	Specification<Person> specification = createDirectorSearchSpecification(personFilter);
+		Page<Person> directorPage = personService.searchPeople(specification, pageable);
+		
+        // Then convert them to DTOs.
+        Page<PersonReference> directorReferencesPage = directorPage.map(director -> {
+        	return PersonService.convertPersonToReference(director);
+		});
+        return directorReferencesPage;
+    }
+    
+	public Specification<Person> createDirectorSearchSpecification(PersonFilter params) {
+	    Specification<Person> spec = (root, query, cb) -> {
+	        List<Predicate> predicates = new ArrayList<>();
+	        List<Predicate> having = new ArrayList<>();
+	        
+	        // find all people that are actors
+	        Subquery<?> subquery = query.subquery(Long.class);
+	        Root<Director> subqueryRoot = subquery.from(Director.class);
+	        subquery.where(cb.equal(subqueryRoot.get("person").get("id"), root.get("id")));
+	        predicates.add(cb.exists(subquery));
+	        
+	        if(params.getName() != null) {
+	            Expression<Integer> differenceName = cb.function("levenshtein_ratio", Integer.class, root.get("name"), cb.literal(params.getName()));
+	            // You can compare if the difference is greater than a threshold value, e.g., 3
+	            predicates.add(cb.lessThan(differenceName, 70)); // Adjust the threshold as needed
+	            
+	            // order by closest matching
+	            query.orderBy(cb.asc(differenceName), cb.asc(root.get("name")));
+	        }
+            if(having.size() > 0) {
+            	query.having(cb.and(having.toArray(new Predicate[0])));
+			}
+            	
+	        return cb.and(predicates.toArray(new Predicate[predicates.size()]));
+	    };
+	    return spec;
+	}
     
     /**
      * Retrieves a list of director DTO objects for a given movie.

@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
@@ -19,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import backend.dtos.DirectorDto;
 import backend.dtos.admin.DirectorAdminReference;
 import backend.dtos.references.DirectorReference;
+import backend.dtos.references.PersonReference;
+import backend.dtos.search.PersonFilter;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
@@ -38,6 +42,11 @@ public class DirectorController {
 
     @Autowired
     private DirectorService directorService;
+    
+    @GetMapping("/search")
+    public Page<PersonReference> searchDirectors(PersonFilter personFilter, Pageable pageable) {
+    	return directorService.searchDirectors(personFilter, pageable);
+    }
 
     /**
      * Retrieves the list of directors associated with a specified movie.

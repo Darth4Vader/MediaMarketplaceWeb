@@ -163,20 +163,20 @@ public class MovieService {
             
             if(params.getGenres() != null) {
 				Join<Movie, Genre> genres = root.join("genres", JoinType.LEFT);
-				List<String> requestedGenres = params.getGenres();
+				List<Long> requestedGenres = params.getGenres();
 				System.out.println("Requested genres: " + requestedGenres);
 				
 			    // 3) Prevent duplicate root results
 			    query.distinct(true);
 				
-			    Predicate inList = genres.get("name").in(requestedGenres);
+			    Predicate inList = genres.get("id").in(requestedGenres);
 			    predicates.add(inList);
 
 			    // 4) Group by movie ID (or full PK if composite)
 			    query.groupBy(root.get("id"));
 
 			    // 5) Only keep movies where the count of *distinct* matched names == wanted.size()
-			    Expression<Long> countDistinctNames = cb.countDistinct(genres.get("name"));	
+			    Expression<Long> countDistinctNames = cb.countDistinct(genres.get("id"));	
 			    having.add(cb.equal(countDistinctNames, requestedGenres.size()));
 				
 			    /*

@@ -4,16 +4,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import backend.auth.AuthenticateAdmin;
+import backend.dtos.references.GenreReference;
+import backend.dtos.search.GenreFilter;
 import backend.entities.Genre;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityRemovalException;
 import backend.repositories.GenreRepository;
+import backend.utils.SpecificationUtils;
+import jakarta.persistence.criteria.Predicate;
 
 /**
  * Service class for managing genres.
@@ -33,24 +39,28 @@ public class GenreService {
 
     @Autowired
     private GenreRepository genreRepository;
-
-    /**
-     * Retrieves a list of all genres.
-     * <p>
-     * This method is accessible to all users, including non-logged-in users.
-     * </p>
-     *
-     * @return A list of genre names as strings.
-     */
-    public List<String> getAllGenres() {
-        List<Genre> genres = genreRepository.findAll();
-        return convertGenresToDto(genres);
+    
+    public Page<GenreReference> searchGenres(GenreFilter genreFilter, Pageable pageable) {
+    	Specification<Genre> specification = createGenreSearchSpecification(genreFilter);
+		Page<Genre> genrePage = genreRepository.findAll(specification, pageable);
+		
+        // Then convert them to DTOs.
+        Page<GenreReference> genreReferencesPage = genrePage.map(genre -> {
+        	return convertGenreToReference(genre);
+		});
+        return genreReferencesPage;
     }
     
-    public List<String> getAllGenres(Specification<Genre> spec) {
-        List<Genre> genres = genreRepository.findAll(spec);
-        return convertGenresToDto(genres);
-    }
+	public Specification<Genre> createGenreSearchSpecification(GenreFilter params) {
+	    Specification<Genre> spec = (root, query, cb) -> {
+	        List<Predicate> predicates = new ArrayList<>();
+	        Predicate filterByName = SpecificationUtils.filterByName(cb, query, params.getName(), root.get("name"));
+	        if(filterByName != null)
+	        	predicates.add(filterByName);
+	        return cb.and(predicates.toArray(new Predicate[predicates.size()]));
+	    };
+	    return spec;
+	}
 
     /**
      * Creates a new genre in the database.
@@ -128,5 +138,11 @@ public class GenreService {
     public Genre getGenreByName(String genreName) throws EntityNotFoundException {
         return genreRepository.findByName(genreName)
                 .orElseThrow(() -> new EntityNotFoundException("The Genre with name: \"" + genreName + "\" does not exist"));
+    }
+    public static GenreReference convertGenreToReference(Genre genre) {
+        GenreReference genreReference = new GenreReference();
+        genreReference.setId(genre.getId());
+        genreReference.setName(genre.getName());
+        return genreReference;
     }
 }
