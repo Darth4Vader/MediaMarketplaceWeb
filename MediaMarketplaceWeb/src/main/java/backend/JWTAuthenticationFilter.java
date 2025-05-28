@@ -15,6 +15,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.WebUtils;
 
 import backend.controllers.UserAuthenticateController;
@@ -96,12 +97,20 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         catch(Exception e) {
         	String uri = request.getRequestURI();
         	LOGGER.error("Error in JWTAuthenticationFilter: " + request.getMethod() + " - " + uri);
-        	e.printStackTrace();
-        	if(resolver != null)
-        		resolver.resolveException(request, response, null, e);
+        	System.out.println(resolver);
+        	if(resolver != null) {
+        		ModelAndView m = resolver.resolveException(request, response, null, e);
+        		System.out.println("ModelAndView: " + m);
+        		// exception not resolved, then rethrow it
+        		if(m == null) {
+        			throw e;
+        		}
+        		else {
+                	e.printStackTrace();
+        		}
+        	}
         	else
         		LOGGER.error("Exception Resolver is null");
-        	//throw e;
         }
     }
     

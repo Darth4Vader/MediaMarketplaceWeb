@@ -15,6 +15,7 @@ import backend.dtos.MovieReviewDto;
 import backend.dtos.references.MovieRatingReference;
 import backend.dtos.references.MovieReviewReference;
 import backend.entities.Movie;
+import backend.entities.MovieRating;
 import backend.entities.MovieReview;
 import backend.entities.User;
 import backend.exceptions.MovieReviewValuesAreIncorrectException;
@@ -109,6 +110,7 @@ public class MovieReviewService {
         checkForExceptionReviews(movieReviewRef);
         Movie movie = movieService.getMovieByID(movieReviewRef.getMovieId());
         MovieReview movieReview;
+        boolean isNewReview = false;
         try {
             // Try to load the current review by the user for the movie.
             movieReview = getMovieReviewFromMovieUser(movie, user);
@@ -117,10 +119,15 @@ public class MovieReviewService {
             movieReview = new MovieReview();
             movieReview.setUser(user);
             movieReview.setMovie(movie);
+            isNewReview = true;
         }
+        // get the user old rating, if he has
+        Integer oldRating = movieReview.getRating();
         // Save the review.
         setMovieReviewFromDto(movieReview, movieReviewRef);
         movieReviewRepository.save(movieReview);
+        // Update the movie rating based on the new or updated review.
+        updateMovieRating(movie, oldRating, movieReview, isNewReview);
     }
 
     /**
@@ -144,6 +151,7 @@ public class MovieReviewService {
         checkForExceptionRatings(movieRatingReference);
         Movie movie = movieService.getMovieByID(movieRatingReference.getMovieId());
         MovieReview movieReview;
+        boolean isNewReview = false;
         try {
             // Try to load the current review by the user for the movie.
             movieReview = getMovieReviewFromMovieUser(movie, user);
@@ -152,11 +160,36 @@ public class MovieReviewService {
             movieReview = new MovieReview();
             movieReview.setUser(user);
             movieReview.setMovie(movie);
+            isNewReview = true;
         }
+        // get the user old rating, if he has
+        Integer oldRating = movieReview.getRating();
         // Save the review with the updated rating.
         setMovieRatingFromDto(movieReview, movieRatingReference);
         movieReviewRepository.save(movieReview);
+        // Update the movie rating based on the new or updated review.
+        updateMovieRating(movie, oldRating, movieReview, isNewReview);
     }
+    
+    @Transactional
+    private void updateMovieRating(Movie movie, Integer userOldRating, MovieReview userMovieReview, boolean isNewReview) {
+        MovieRating movieRating = movie.getMovieRating();
+        Long count = movieRating.getTotalRatings();
+        Double currentAvg = movieRating.getAverageRating();
+        Integer newRating = userMovieReview.getRating();
+        if(isNewReview) {
+        	// If this is the first time the user is rating the movie, set the average rating.
+			// Update the total ratings count and average rating.
+			double newAvg = (currentAvg * count + newRating) / (count + 1);
+			movieRating.setTotalRatings(count + 1);
+			movieRating.setAverageRating(newAvg);
+        }
+        else if(userOldRating != null) {
+        	// not the first time the user is rating the movie, update the average rating.
+            double newAvg = (currentAvg * count - userOldRating + newRating) / count;
+            movieRating.setAverageRating(newAvg);
+        }
+	}
 
     /**
      * Calculates the average rating of a specific movie.

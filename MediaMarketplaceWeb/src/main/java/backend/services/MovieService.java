@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ import backend.entities.MovieReview;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.MovieRepository;
+import backend.sort.entities.MovieSort;
 import backend.utils.UrlUtils;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
@@ -67,8 +70,24 @@ public class MovieService {
      */
     public Page<MovieReference> searchMovies(MovieFilter movieFilter, Pageable pageable) {
     	System.out.println(movieFilter);
+    	Sort sort = pageable.getSort();
+    	List<Order> customSortOrders = new ArrayList<>();
+    	for(Order order : sort) {
+    		String property = order.getProperty();
+    		MovieSort movieSort = MovieSort.fromValue(property);
+    		if(movieSort != null) {
+    			customSortOrders.add(order);
+    		}
+		}
+    	if(customSortOrders.size() > 0) {
+			// If there are custom sort orders, we apply them.
+    		Sort defaultSort = Sort.by(sort.stream()
+					    				.filter(order -> !customSortOrders.contains(order))
+					    				.toList());
+			pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), defaultSort);
+		}
     	//PageRequest pageable = PageRequestUtils.getPageRequest(pageableDto);
-    	Specification<Movie> specification = createMovieSearchSpecification(movieFilter);
+    	Specification<Movie> specification = createMovieSearchSpecification(movieFilter, Sort.by(customSortOrders));
 		Page<Movie> moviePage = movieRepository.findAll(specification, pageable);
 		
         // Then convert them to DTOs.
@@ -93,7 +112,7 @@ public class MovieService {
     }
     
     private Page<MovieDto> getSearchMoviesDto(MovieFilter movieFilter, Pageable pageable) {
-		Specification<Movie> specification = createMovieSearchSpecification(movieFilter);
+		Specification<Movie> specification = createMovieSearchSpecification(movieFilter, null);
 		Page<Movie> moviePage = movieRepository.findAll(specification, pageable);
 		
 		// Then convert them to DTOs.
@@ -127,10 +146,11 @@ public class MovieService {
 	    return spec;
 	}
     */
-	public Specification<Movie> createMovieSearchSpecification(MovieFilter params) {
+	public Specification<Movie> createMovieSearchSpecification(MovieFilter params, Sort sort) {
 	    Specification<Movie> spec = (root, query, cb) -> {
 	        List<Predicate> predicates = new ArrayList<>();
 	        List<Predicate> having = new ArrayList<>();
+	        List<Predicate> orderBy = new ArrayList<>();
 	        if(params.getRatingAbove() != null || params.getRatingBelow() != null) {
 	            Join<Movie, MovieReview> reviews = root.join("movieReviews", JoinType.LEFT);
 	            query.groupBy(root.get("id"));
@@ -155,7 +175,7 @@ public class MovieService {
             	Path<LocalDate> releaseDate = root.get("releaseDate");
             	predicates.add(cb.greaterThanOrEqualTo(releaseDate, year));
             }
-            if (params.getRatingBelow() != null) {
+            if (params.getYearBelow() != null) {
             	LocalDate year = LocalDate.of(params.getYearBelow(), 12, 31);
             	Path<LocalDate> releaseDate = root.get("releaseDate");
             	predicates.add(cb.lessThanOrEqualTo(releaseDate, year));
@@ -242,6 +262,15 @@ public class MovieService {
     			    // 5) Only keep movies where the count of *distinct* matched num of directors == wanted.size()
     			    Expression<Long> countDistinctActors = cb.countDistinct(directors.get("person").get("id"));	
     			    having.add(cb.equal(countDistinctActors, requestedDirectors.size()));
+				}
+            }
+            if(sort != null) {
+				for(Order order : sort) {
+					String property = order.getProperty();
+					MovieSort movieSort = MovieSort.fromValue(property);
+					if(movieSort == MovieSort.RATING) {
+						//orderBy
+					}
 				}
             }
             

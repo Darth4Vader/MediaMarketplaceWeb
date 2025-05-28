@@ -18,6 +18,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 
@@ -150,6 +151,10 @@ public class Movie {
     
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "movie", cascade = CascadeType.ALL)
     private List<MovieReview> movieReviews;
+    
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "movie_rating_id", referencedColumnName = "id")
+    private MovieRating movieRating;
 
     /**
      * Default constructor for the Movie class.
@@ -383,6 +388,14 @@ public class Movie {
      */
     public void setReleaseDate(LocalDate releaseDate) {
         this.releaseDate = releaseDate;
+    }
+    
+    public MovieRating getMovieRating() {
+		return movieRating;
+	}
+    
+    public void setMovieRating(MovieRating movieRating) {
+		this.movieRating = movieRating;
     }
 
     /**
