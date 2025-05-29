@@ -1,11 +1,16 @@
 package backend.services;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException.UnprocessableEntity;
@@ -25,7 +30,11 @@ import backend.exceptions.EntityUnprocessableException;
 import backend.exceptions.UserNotLoggedInException;
 import backend.repositories.CartProductRepository;
 import backend.repositories.CartRepository;
+import backend.sort.entities.CartProductSort;
 import backend.utils.PurchaseType;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -66,11 +75,11 @@ public class CartService {
      * @return A {@link CartDto} representing the user's cart.
      * @throws EntityNotFoundException if the user does not have a cart.
      */
-    public CartDto getCart(Pageable pageable, HttpSession session) throws EntityNotFoundException {
+    public CartDto getCart(Pageable pageable, HttpSession session) {
     	// first we load the cart of the current session
         Cart cart = getCartOfSession(session);
         // load the cart products for the requested page
-        Page<CartProduct> cartProductsPage = getCartProductOfCart(cart, pageable);
+        Page<CartProduct> cartProductsPage = searchCartProductsResult(cart, pageable);
         // And then we convert it to a cart DTO
         CartDto cartDto = new CartDto();
         Page<CartProductDto> cartProductsDtoPage = cartProductsPage.map(cartProduct -> {
@@ -81,6 +90,65 @@ public class CartService {
         cartDto.setTotalItems(calculateCartProductTotalItems(cart));
         return cartDto;
     }
+    
+    public Page<CartProduct> searchCartProductsResult(Cart cart, Pageable pageable) {
+    	Sort sort = pageable.getSort();
+    	List<Order> customSortOrders = new ArrayList<>();
+    	for(Order order : sort) {
+    		String property = order.getProperty();
+    		CartProductSort movieSort = CartProductSort.fromValue(property);
+    		if(movieSort != null) {
+    			customSortOrders.add(order);
+    		}
+		}
+    	if(customSortOrders.size() > 0) {
+			// If there are custom sort orders, we apply them.
+    		Sort defaultSort = Sort.by(sort.stream()
+					    				.filter(order -> !customSortOrders.contains(order))
+					    				.toList());
+			pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), defaultSort);
+		}
+    	Specification<CartProduct> specification = createCartProductSortSpecification(cart, Sort.by(customSortOrders));
+    	Page<CartProduct> cartProductsPage = getCartProductOfCart(pageable, specification);
+		return cartProductsPage;
+    }
+    
+	public Specification<CartProduct> createCartProductSortSpecification(Cart cart, Sort sort) {
+	    Specification<CartProduct> spec = (root, query, cb) -> {
+	        List<jakarta.persistence.criteria.Order> orderBy = new ArrayList<>();
+            if(sort != null) {
+				for(Order order : sort) {
+					String property = order.getProperty();
+					CartProductSort cartProductSort = CartProductSort.fromValue(property);
+					if(cartProductSort == CartProductSort.PRICE) {
+						Join<CartProduct, Product> productJoin = root.join("product", JoinType.INNER);
+						Expression<?> price = cb.selectCase()
+							.when(cb.equal(root.get("purchaseType"), PurchaseType.BUY.getType()), productJoin.get("buyPrice"))
+							.when(cb.equal(root.get("purchaseType"), PurchaseType.RENT.getType()), productJoin.get("rentPrice"))
+							.otherwise(0.0);
+						query.groupBy(root.get("id"));
+						orderBy.add(order.isAscending() ? cb.asc(price) : cb.desc(price));
+					}
+					else if(cartProductSort == CartProductSort.DISCOUNT ) {
+						Join<CartProduct, Product> productJoin = root.join("product", JoinType.INNER);
+						Expression<?> discount = cb.selectCase()
+							.when(cb.equal(root.get("purchaseType"), PurchaseType.BUY.getType()), productJoin.get("buyDiscount"))
+							.when(cb.equal(root.get("purchaseType"), PurchaseType.RENT.getType()), productJoin.get("rentDiscount"))
+							.otherwise(0.0);
+						query.groupBy(root.get("id"));
+						orderBy.add(order.isAscending() ? cb.asc(discount) : cb.desc(discount));
+					}
+				}
+            }
+            
+            if(orderBy.size() > 0) {
+				query.orderBy(orderBy);
+            }
+            
+	        return cb.and(cb.equal(root.get("cart"), cart));
+	    };
+	    return spec;
+	}
     
     /**
      * Adds a product to the user's shopping cart.
@@ -381,9 +449,8 @@ public class CartService {
 		cartRepository.delete(cart);
     }
     
-    private Page<CartProduct> getCartProductOfCart(Cart cart, Pageable pageable) throws EntityNotFoundException {
-    	return cartProductRepository.findByCart(cart, pageable)
-                .orElseThrow(() -> new EntityNotFoundException("There are no product in the cart"));
+    private Page<CartProduct> getCartProductOfCart(Pageable pageable, Specification<CartProduct> spec) {
+    	return cartProductRepository.findAll(spec, pageable);
     }
     
     public static CartProductDto convertCartProductToDto(CartProduct cartProduct) {

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import backend.dtos.CreateMovieDto;
 import backend.dtos.MovieDto;
+import backend.dtos.MoviePageDto;
 import backend.dtos.references.MovieReference;
 import backend.dtos.search.MovieFilter;
 import backend.exceptions.EntityAdditionException;
@@ -99,7 +100,7 @@ public class MovieController {
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      */
     @GetMapping("/{id}")
-    public MovieDto getMovie(@PathVariable("id") Long movieId) throws EntityNotFoundException {
+    public MoviePageDto getMovie(@PathVariable("id") Long movieId) throws EntityNotFoundException {
         return movieService.getMovie(movieId);
     }
     

@@ -41,6 +41,9 @@ public class TimezoneUtils {
 	}
 	
 	public static LocalDateTime convertToRequestTimezone(LocalDateTime utcDateTime) {
+		if(utcDateTime == null) {
+			return null;
+		}
 		ZoneId timezone = getRequestTimezone();
 		if(timezone != null) {
 			return utcDateTime

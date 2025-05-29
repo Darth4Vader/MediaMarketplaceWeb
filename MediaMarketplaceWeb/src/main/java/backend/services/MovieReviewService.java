@@ -5,7 +5,6 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -174,6 +173,14 @@ public class MovieReviewService {
     @Transactional
     private void updateMovieRating(Movie movie, Integer userOldRating, MovieReview userMovieReview, boolean isNewReview) {
         MovieRating movieRating = movie.getMovieRating();
+        if(movieRating == null) {
+        	// If the movie does not have a rating yet, create a new MovieRating.
+			movieRating = new MovieRating();
+			movieRating.setMovie(movie);
+			movieRating.setTotalRatings(0L);
+			movieRating.setAverageRating(0.0);
+			movie.setMovieRating(movieRating);
+        }
         Long count = movieRating.getTotalRatings();
         Double currentAvg = movieRating.getAverageRating();
         Integer newRating = userMovieReview.getRating();
@@ -205,17 +212,12 @@ public class MovieReviewService {
         try {
             // Load the movie and get all its reviews.
             Movie movie = movieService.getMovieByID(movieId);
-            Pageable pageable = PageRequest.of(0, 5000);
-            Page<MovieReview> page = getMovieReviewOfMovie(movie, pageable);
-            // Calculate the average rating.
-            double sum = 0;
-            sum += page.getContent().stream().mapToDouble(MovieReview::getRating).sum();
-            while(page.hasNext()) {
-				pageable = page.nextPageable();
-				page = getMovieReviewOfMovie(movie, pageable);
-				sum += page.getContent().stream().mapToDouble(MovieReview::getRating).sum();
-            }
-            return (int) (sum / page.getTotalElements());
+            MovieRating movieRating = movie.getMovieRating();
+            // If there are no reviews, return null.
+            if (movieRating == null || movieRating.getTotalRatings() == 0) {
+				return null;
+			}
+            return movieRating.getAverageRating() == null ? null : movieRating.getAverageRating().intValue();
         } catch (EntityNotFoundException e) {
             // If there are no reviews for the movie, return null.
             return null;

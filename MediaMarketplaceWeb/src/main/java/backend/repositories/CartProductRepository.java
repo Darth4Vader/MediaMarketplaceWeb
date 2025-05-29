@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import backend.entities.Cart;
@@ -18,7 +19,7 @@ import backend.entities.CartProduct;
  * It extends {@link JpaRepository}, which provides basic CRUD operations for {@link CartProduct}.
  */
 @Repository
-public interface CartProductRepository extends JpaRepository<CartProduct, Long> {
+public interface CartProductRepository extends JpaRepository<CartProduct, Long>, JpaSpecificationExecutor<CartProduct> {
 
 	
 	Optional<Page<CartProduct>> findByCart(Cart cart, Pageable pageable);

@@ -6,6 +6,8 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import backend.entities.Movie;
@@ -60,4 +62,10 @@ public interface MovieReviewRepository extends JpaRepository<MovieReview, Long> 
     Optional<MovieReview> findByMovieAndUser(Movie movie, User user);
     
     Optional<Page<MovieReview>> findByMovie(Movie movie, Pageable pageable);
+    
+    @Query("SELECT AVG(r.rating) FROM MovieReview r WHERE r.movie = :movie")
+    Double findAverageRatingByMovie(@Param("movie") Movie movie);
+    
+    @Query("SELECT COUNT(r) FROM MovieReview r WHERE r.movie = :movie")
+    Long findCountByMovie(@Param("movie") Movie movie);
 }

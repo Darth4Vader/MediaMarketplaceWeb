@@ -123,7 +123,7 @@ public class Movie {
      * 
      * @return the list of directors for this movie
      */
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "movie", cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "movie", cascade = CascadeType.ALL)
     private List<Director> directors;
     
     /**
@@ -133,7 +133,7 @@ public class Movie {
      * 
      * @return the list of actors' roles in this movie
      */
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "movie", cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "movie", cascade = CascadeType.ALL)
     private List<Actor> actorsRoles;
     
     /**
@@ -152,7 +152,7 @@ public class Movie {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "movie", cascade = CascadeType.ALL)
     private List<MovieReview> movieReviews;
     
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "movie_rating_id", referencedColumnName = "id")
     private MovieRating movieRating;
 

@@ -19,13 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 import backend.auth.AuthenticateAdmin;
 import backend.dtos.CreateMovieDto;
 import backend.dtos.MovieDto;
+import backend.dtos.MoviePageDto;
 import backend.dtos.references.MovieReference;
 import backend.dtos.search.MovieFilter;
 import backend.entities.Actor;
 import backend.entities.Director;
 import backend.entities.Genre;
 import backend.entities.Movie;
-import backend.entities.MovieReview;
+import backend.entities.MovieRating;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.MovieRepository;
@@ -69,26 +70,7 @@ public class MovieService {
      * @return A list of {@link MovieReference} objects representing all movies.
      */
     public Page<MovieReference> searchMovies(MovieFilter movieFilter, Pageable pageable) {
-    	System.out.println(movieFilter);
-    	Sort sort = pageable.getSort();
-    	List<Order> customSortOrders = new ArrayList<>();
-    	for(Order order : sort) {
-    		String property = order.getProperty();
-    		MovieSort movieSort = MovieSort.fromValue(property);
-    		if(movieSort != null) {
-    			customSortOrders.add(order);
-    		}
-		}
-    	if(customSortOrders.size() > 0) {
-			// If there are custom sort orders, we apply them.
-    		Sort defaultSort = Sort.by(sort.stream()
-					    				.filter(order -> !customSortOrders.contains(order))
-					    				.toList());
-			pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), defaultSort);
-		}
-    	//PageRequest pageable = PageRequestUtils.getPageRequest(pageableDto);
-    	Specification<Movie> specification = createMovieSearchSpecification(movieFilter, Sort.by(customSortOrders));
-		Page<Movie> moviePage = movieRepository.findAll(specification, pageable);
+		Page<Movie> moviePage = searchMoviesResult(movieFilter, pageable);
 		
         // Then convert them to DTOs.
         Page<MovieReference> movieReferencesPage = moviePage.map(movie -> {
@@ -112,15 +94,37 @@ public class MovieService {
     }
     
     private Page<MovieDto> getSearchMoviesDto(MovieFilter movieFilter, Pageable pageable) {
-		Specification<Movie> specification = createMovieSearchSpecification(movieFilter, null);
-		Page<Movie> moviePage = movieRepository.findAll(specification, pageable);
-		
+		Page<Movie> moviePage = searchMoviesResult(movieFilter, pageable);
 		// Then convert them to DTOs.
 		Page<MovieDto> movieDtosPage = moviePage.map(movie -> {
 			return MovieService.convertMovieToDto(movie);
 		});
 		return movieDtosPage;
 	}
+    
+    public Page<Movie> searchMoviesResult(MovieFilter movieFilter, Pageable pageable) {
+    	System.out.println(movieFilter);
+    	Sort sort = pageable.getSort();
+    	List<Order> customSortOrders = new ArrayList<>();
+    	for(Order order : sort) {
+    		String property = order.getProperty();
+    		MovieSort movieSort = MovieSort.fromValue(property);
+    		if(movieSort != null) {
+    			customSortOrders.add(order);
+    		}
+		}
+    	if(customSortOrders.size() > 0) {
+			// If there are custom sort orders, we apply them.
+    		Sort defaultSort = Sort.by(sort.stream()
+					    				.filter(order -> !customSortOrders.contains(order))
+					    				.toList());
+			pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), defaultSort);
+		}
+    	//PageRequest pageable = PageRequestUtils.getPageRequest(pageableDto);
+    	Specification<Movie> specification = createMovieSearchSpecification(movieFilter, Sort.by(customSortOrders));
+		Page<Movie> moviePage = movieRepository.findAll(specification, pageable);
+		return moviePage;
+    }
     
     /*
 	public Specification<Genre> getMovieGenreCategories(MovieFilter params) {
@@ -150,16 +154,18 @@ public class MovieService {
 	    Specification<Movie> spec = (root, query, cb) -> {
 	        List<Predicate> predicates = new ArrayList<>();
 	        List<Predicate> having = new ArrayList<>();
-	        List<Predicate> orderBy = new ArrayList<>();
+	        List<jakarta.persistence.criteria.Order> orderBy = new ArrayList<>();
+	        
+	    	if(params == null)
+	    		return cb.and(predicates.toArray(new Predicate[predicates.size()]));;
+	        
 	        if(params.getRatingAbove() != null || params.getRatingBelow() != null) {
-	            Join<Movie, MovieReview> reviews = root.join("movieReviews", JoinType.LEFT);
-	            query.groupBy(root.get("id"));
-	            Expression<Double> rating = cb.avg(reviews.get("rating"));
+	        	Join<Movie, MovieRating> ratings = root.join("movieRating", JoinType.LEFT);
 	            if (params.getRatingAbove() != null) {
-	                having.add(cb.greaterThan(rating, params.getRatingAbove()));
+	                predicates.add(cb.greaterThan(ratings.get("averageRating"), params.getRatingAbove()));
 	            }
 	            if (params.getRatingBelow() != null) {
-	                having.add(cb.lessThan(rating, params.getRatingBelow()));
+	                predicates.add(cb.lessThan(ratings.get("averageRating"), params.getRatingBelow()));
 	            }
 	        }
 	        if(params.getName() != null) {
@@ -168,7 +174,8 @@ public class MovieService {
 	            predicates.add(cb.lessThan(differenceName, 70)); // Adjust the threshold as needed
 	            
 	            // order by closest matching
-	            query.orderBy(cb.asc(differenceName), cb.asc(root.get("name"))); // Ascending order by name
+	            orderBy.add(cb.asc(differenceName));
+	            orderBy.add(cb.asc(root.get("name"))); // Ascending order by name
 	        }
             if (params.getYearAbove() != null) {
             	LocalDate year = LocalDate.of(params.getYearAbove(), 1, 1);
@@ -269,7 +276,9 @@ public class MovieService {
 					String property = order.getProperty();
 					MovieSort movieSort = MovieSort.fromValue(property);
 					if(movieSort == MovieSort.RATING) {
-						//orderBy
+						Join<Movie, MovieRating> ratings = root.join("movieRating", JoinType.INNER);
+						query.groupBy(root.get("id")); // Group by movie ID to ensure correct ordering
+						orderBy.add(order.isAscending() ? cb.asc(ratings.get("averageRating")) : cb.desc(ratings.get("averageRating")));
 					}
 				}
             }
@@ -277,7 +286,11 @@ public class MovieService {
             if(having.size() > 0) {
             	query.having(cb.and(having.toArray(new Predicate[0])));
 			}
-            	
+            
+            if(orderBy.size() > 0) {
+				query.orderBy(orderBy);
+            }
+            
 	        return cb.and(predicates.toArray(new Predicate[predicates.size()]));
 	    };
 	    return spec;
@@ -294,9 +307,22 @@ public class MovieService {
      * @return A {@link MovieDto} object containing details of the specified movie.
      * @throws EntityNotFoundException if the movie with the specified ID does not exist.
      */
-    public MovieDto getMovie(Long movieId) throws EntityNotFoundException {
+    public MoviePageDto getMovie(Long movieId) throws EntityNotFoundException {
         Movie movie = getMovieByID(movieId);
-        return convertMovieToDto(movie);
+        MovieDto movieDto = convertMovieToDto(movie);
+        MoviePageDto moviePageDto = new MoviePageDto();
+        moviePageDto.setMovie(movieDto);
+        MovieRating movieRating = movie.getMovieRating();
+        System.out.println("Movie Rating: " + movieRating);
+        if (movieRating != null) {
+        	Long totalRatings = movieRating.getTotalRatings();
+        	if(totalRatings != null && totalRatings > 0) {
+				// If there are ratings, then we set the average rating and total ratings.
+				moviePageDto.setAverageRating(movieRating.getAverageRating());
+				moviePageDto.setTotalRatings(movieRating.getTotalRatings());
+			}
+		}
+        return moviePageDto;
     }
 
     /**
@@ -413,6 +439,11 @@ public class MovieService {
         return movieRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("The Movie with ID: (" + id + ") does not exist"));
     }
+    
+    @Transactional
+    public void saveMovie(Movie movie) {
+		movieRepository.save(movie);
+	}
 
     /**
      * Converts a {@link Movie} entity to a {@link MovieReference} DTO.
