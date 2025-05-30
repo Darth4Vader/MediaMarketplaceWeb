@@ -317,6 +317,8 @@ public class CartService {
 								// if not, add it to the user cart
 								addProductToCart(userCart, cartProduct);
 							}
+							// after we merged the cart products, we need to remove them from session cart
+							sessionCart.setCartProducts(null);
 						}
 						// now remove the session cart
 						removeCartFromUser(sessionCart);
@@ -388,8 +390,7 @@ public class CartService {
     	// First we save the cart product into the database
     	cartProductRepository.save(cartProduct);
     	// Then we add the CartProduct into the Cart
-    	List<CartProduct> cartProducts = cart.getCartProducts();
-        cartProducts.add(cartProduct);
+    	cart.addToCartProducts(cartProduct);
     }
     
     /**

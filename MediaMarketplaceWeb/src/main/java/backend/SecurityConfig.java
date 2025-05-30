@@ -27,7 +27,6 @@ import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import backend.entities.enums.RoleType;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
@@ -136,7 +135,7 @@ public class SecurityConfig {
             		//This is for swagger, remove when using javafx
             		.requestMatchers("/images/**").permitAll()
             		.requestMatchers(AUTH_WHITELIST).permitAll()
-            		.requestMatchers("/api/users/login", "/api/users/register", "/api/users/refresh").permitAll()
+            		.requestMatchers("/api/users/login", "/api/users/register", "/api/users/refresh", "/api/users/refresh/logout").permitAll()
             		.requestMatchers(HttpMethod.GET, "/api/main/**").permitAll()
             		.requestMatchers("/api/users/carts/**").permitAll()
             		.requestMatchers("/error").permitAll()

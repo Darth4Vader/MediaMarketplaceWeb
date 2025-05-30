@@ -1,7 +1,5 @@
 package backend.controllers;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
@@ -99,7 +97,8 @@ public class MovieReviewController {
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      */
     @PostMapping("/reviews/{movieId}/current-user")
-    public void addMovieReviewOfUser(@RequestBody MovieReviewReference movieReviewDto) throws MovieReviewValuesAreIncorrectException, EntityNotFoundException {
+    public void addMovieReviewOfUser(@PathVariable("movieId") Long movieId, @RequestBody MovieReviewReference movieReviewDto) throws MovieReviewValuesAreIncorrectException, EntityNotFoundException {
+    	movieReviewDto.setMovieId(movieId);
         try {
             movieReviewService.addMovieReviewOfUser(movieReviewDto);
         } catch (DataAccessException e) {
@@ -120,9 +119,10 @@ public class MovieReviewController {
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      */
     @PostMapping("/ratings/{movieId}/current-user")
-    public void addMovieRatingOfUser(@RequestBody MovieRatingReference movieRatingDto) 
+    public void addMovieRatingOfUser(@PathVariable("movieId") Long movieId, @RequestBody MovieRatingReference movieRatingDto) 
             throws MovieReviewValuesAreIncorrectException, EntityNotFoundException {
-        try {
+    	movieRatingDto.setMovieId(movieId);
+    	try {
             movieReviewService.addMovieRatingOfUser(movieRatingDto);
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to add user ratings to the movie \"" + movieRatingDto.getMovieId() + "\"", e);

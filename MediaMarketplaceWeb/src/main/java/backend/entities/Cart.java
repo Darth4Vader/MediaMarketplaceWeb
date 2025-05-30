@@ -124,4 +124,11 @@ public class Cart {
 	public void setUser(User user) {
 		this.user = user;
 	}
+	
+	public void setCartProducts(List<CartProduct> cartProducts) {
+		this.cartProducts = cartProducts;
+		if(cartProducts != null) for (CartProduct cartProduct : cartProducts) {
+			cartProduct.setCart(this);
+		}
+	}
 }
