@@ -3,6 +3,8 @@ package backend.dtos;
 import java.time.LocalDate;
 import java.util.List;
 
+import backend.dtos.movies.RuntimeDto;
+
 /**
  * Data Transfer Object for representing a movie.
  */
@@ -31,7 +33,7 @@ public class MovieDto {
     /**
      * The runtime of the movie in minutes.
      */
-    private Integer runtime;
+    private RuntimeDto runtime;
 
     /**
      * The list of genres associated with the movie.
@@ -130,7 +132,7 @@ public class MovieDto {
      * 
      * @return the runtime of the movie
      */
-    public Integer getRuntime() {
+    public RuntimeDto getRuntime() {
         return runtime;
     }
 
@@ -139,7 +141,7 @@ public class MovieDto {
      * 
      * @param runtime the runtime of the movie
      */
-    public void setRuntime(Integer runtime) {
+    public void setRuntime(RuntimeDto runtime) {
         this.runtime = runtime;
     }
 

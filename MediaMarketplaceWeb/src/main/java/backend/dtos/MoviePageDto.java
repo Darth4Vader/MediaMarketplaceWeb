@@ -7,7 +7,7 @@ public class MoviePageDto {
 	@JsonUnwrapped
 	private MovieDto movie;
 	
-	private Double averageRating;
+	private Integer averageRating;
 	
 	private Long totalRatings;
 
@@ -19,7 +19,7 @@ public class MoviePageDto {
 		return movie;
 	}
 
-	public Double getAverageRating() {
+	public Integer getAverageRating() {
 		return averageRating;
 	}
 
@@ -31,7 +31,7 @@ public class MoviePageDto {
 		this.movie = movie;
 	}
 
-	public void setAverageRating(Double averageRating) {
+	public void setAverageRating(Integer averageRating) {
 		this.averageRating = averageRating;
 	}
 

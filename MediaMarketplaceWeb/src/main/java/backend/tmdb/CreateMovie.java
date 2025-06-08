@@ -33,6 +33,7 @@ import backend.dtos.admin.PersonAdminDto;
 import backend.dtos.references.MovieReference;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
+import backend.services.MovieService;
 import info.movito.themoviedbapi.TmdbApi;
 import info.movito.themoviedbapi.TmdbMovies;
 import info.movito.themoviedbapi.TmdbMovies.MovieMethod;
@@ -510,7 +511,7 @@ public class CreateMovie {
     private MovieDto getMovieDto(MovieDb movieDb) {
         MovieDto movieDto = new MovieDto();
         movieDto.setName(movieDb.getOriginalTitle());
-        movieDto.setRuntime(movieDb.getRuntime());
+        movieDto.setRuntime(MovieService.convertRuntimeToDto(movieDb.getRuntime()));
         movieDto.setSynopsis(movieDb.getOverview());
         List<Genre> genres = movieDb.getGenres();
         List<String> movieGenres = new ArrayList<>();

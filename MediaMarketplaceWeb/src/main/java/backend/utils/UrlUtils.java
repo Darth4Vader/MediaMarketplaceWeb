@@ -11,6 +11,7 @@ public class UrlUtils {
 	}
 	
 	public static String getFullImageURL(String imageUri) {
+		if(imageUri == null) return null;
 		return getServerURL() + "/" + ActivateSpringApplication.IMAGES_FOLDER + "/" + imageUri;
 	}
 

@@ -1,5 +1,6 @@
 package backend.services;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,6 +21,7 @@ import backend.auth.AuthenticateAdmin;
 import backend.dtos.CreateMovieDto;
 import backend.dtos.MovieDto;
 import backend.dtos.MoviePageDto;
+import backend.dtos.movies.RuntimeDto;
 import backend.dtos.references.MovieReference;
 import backend.dtos.search.MovieFilter;
 import backend.entities.Actor;
@@ -318,7 +320,7 @@ public class MovieService {
         	Long totalRatings = movieRating.getTotalRatings();
         	if(totalRatings != null && totalRatings > 0) {
 				// If there are ratings, then we set the average rating and total ratings.
-				moviePageDto.setAverageRating(movieRating.getAverageRating());
+				moviePageDto.setAverageRating((int) Math.round(movieRating.getAverageRating()));
 				moviePageDto.setTotalRatings(movieRating.getTotalRatings());
 			}
 		}
@@ -471,7 +473,7 @@ public class MovieService {
         movieDto.setSynopsis(movie.getSynopsis());
         movieDto.setPosterPath(UrlUtils.getFullImageURL(movie.getPosterPath()));
         movieDto.setBackdropPath(UrlUtils.getFullImageURL(movie.getBackdropPath()));
-        movieDto.setRuntime(movie.getRuntime());
+        movieDto.setRuntime(convertRuntimeToDto(movie.getRuntime()));
         movieDto.setName(movie.getName());
         List<Genre> genres = movie.getGenres();
         List<String> genresNameList = GenreService.convertGenresToDto(genres);
@@ -480,6 +482,26 @@ public class MovieService {
         movieDto.setYear(movie.getYear());
         return movieDto;
     }
+    
+    public static RuntimeDto convertRuntimeToDto(Integer runtime) {
+		RuntimeDto runtimeDto = new RuntimeDto();
+		runtimeDto.setMinutes(runtime);
+		if(runtime != null) {
+			Duration runtimeDuration = Duration.ofMinutes(runtime);
+			String formattedText = "";
+			if(runtimeDuration.toHoursPart() > 0) {
+				formattedText += runtimeDuration.toHoursPart() + "h";
+			}
+			if(runtimeDuration.toMinutesPart() > 0) {
+				if(!formattedText.isEmpty()) {
+					formattedText += " ";
+				}
+				formattedText += runtimeDuration.toMinutesPart() + "m";
+			}
+			runtimeDto.setFormattedText(formattedText);
+		}
+		return runtimeDto;
+	}
 
     /**
      * Updates the properties of a {@link Movie} entity based on the provided {@link MovieDto}.
@@ -497,7 +519,8 @@ public class MovieService {
         if (posterPath != null) movie.setPosterPath(posterPath);
         String backdropPath = movieDto.getBackdropPath();
         if (backdropPath != null) movie.setBackdropPath(backdropPath);
-        movie.setRuntime(movieDto.getRuntime());
+        RuntimeDto runtime = movieDto.getRuntime();
+        if (runtime != null) movie.setRuntime(runtime.getMinutes());
         String name = movieDto.getName();
         if (name != null) movie.setName(name);
         movie.setReleaseDate(movieDto.getReleaseDate());
