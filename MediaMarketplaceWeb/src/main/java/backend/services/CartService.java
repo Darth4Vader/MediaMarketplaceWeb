@@ -310,16 +310,25 @@ public class CartService {
 						// merge the two carts
 						// user cart remains, session cart is removed, and merged into the user cart
 						List<CartProduct> sessionCartProducts = sessionCart.getCartProducts();
+						List<CartProduct> removeCartProducts = new ArrayList<>();
 						for (CartProduct cartProduct : sessionCartProducts) {
 							// check if the product is already in the user cart
 							CartProduct productInUserCart = getProductInCart(userCart, cartProduct.getProduct());
 							if (productInUserCart == null) {
 								// if not, add it to the user cart
-								addProductToCart(userCart, cartProduct);
+								userCart.addToCartProducts(cartProduct);
 							}
-							// after we merged the cart products, we need to remove them from session cart
-							sessionCart.setCartProducts(null);
+							else {
+								// remove the cart product from the session cart
+								removeCartProducts.add(cartProduct);
+							}
 						}
+						// after we merged the cart products, we need to remove them from session cart
+						for (CartProduct cartProduct : removeCartProducts) {
+							removeProductFromCart(sessionCart, cartProduct);
+						}
+						sessionCart.setCartProducts(null);
+						sessionCart.setUser(null);
 						// now remove the session cart
 						removeCartFromUser(sessionCart);
 						cart = userCart;
@@ -433,6 +442,8 @@ public class CartService {
      */
     @Transactional
     private void removeProductFromCart(List<CartProduct> cartProducts, CartProduct cartProduct) {
+        // if there are no products, then return
+    	if(cartProducts == null) return;
         // Remove the CartProduct from the list
         cartProducts.remove(cartProduct);
         // Then remove it from the database
