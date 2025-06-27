@@ -108,9 +108,11 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(MovieReviewValuesAreIncorrectException.class)
 	public ResponseEntity<Object> handleMovieReviewValuesAreIncorrectException(MovieReviewValuesAreIncorrectException ex, WebRequest request) {
 		LOGGER.error(ex);
+		System.out.println(ex.getMessage());
+		System.out.println(ex.getMap());
 		Map<String, Object> bodyOfResponse = Map.of(
 				"error", ex.getMessage(),
-				"values_problems", ex.getMap()
+				"fields", ex.getMap()
 		);
 		return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
 	}

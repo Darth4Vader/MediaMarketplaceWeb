@@ -34,7 +34,8 @@ public class MovieReviewValuesAreIncorrectException extends Exception {
      * @param map A map where each key is a {@link MovieReviewTypes} value indicating the field type, 
      *            and each value is a string describing the validation error associated with that field.
      */
-    public MovieReviewValuesAreIncorrectException(Map<MovieReviewTypes, String> map) {
+    public MovieReviewValuesAreIncorrectException(Map<MovieReviewTypes, String> map, String message) {
+    	super(message);
         this.map = map;
     }
 

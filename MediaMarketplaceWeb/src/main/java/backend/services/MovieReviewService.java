@@ -320,7 +320,7 @@ public class MovieReviewService {
         Map<MovieReviewTypes, String> map = new HashMap<>();
         exceptionMapRatings(movieRatingReference, map);
         if (!map.isEmpty())
-            throw new MovieReviewValuesAreIncorrectException(map);
+            throw new MovieReviewValuesAreIncorrectException(map, "One or more values are missing");
     }
 
     /**
@@ -333,7 +333,7 @@ public class MovieReviewService {
         Map<MovieReviewTypes, String> map = new HashMap<>();
         exceptionMapReview(movieReviewRef, map);
         if (!map.isEmpty())
-            throw new MovieReviewValuesAreIncorrectException(map);
+            throw new MovieReviewValuesAreIncorrectException(map, "One or more values are missing");
     }
     
     /** Minimum value for a rating */
