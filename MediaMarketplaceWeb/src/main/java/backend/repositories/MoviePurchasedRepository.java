@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import backend.entities.Movie;
@@ -22,7 +23,7 @@ import backend.entities.User;
  * entities based on related {@link Order} and {@link User} entities.</p>
  */
 @Repository
-public interface MoviePurchasedRepository extends JpaRepository<MoviePurchased, Long> {
+public interface MoviePurchasedRepository extends JpaRepository<MoviePurchased, Long>, JpaSpecificationExecutor<MoviePurchased> {
 
     /**
      * Finds a list of {@link MoviePurchased} entities by the given {@link Order}.

@@ -3,6 +3,8 @@ package backend.controllers;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,9 +40,9 @@ public class MoviePurchasedController {
      *
      * @return A list of {@link MovieReference} objects representing active movies purchased by the user.
      */
-    @GetMapping("/actives/")
-    public List<MovieReference> getAllActiveMediaProductsOfUser() {
-        return moviePurchasedService.getAllActiveMoviesOfUser();
+    @GetMapping("/actives")
+    public Page<MovieReference> getAllActiveMediaProductsOfUser(Pageable pageable) {
+    	return moviePurchasedService.getAllActiveMoviesOfUser(pageable);
     }
 
     /**

@@ -4,8 +4,12 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import backend.DataUtils;
@@ -18,6 +22,9 @@ import backend.entities.User;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.MoviePurchasedRepository;
 import backend.utils.TimezoneUtils;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
 
 /**
  * Service class for managing purchased movies.
@@ -54,25 +61,46 @@ public class MoviePurchasedService {
      *
      * @return A list of MovieReference objects representing active movies.
      */
-    public List<MovieReference> getAllActiveMoviesOfUser() {
+    public Page<MovieReference> getAllActiveMoviesOfUser(Pageable pageable) {
         // First load all the movies purchased by the user
         User user = tokenService.getCurretUser();
-        List<MoviePurchased> purchasedList = moviePurchasedRepository.findByOrderUser(user);
+        Specification<MoviePurchased> specification = createActiveMoviePurchasedSearchSpecification(user);
+        Page<MoviePurchased> moviePurchasedPage = getMoviePurchasedOfUser(specification, pageable);
         // Then convert the active ones to movie references.
-        List<MovieReference> movieReferences = new ArrayList<>();
-        for (MoviePurchased purchased : purchasedList) {
-            // Checks if rent is still active or if it is bought.
-            if (DataUtils.isUseable(purchased.isRented(), getCurrentRentTime(purchased))) {
-                // Adds the movie if it is not already contained in the list.
-                Movie movie = purchased.getMovie();
-                MovieReference movieReference = MovieService.convertMovieToReference(movie);
-                if (!movieReferences.contains(movieReference)) {
-                    movieReferences.add(movieReference);
-                }
-            }
-        }
-        return movieReferences;
+        Page<MovieReference> movieReferencesPage = moviePurchasedPage.map(purchased -> {
+			Movie movie = purchased.getMovie();
+			return MovieService.convertMovieToReference(movie);
+		});
+        return movieReferencesPage;
     }
+    
+	public Specification<MoviePurchased> createActiveMoviePurchasedSearchSpecification(User user) {
+	    Specification<MoviePurchased> spec = (root, query, cb) -> {
+	    	List<Predicate> predicates = new ArrayList<>();
+	    	
+	    	// check that the user is the one who purchased the movie
+			predicates.add(cb.equal(root.get("order").get("user").get("id"), user.getId()));
+	    	
+        	Path<Boolean> isRented = root.get("isRented");
+        	Path<LocalDateTime> purchasedDate = root.get("purchaseDate");
+        	Path<Long> rentTime = root.get("rentTime");
+        	
+        	// Convert rentTime from nanoseconds to seconds
+        	Expression<Number> rentTimeInSeconds = cb.quot(rentTime, cb.literal(TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS)));
+        	// Calculate the end date of the rental period
+        	Expression<LocalDateTime> rentEndDate = cb.function("date_add_seconds", LocalDateTime.class, purchasedDate, rentTimeInSeconds);
+        	
+        	// check if the movie is bought
+        	Predicate isMovieBought = cb.isFalse(isRented);
+        	// check if the movie is rented and the rental period has not expired
+        	Predicate isRentGood = cb.and(cb.isTrue(isRented), cb.greaterThan(rentEndDate, LocalDateTime.now()));
+        	// One of the two conditions must be true for the movie to be considered active
+	        predicates.add(cb.or(isMovieBought, isRentGood));
+	        
+	        return cb.and(predicates.toArray(new Predicate[predicates.size()]));
+	    };
+	    return spec;
+	}
 
     /**
      * Retrieves a list of active purchases for a specific movie by the current user.
@@ -174,6 +202,10 @@ public class MoviePurchasedService {
                 .filter(e -> !e.isEmpty())
                 .orElseThrow(() -> new EntityNotFoundException("The user never purchased the movie"));
     }
+    
+    public Page<MoviePurchased> getMoviePurchasedOfUser(Specification<MoviePurchased> specification, Pageable pageable) {
+    	return moviePurchasedRepository.findAll(specification, pageable);
+	}
 
     /**
      * Calculates the current rental expiration time for a given MoviePurchased entity.
