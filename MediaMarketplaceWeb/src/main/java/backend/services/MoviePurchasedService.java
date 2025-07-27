@@ -22,9 +22,13 @@ import backend.entities.User;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.MoviePurchasedRepository;
 import backend.utils.TimezoneUtils;
+import jakarta.persistence.criteria.AbstractQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 /**
  * Service class for managing purchased movies.
@@ -77,29 +81,52 @@ public class MoviePurchasedService {
 	public Specification<MoviePurchased> createActiveMoviePurchasedSearchSpecification(User user) {
 	    Specification<MoviePurchased> spec = (root, query, cb) -> {
 	    	List<Predicate> predicates = new ArrayList<>();
-	    	
-	    	// check that the user is the one who purchased the movie
-			predicates.add(cb.equal(root.get("order").get("user").get("id"), user.getId()));
-	    	
-        	Path<Boolean> isRented = root.get("isRented");
-        	Path<LocalDateTime> purchasedDate = root.get("purchaseDate");
-        	Path<Long> rentTime = root.get("rentTime");
-        	
-        	// Convert rentTime from nanoseconds to seconds
-        	Expression<Number> rentTimeInSeconds = cb.quot(rentTime, cb.literal(TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS)));
-        	// Calculate the end date of the rental period
-        	Expression<LocalDateTime> rentEndDate = cb.function("date_add_seconds", LocalDateTime.class, purchasedDate, rentTimeInSeconds);
-        	
-        	// check if the movie is bought
-        	Predicate isMovieBought = cb.isFalse(isRented);
-        	// check if the movie is rented and the rental period has not expired
-        	Predicate isRentGood = cb.and(cb.isTrue(isRented), cb.greaterThan(rentEndDate, LocalDateTime.now()));
-        	// One of the two conditions must be true for the movie to be considered active
-	        predicates.add(cb.or(isMovieBought, isRentGood));
 	        
+	        // we filter the results by the minimum id of each movie purchased, to avoid duplicates movies
+	        Subquery<Number> uniqueMoviesQuery = query.subquery(Number.class);
+	        Root<MoviePurchased> uniqueMoviesRoot = uniqueMoviesQuery.from(MoviePurchased.class);
+	        
+	        // we create the subquery to search for active movies purchased by the user
+	        Subquery<Number> searchActiveMoviesQuery = uniqueMoviesQuery.subquery(Number.class);
+	        Root<MoviePurchased> searchActiveMoviesRoot = searchActiveMoviesQuery.from(MoviePurchased.class);
+	        searchActiveMoviesQuery.select(searchActiveMoviesRoot.get("id"));
+	        createSubQueryForSearchingActiveMovies(searchActiveMoviesQuery, searchActiveMoviesRoot, cb, user);
+	        
+	        // we select the minimum purchase id of each active movie purchased
+	        uniqueMoviesQuery.select(cb.min(uniqueMoviesRoot.get("id")));
+	        uniqueMoviesQuery.where(cb.in(uniqueMoviesRoot.get("id")).value(searchActiveMoviesQuery));
+	        uniqueMoviesQuery.groupBy(uniqueMoviesRoot.get("movie").get("id"));
+	        
+	        // we select the movies purchased by the user that are active
+	        predicates.add(cb.in(root.get("id")).value(uniqueMoviesQuery));
 	        return cb.and(predicates.toArray(new Predicate[predicates.size()]));
 	    };
 	    return spec;
+	}
+	
+	private void createSubQueryForSearchingActiveMovies(AbstractQuery<?> query, Root<MoviePurchased> root, CriteriaBuilder cb, User user) {
+    	List<Predicate> predicates = new ArrayList<>();
+    	
+    	// check that the user is the one who purchased the movie
+		predicates.add(cb.equal(root.get("order").get("user").get("id"), user.getId()));
+    	
+    	Path<Boolean> isRented = root.get("isRented");
+    	Path<LocalDateTime> purchasedDate = root.get("purchaseDate");
+    	Path<Long> rentTime = root.get("rentTime");
+    	
+    	// Convert rentTime from nanoseconds to seconds
+    	Expression<Number> rentTimeInSeconds = cb.quot(rentTime, cb.literal(TimeUnit.NANOSECONDS.convert(1, TimeUnit.SECONDS)));
+    	// Calculate the end date of the rental period
+    	Expression<LocalDateTime> rentEndDate = cb.function("date_add_seconds", LocalDateTime.class, purchasedDate, rentTimeInSeconds);
+    	
+    	// check if the movie is bought
+    	Predicate isMovieBought = cb.isFalse(isRented);
+    	// check if the movie is rented and the rental period has not expired
+    	Predicate isRentGood = cb.and(cb.isTrue(isRented), cb.greaterThan(rentEndDate, LocalDateTime.now()));
+    	// One of the two conditions must be true for the movie to be considered active
+        predicates.add(cb.or(isMovieBought, isRentGood));
+        
+        query.where(predicates.toArray(new Predicate[predicates.size()]));
 	}
 
     /**
