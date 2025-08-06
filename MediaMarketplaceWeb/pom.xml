@@ -9,6 +9,9 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compiler.source>24</maven.compiler.source>
     <maven.compiler.target>24</maven.compiler.target>
+    <mainClass>Main</mainClass>
+    <spring.version>3.4.4</spring.version>
+    <javafx.version>25-ea+11</javafx.version>
 </properties>
   
   <dependencies>
@@ -20,46 +23,46 @@
     <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-web</artifactId>
-        <version>3.4.4</version>
+        <version>${spring.version}</version>
     </dependency>
   <dependency>
     <groupId>org.springframework.data</groupId>
     <artifactId>spring-data-envers</artifactId>
-    <version>3.4.4</version>
+    <version>${spring.version}</version>
   </dependency>
   <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-tomcat</artifactId>
-    <version>3.4.4</version>
+    <version>${spring.version}</version>
 </dependency>
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-test</artifactId>
-    <version>3.4.4</version>
+    <version>${spring.version}</version>
     <scope>test</scope>
 </dependency>
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-data-jpa</artifactId>
-    <version>3.4.4</version>
+    <version>${spring.version}</version>
 </dependency>
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-security</artifactId>
-    <version>3.4.4</version>
+    <version>${spring.version}</version>
 </dependency>
 
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-    <version>3.4.4</version>
+    <version>${spring.version}</version>
 </dependency>
 
 
 <dependency>
     <groupId>org.springframework.session</groupId>
     <artifactId>spring-session-jdbc</artifactId>
-    <version>3.4.3</version>
+    <version>${spring.version}</version>
 </dependency>
 
 
@@ -89,28 +92,28 @@
   <dependency>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-controls</artifactId>
-    <version>25-ea+11</version>
+    <version>${javafx.version}</version>
   </dependency>
   
 	<dependency>
 	    <groupId>org.openjfx</groupId>
 	    <artifactId>javafx-fxml</artifactId>
-	    <version>25-ea+11</version>
+	    <version>${javafx.version}</version>
 </dependency>
 	<dependency>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-graphics</artifactId>
-    <version>25-ea+11</version>
+    <version>${javafx.version}</version>
 </dependency>
 <dependency>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx-base</artifactId>
-    <version>25-ea+11</version>
+    <version>${javafx.version}</version>
 </dependency>
 <dependency>
     <groupId>org.openjfx</groupId>
     <artifactId>javafx</artifactId>
-    <version>25-ea+11</version>
+    <version>${javafx.version}</version>
     <type>pom</type>
 </dependency>
 
@@ -202,6 +205,8 @@
 		    <configuration>
 		      <!-- Ignore any tests that are marked by the @IntegrationTest annotation of Spring Boot -->
 		      <excludedGroups>org.springframework.boot.test.IntegrationTest</excludedGroups>
+		      <!-- Compile without running tests -->
+			  <skipTests>true</skipTests>
 		    </configuration>
   		</plugin>
   
@@ -209,6 +214,13 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>3.4.4</version>
+                <executions>
+	                <execution>
+	                    <goals>
+	                        <goal>repackage</goal>
+	                    </goals>
+	                </execution>
+            	</executions>
                 <configuration>
                     <excludes>
                         <exclude>
@@ -216,6 +228,7 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+					<mainClass>${mainClass}</mainClass>
                 </configuration>
             </plugin>
             
@@ -234,7 +247,7 @@
 		        <image>mediamarketplace/app</image>
 		      </to>
 		      <container>
-                <mainClass>Main</mainClass>
+                <mainClass>${mainClass}</mainClass>
                </container>
 		    </configuration>
 		</plugin>

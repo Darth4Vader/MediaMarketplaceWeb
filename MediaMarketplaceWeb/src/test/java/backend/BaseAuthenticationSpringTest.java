@@ -49,6 +49,7 @@ public abstract class BaseAuthenticationSpringTest extends BaseSpringTest {
     	MockHttpServletResponse response = result.getResponse();
     	String body = response.getContentAsString();
     	LoginResponse loginResponse = asObject(body, LoginResponse.class);
+    	// need to fix all test, because tokens are now managed with cookies
     	setAccessToken(loginResponse.getAccessToken());
     	setRefreshToken(loginResponse.getRefreshToken());
     }
