@@ -1,7 +1,7 @@
 package backend.exceptions;
 
 /**
- * Exception thrown when the password provided for a given username is incorrect.
+ * Exception thrown when the password provided for a given email is incorrect.
  * <p>
  * This exception is used in scenarios where a user attempts to authenticate with an incorrect password.
  * </p>
@@ -16,11 +16,11 @@ public class UserPasswordIsIncorrectException extends Exception {
 	/**
      * Constructs a new {@code UserPasswordIsIncorrectException} with a default detail message.
      * <p>
-     * The default message is "The password is incorrect for the given username".
+     * The default message is "The password is incorrect for the given email".
      * </p>
      */
     public UserPasswordIsIncorrectException() {
-        super("The password is incorrect for the given username");
+        super("The password is incorrect for the given email");
     }
 
     /**

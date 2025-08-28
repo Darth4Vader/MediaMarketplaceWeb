@@ -16,16 +16,16 @@ import backend.entities.User;
  * It extends {@link JpaRepository}, which provides basic CRUD operations for {@link User}.
  * 
  * <p>In addition to standard CRUD operations, this repository includes a custom method to retrieve a {@link User}
- * entity based on the username.</p>
+ * entity based on the email.</p>
  */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
-     * Finds a {@link User} entity by its username.
+     * Finds a {@link User} entity by its email.
      * 
-     * @param userName the username of the user
+     * @param email the email of the user
      * @return an {@link Optional} containing the found {@link User} entity, or {@link Optional#empty()} if no user is found
      */
-    Optional<User> findByUsername(@Param("user_name") String username);
+    Optional<User> findByEmail(@Param("email") String email);
 }

@@ -11,9 +11,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum UserLogInfo {
     
     /**
-     * Represents the user's name or username.
+     * Represents the user's name or email.
      */
-    USERNAME("username"),
+    EMAIL("email"),
 
     /**
      * Represents the user's password.

@@ -6,9 +6,9 @@ package backend.dtos.users;
 public class LogInDto {
 
     /**
-     * The username of the user attempting to log in.
+     * The email of the user attempting to log in.
      */
-    private String username;
+    private String email;
 
     /**
      * The password of the user attempting to log in.
@@ -16,21 +16,21 @@ public class LogInDto {
     private String password;
 
     /**
-     * Gets the username of the user attempting to log in.
+     * Gets the email of the user attempting to log in.
      * 
-     * @return the username of the user
+     * @return the email of the user
      */
-    public String getUsername() {
-        return username;
+    public String getEmail() {
+        return email;
     }
 
     /**
-     * Sets the username of the user attempting to log in.
+     * Sets the email of the user attempting to log in.
      * 
-     * @param username the username of the user
+     * @param email the email of the user
      */
-    public void setUsername(String username) {
-        this.username = username;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     /**

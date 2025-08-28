@@ -42,21 +42,24 @@ public class User implements UserDetails {
     private Long id;
 
     /**
-     * Username for the user, must be unique.
+     * Email for the user, must be unique.
      */
-    @Column(name = "user_name", nullable = false, unique = true)
-    private String username;
+    @Column(nullable = false, unique = true)
+    private String email;
 
     /**
      * Encrypted password for the user.
      */
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password;
 
     /**
      * Optional name of the user.
      */
     private String name;
+    
+    @Column(name = "profile_picture", nullable = true)
+    private String profilePicture;
 
     /**
      * Roles associated with the user, used for authorization.
@@ -77,24 +80,24 @@ public class User implements UserDetails {
     }
 
     /**
-     * Constructs a {@code User} with the specified username and password, and initializes an empty set of authorities.
+     * Constructs a {@code User} with the specified email and password, and initializes an empty set of authorities.
      * 
-     * @param userName the username of the user
+     * @param email the email of the user
      * @param password the password of the user
      */
-    public User(String userName, String password) {
-        this(userName, password, new HashSet<>());
+    public User(String email, String password) {
+        this(email, password, new HashSet<>());
     }
 
     /**
-     * Constructs a {@code User} with the specified username, password, and authorities.
+     * Constructs a {@code User} with the specified email, password, and authorities.
      * 
-     * @param userName the username of the user
+     * @param email the email of the user
      * @param password the password of the user
      * @param authorities the roles associated with the user
      */
-    public User(String userName, String password, Set<Role> authorities) {
-        this.username = userName;
+    public User(String email, String password, Set<Role> authorities) {
+        this.email = email;
         this.password = password;
         this.authorities = authorities;
     }
@@ -126,16 +129,20 @@ public class User implements UserDetails {
     }
 
     /**
-     * Returns the username of the user.
+     * Returns the email of the user.
      * <p>
-     * This method is part of the {@link UserDetails} interface and returns the user's username.
+     * This method is part of the {@link UserDetails} interface and returns the user's email.
      * </p>
      * 
-     * @return the username
+     * @return the email
      */
     @Override
     public String getUsername() {
-        return this.username;
+        return this.email;
+    }
+    
+    public String getEmail() {
+        return this.email;
     }
 
     /**
@@ -172,5 +179,13 @@ public class User implements UserDetails {
      */
     public void setName(String name) {
         this.name = name;
+    }
+    
+    public String getProfilePicture() {
+		return profilePicture;
+	}
+    
+    public void setProfilePicture(String profilePicture) {
+		this.profilePicture = profilePicture;
     }
 }

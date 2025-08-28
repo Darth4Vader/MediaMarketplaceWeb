@@ -14,7 +14,7 @@ import backend.repositories.UserRepository;
  * <p>
  * This service implements the {@link UserDetailsService} interface provided by Spring Security,
  * allowing for the loading of user-specific data during authentication. It interacts with the UserRepository
- * to retrieve user details based on the username.
+ * to retrieve user details based on the email.
  * </p>
  */
 @Service
@@ -24,35 +24,35 @@ public class UserServiceImpl implements UserDetailsService {
     private UserRepository userRepository;
 
     /**
-     * Retrieves a user by their username.
+     * Retrieves a user by their email.
      * <p>
-     * This method queries the UserRepository to find a user with the specified username. If the user is not found,
-     * a {@link UsernameNotFoundException} is thrown.
+     * This method queries the UserRepository to find a user with the specified email. If the user is not found,
+     * a {@link emailNotFoundException} is thrown.
      * </p>
      * 
-     * @param username The username of the user to be retrieved.
-     * @return The User entity corresponding to the provided username.
-     * @throws UsernameNotFoundException if no user is found with the specified username.
+     * @param email The email of the user to be retrieved.
+     * @return The User entity corresponding to the provided email.
+     * @throws emailNotFoundException if no user is found with the specified email.
      */
-    public User getUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository
-                .findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    public User getUserByEmail(String email) throws UsernameNotFoundException {
+    	return userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Email not found"));
     }
     
     /**
-     * Loads user-specific data for the given username.
+     * Loads user-specific data for the given email.
      * <p>
      * This method is required by the {@link UserDetailsService} interface and retrieves a UserDetails object
-     * for the specified username. It uses the {@link #getUserByUsername(String)} method to fetch the user details.
+     * for the specified email. It uses the {@link #getUserByemail(String)} method to fetch the user details.
      * </p>
      * 
-     * @param username The username of the user to be loaded.
-     * @return A {@link UserDetails} object representing the user with the specified username.
-     * @throws UsernameNotFoundException if no user is found with the specified username.
+     * @param email The email of the user to be loaded.
+     * @return A {@link UserDetails} object representing the user with the specified email.
+     * @throws emailNotFoundException if no user is found with the specified email.
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return getUserByUsername(username);
+        return getUserByEmail(username);
     }
 }

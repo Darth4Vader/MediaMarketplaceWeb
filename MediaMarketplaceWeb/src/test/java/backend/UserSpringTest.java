@@ -11,7 +11,7 @@ public class UserSpringTest extends BaseAuthenticationSpringTest {
 	@Override
 	protected LogInDto getLoginDto() {
 		LogInDto loginDto = new LogInDto();
-		loginDto.setUsername("frodo");
+		loginDto.setEmail("frodo");
 		loginDto.setPassword("bag");
 		return loginDto;
 	}

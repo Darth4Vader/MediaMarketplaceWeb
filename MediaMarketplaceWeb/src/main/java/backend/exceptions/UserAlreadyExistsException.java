@@ -3,7 +3,7 @@ package backend.exceptions;
 /**
  * Exception thrown when an attempt is made to create a user that already exists in the system.
  * <p>
- * This exception is typically used during user registration to indicate that the username
+ * This exception is typically used during user registration to indicate that the email
  * being used for the new user account is already taken by an existing user.
  * </p>
  */

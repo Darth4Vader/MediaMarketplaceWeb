@@ -115,6 +115,9 @@ public class SecurityConfig {
       };
     }
     */
+    
+    @Autowired
+    private GoogleOauth2LoginSuccessHandler oAuth2SuccessHandler;
 
     /**
      * Configures the security filter chain for HTTP requests.
@@ -135,7 +138,7 @@ public class SecurityConfig {
             		//This is for swagger, remove when using javafx
             		.requestMatchers("/images/**").permitAll()
             		.requestMatchers(AUTH_WHITELIST).permitAll()
-            		.requestMatchers("/api/users/login", "/api/users/register", "/api/users/refresh", "/api/users/refresh/logout").permitAll()
+            		.requestMatchers("/api/users/login", "/api/users/register", "/api/users/refresh", "/api/users/refresh/logout", "/oauth2/authorization/google").permitAll()
             		.requestMatchers(HttpMethod.GET, "/api/main/**").permitAll()
             		.requestMatchers("/api/users/carts/**").permitAll()
             		.requestMatchers("/error").permitAll()
@@ -150,7 +153,11 @@ public class SecurityConfig {
             )
             .httpBasic(Customizer.withDefaults()) // Enables HTTP Basic authentication.
         	//.formLogin(form -> form.disable());
-            .formLogin(Customizer.withDefaults());
+            .formLogin(Customizer.withDefaults())
+            .oauth2Login(oauth2 -> oauth2
+        		.successHandler(oAuth2SuccessHandler)
+				.permitAll()
+			);
         //add oauth2 protection for users.
         http.oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt

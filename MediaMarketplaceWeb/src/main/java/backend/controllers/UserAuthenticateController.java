@@ -65,6 +65,17 @@ public class UserAuthenticateController {
 				.build();
 	}
     
+    public static void createAuthenticationResponse(HttpServletResponse response, LoginResponse loginResponse) {
+    	HttpCookie accessTokenCookie = createAccessTokenCookie(
+    			loginResponse.getAccessToken(), TokenService.ACCESS_TOKEN_EXPIRATION_TIME);
+    	
+    	HttpCookie refreshTokenCookie = createRefreshTokenCookie(
+    			loginResponse.getRefreshToken(), RefreshTokenService.REFRESH_TOKEN_EXPIRATION_TIME);
+    	
+    	response.addHeader(HttpHeaders.SET_COOKIE, accessTokenCookie.toString());
+    	response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
+	}
+    
     private static ResponseCookie createAccessTokenCookie(String accessToken, Duration maxAge) {
     	ResponseCookie accessTokenCookie = ResponseCookie.from(CookieNames.ACCESS_TOKEN, accessToken)
 			.path("/")

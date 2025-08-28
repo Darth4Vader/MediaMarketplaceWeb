@@ -4,7 +4,7 @@ package backend.exceptions;
  * Exception thrown when an attempt is made to access a user that does not exist in the system.
  * <p>
  * This exception is typically used in situations where a user lookup fails because the user with the
- * specified username or identifier could not be found.
+ * specified email or identifier could not be found.
  * </p>
  */
 public class UserDoesNotExistsException extends Exception {
@@ -21,7 +21,7 @@ public class UserDoesNotExistsException extends Exception {
      * </p>
      */
     public UserDoesNotExistsException() {
-        super("The User does not exists for the given username");
+        super("The User does not exists for the given email");
     }
 
     /**

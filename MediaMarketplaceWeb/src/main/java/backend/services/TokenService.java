@@ -143,7 +143,7 @@ public class TokenService {
     	if(principal instanceof Jwt) {
     		Jwt jwt = (Jwt) principal;
     		String username = jwt.getSubject();
-    		return userService.getUserByUsername(username);
+    		return userService.getUserByEmail(username);
     	}
     	//The current user
     	if(principal instanceof User)

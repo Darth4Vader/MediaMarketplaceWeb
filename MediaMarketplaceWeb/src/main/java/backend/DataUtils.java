@@ -177,4 +177,8 @@ public class DataUtils {
         LocalDateTime now = LocalDateTime.now();
         return now.isBefore(timeSince);
     }
+    
+    public static String emailFormatted(String email) {
+    	return email != null ? email.trim().toLowerCase() : null;
+    }
 }

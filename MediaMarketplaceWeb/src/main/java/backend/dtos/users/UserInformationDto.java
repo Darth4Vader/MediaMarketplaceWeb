@@ -6,9 +6,9 @@ package backend.dtos.users;
 public class UserInformationDto {
 
     /**
-     * The username of the user.
+     * The email of the user.
      */
-    private String username;
+    private String email;
 
     /**
      * The full name of the user.
@@ -26,21 +26,21 @@ public class UserInformationDto {
     private String passwordConfirm;
 
     /**
-     * Gets the username of the user.
+     * Gets the email of the user.
      * 
-     * @return the username of the user
+     * @return the email of the user
      */
-    public String getUsername() {
-        return username;
+    public String getEmail() {
+        return email;
     }
 
     /**
-     * Sets the username of the user.
+     * Sets the email of the user.
      * 
-     * @param username the username of the user
+     * @param email the email of the user
      */
-    public void setUsername(String username) {
-        this.username = username;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     /**
