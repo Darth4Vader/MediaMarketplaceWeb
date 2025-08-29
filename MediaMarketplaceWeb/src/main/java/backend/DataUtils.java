@@ -148,6 +148,20 @@ public class DataUtils {
         return time;
     }
     
+    public static String timeLeftString(Duration duration) {
+    	String time = "";
+    	if(duration.toDaysPart() > 0) {
+    		time += String.format("%d days ", duration.toDaysPart());
+    	} else if(duration.toHoursPart() > 0) {
+    		time += String.format("%d hours ", duration.toHoursPart());
+		} else if(duration.toMinutesPart() > 0) {
+			time += String.format("%d minutes ", duration.toMinutesPart());
+		} else {
+			time += String.format("%d seconds ", duration.toSecondsPart());
+		}
+        return time;
+    }
+    
     /**
      * Determines if a {@code MoviePurchasedDto} is usable.
      * <p>
@@ -176,6 +190,12 @@ public class DataUtils {
             return true;
         LocalDateTime now = LocalDateTime.now();
         return now.isBefore(timeSince);
+    }
+    
+    public static boolean isUseable(LocalDateTime createdAt, Duration duration) {
+		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime expiryTime = createdAt.plus(duration);
+		return now.isBefore(expiryTime);
     }
     
     public static String emailFormatted(String email) {

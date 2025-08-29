@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import backend.exceptions.EmailSendFailedException;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
@@ -22,6 +23,7 @@ import backend.exceptions.JwtTokenNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
 import backend.exceptions.MissingCookieException;
 import backend.exceptions.MovieReviewValuesAreIncorrectException;
+import backend.exceptions.PasswordResetTokenCooldownException;
 import backend.exceptions.PurchaseOrderException;
 import backend.exceptions.RefreshTokenExpiredException;
 import backend.exceptions.RevokedRefreshTokenAccessException;
@@ -151,6 +153,18 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	public ResponseEntity<Object> handleMissingCookieException(MissingCookieException ex, WebRequest request) {
 		LOGGER.error(ex);
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+	}
+	
+	@ExceptionHandler(PasswordResetTokenCooldownException.class)
+	public ResponseEntity<Object> handlePasswordResetTokenCooldownException(PasswordResetTokenCooldownException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.TOO_MANY_REQUESTS, request);
+	}
+	
+	@ExceptionHandler(EmailSendFailedException.class)
+	public ResponseEntity<Object> handleEmailSendFailedException(EmailSendFailedException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
 	}
 	
 	/**

@@ -141,6 +141,7 @@ public class SecurityConfig {
             		.requestMatchers("/api/users/login", "/api/users/register", "/api/users/refresh", "/api/users/refresh/logout", "/oauth2/authorization/google").permitAll()
             		.requestMatchers(HttpMethod.GET, "/api/main/**").permitAll()
             		.requestMatchers("/api/users/carts/**").permitAll()
+            		.requestMatchers("/api/users/reset-password/**").permitAll()
             		.requestMatchers("/error").permitAll()
             		.anyRequest().authenticated()
                 /*

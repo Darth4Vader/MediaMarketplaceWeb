@@ -21,6 +21,7 @@ import org.springframework.web.util.WebUtils;
 import backend.CookieNames;
 import backend.dtos.users.LogInDto;
 import backend.dtos.users.LoginResponse;
+import backend.dtos.users.UserBasicInformationDto;
 import backend.dtos.users.UserInformationDto;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
@@ -230,7 +231,7 @@ public class UserAuthenticateController {
      * @throws UserNotLoggedInException If the user is not logged in.
      */
     @GetMapping("/current")
-    public UserInformationDto getCurrentUserDto() throws UserNotLoggedInException {
+    public UserBasicInformationDto getCurrentUserDto() throws UserNotLoggedInException {
         return userAuthService.getCurrentUserDto();
     }
     

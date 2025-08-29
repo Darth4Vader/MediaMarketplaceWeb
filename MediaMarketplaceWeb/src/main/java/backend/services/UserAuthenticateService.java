@@ -26,6 +26,7 @@ import backend.DataUtils;
 import backend.auth.AuthenticateAdmin;
 import backend.dtos.users.LogInDto;
 import backend.dtos.users.LoginResponse;
+import backend.dtos.users.UserBasicInformationDto;
 import backend.dtos.users.UserInformationDto;
 import backend.entities.RefreshToken;
 import backend.entities.Role;
@@ -173,6 +174,11 @@ public class UserAuthenticateService {
         if (userOpt.isEmpty()) {
             throw new UserDoesNotExistsException();
         }
+        
+        if(userOpt.get().getPassword() == null) {
+			// User registered via OAuth2 and does not have a password set
+			throw new UserPasswordIsIncorrectException("User registered via OAuth2, no password set");
+		}
 
         try {
         	// Set as the current authentication user
@@ -213,25 +219,13 @@ public class UserAuthenticateService {
             throw new UserNotLoggedInException("The user: " + userDto.getEmail() + " is not logged in, cannot update information");
         }
 
-        String password = userDto.getPassword();
-        String passwordConfirm = userDto.getPasswordConfirm();
-
         // Load the user from the database
         User user = findUserByEmail(email)
             .orElseThrow(() -> new UserNotLoggedInException("User not found"));
 
-        if (DataUtils.isNotBlank(password) || DataUtils.isNotBlank(passwordConfirm)) {
-            // If there is a new password, check that it matches the confirm password
-        	// Otherwise throw an exception for the user to know the problem
-        	checkForException(userDto);
-            if (!Objects.equals(password, passwordConfirm)) {
-                throw new UserPasswordIsIncorrectException("Password not matching");
-            }
-            // After the change we will reloging the user again to a new session with his updated information.
-            user.setPassword(encodePassword(password));
-        }
-
         user.setName(userDto.getName());
+        
+        userRepository.save(user);
 
         // After the change, re-login the user again with their updated information
         reloadAuthentication(user);
@@ -331,8 +325,13 @@ public class UserAuthenticateService {
      * @return The {@link UserInformationDto} for the current user.
      * @throws UserNotLoggedInException If no user is logged in.
      */
-    public UserInformationDto getCurrentUserDto() throws UserNotLoggedInException {
-        return convertUserToDto(tokenService.getCurretUser());
+    public UserBasicInformationDto getCurrentUserDto() throws UserNotLoggedInException {
+        User user = tokenService.getCurretUser();
+        UserBasicInformationDto userDto = new UserBasicInformationDto();
+        userDto.setName(user.getName());
+        userDto.setProfilePicture(user.getProfilePicture());
+        
+    	return userDto;
     }
     
 	public Optional<User> findUserByEmail(String email) {
@@ -366,7 +365,7 @@ public class UserAuthenticateService {
      * 
      * @param user The {@link User} object representing the user to be authenticated.
      */
-    private void reloadAuthentication(User user) {
+    public void reloadAuthentication(User user) {
     	reloadAuthentication(user, user.getPassword(), user.getAuthorities());
     }
     
@@ -438,7 +437,7 @@ public class UserAuthenticateService {
      * @param password The plain text password to be encoded.
      * @return The encoded password as a {@link String}.
      */
-    private String encodePassword(String password) {
+    public String encodePassword(String password) {
         return passwordEncoder.encode(password);
     }
 
@@ -454,6 +453,14 @@ public class UserAuthenticateService {
         userDto.setName(user.getName());
         return userDto;
     }
+    
+    public static void checkForException(String email) throws LogValuesAreIncorrectException {
+        Map<UserLogInfo, String> logInfo = new HashMap<>();
+        loadMailExceptions(email, logInfo);
+        if (!logInfo.isEmpty()) {
+            throw new LogValuesAreIncorrectException(logInfo, "One or more values are missing");
+        }
+    }
 
     /**
      * Checks for missing or incorrect values in the provided email and password.
@@ -468,7 +475,7 @@ public class UserAuthenticateService {
      */
     public static void checkForException(String email, String password) throws LogValuesAreIncorrectException {
         Map<UserLogInfo, String> logInfo = new HashMap<>();
-        loadExceptions(email, password, logInfo);
+        loadExceptionsMailPassword(email, password, logInfo);
         if (!logInfo.isEmpty()) {
             throw new LogValuesAreIncorrectException(logInfo, "One or more values are missing");
         }
@@ -490,10 +497,8 @@ public class UserAuthenticateService {
         String email = userInformationDto.getEmail();
         String password = userInformationDto.getPassword();
         String passwordConfirm = userInformationDto.getPasswordConfirm();
-        loadExceptions(email, password, logInfo);
-        if (DataUtils.isBlank(passwordConfirm)) {
-        	logInfo.put(UserLogInfo.PASSWORD_CONFIRM, "Please fill this field");
-        }
+        loadExceptionsMailPassword(email, password, logInfo);
+        loadExceptionsPasswordConfirm(passwordConfirm, logInfo);
         if (!logInfo.isEmpty()) {
             throw new LogValuesAreIncorrectException(logInfo, "One or more values are missing or incorrect");
         }
@@ -518,14 +523,28 @@ public class UserAuthenticateService {
      * @param password The password to be checked.
      * @param logInfoSet The set to be populated with missing value information.
      */
-    private static void loadExceptions(String email, String password, Map<UserLogInfo, String> logInfo) {
+    private static void loadExceptionsMailPassword(String email, String password, Map<UserLogInfo, String> logInfo) {
+    	loadMailExceptions(email, logInfo);
+    	loadExceptionsPassword(password, logInfo);
+    }
+    
+    private static void loadMailExceptions(String email, Map<UserLogInfo, String> logInfo) {
         if (DataUtils.isBlank(email)) {
         	logInfo.put(UserLogInfo.EMAIL, "Please fill this field");
         } else if(!validateEmail(email)) {
         	logInfo.put(UserLogInfo.EMAIL, "Email is not valid");
         }
+    }
+    
+    public static void loadExceptionsPassword(String password, Map<UserLogInfo, String> logInfo) {
         if (DataUtils.isBlank(password)) {
         	logInfo.put(UserLogInfo.PASSWORD, "Please fill this field");
+        }
+    }
+    
+    public static void loadExceptionsPasswordConfirm(String passwordConfirm, Map<UserLogInfo, String> logInfo) {
+        if (DataUtils.isBlank(passwordConfirm)) {
+        	logInfo.put(UserLogInfo.PASSWORD_CONFIRM, "Please fill this field");
         }
     }
 }
