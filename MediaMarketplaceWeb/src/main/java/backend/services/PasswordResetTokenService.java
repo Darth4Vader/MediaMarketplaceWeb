@@ -21,6 +21,7 @@ import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
 import backend.exceptions.PasswordResetTokenCooldownException;
 import backend.exceptions.UserDoesNotExistsException;
+import backend.exceptions.UserNotVerifiedException;
 import backend.exceptions.UserPasswordIsIncorrectException;
 import backend.exceptions.enums.UserLogInfo;
 import backend.repositories.PasswordResetTokenRepository;
@@ -29,8 +30,8 @@ import backend.repositories.UserRepository;
 @Service
 public class PasswordResetTokenService {
 	
-	public static final Duration PASSWIRD_RESET_TOKEN_EXPIRATION_TIME = Duration.ofMinutes(10); // 10 minutes
-	public static final Duration PASSWIRD_RESET_TOKEN_EXPIRATION_COOLDOWN = Duration.ofSeconds(60); // 60 seconds
+	public static final Duration PASSWORD_RESET_TOKEN_EXPIRATION_TIME = Duration.ofMinutes(10); // 10 minutes
+	public static final Duration PASSWORD_RESET_TOKEN_EXPIRATION_COOLDOWN = Duration.ofSeconds(60); // 60 seconds
 	
 	@Autowired
 	private PasswordResetTokenRepository passwordResetTokenRepository;
@@ -42,24 +43,20 @@ public class PasswordResetTokenService {
 	private UserRepository userRepository;
 	
     @Transactional
-	public PasswordResetToken createPasswordResetToken(ResetPasswordTokenRequest resetPasswordTokenRequest) throws UserDoesNotExistsException, PasswordResetTokenCooldownException, LogValuesAreIncorrectException {
+	public PasswordResetToken createPasswordResetToken(ResetPasswordTokenRequest resetPasswordTokenRequest) throws UserDoesNotExistsException, PasswordResetTokenCooldownException, LogValuesAreIncorrectException, UserNotVerifiedException {
 		String email = resetPasswordTokenRequest != null ? resetPasswordTokenRequest.getEmail() : null;
-		UserAuthenticateService.checkForException(email);
-		Optional<User> userOpt = userAuthenticateService.findUserByEmail(email);
-		
-		if(userOpt.isEmpty()) {
-			//email not found,, throw exception
-			throw new UserDoesNotExistsException();
-		}
-		User user = userOpt.get();
+		UserAuthenticateService.checkForEmailException(email);
+		User user = userAuthenticateService.getExistingUserByEmail(email);
+		//check if user is verified
+		userAuthenticateService.checkIfUserIsVerified(user);
 		Optional<PasswordResetToken> existingTokenOpt = passwordResetTokenRepository.findByUser(user);
 		// check if already exists
 		if (existingTokenOpt.isPresent()) {
 			PasswordResetToken existingToken = existingTokenOpt.get();
 			// check if cooldown period has passed
-			if (DataUtils.isUseable(existingToken.getCreatedDate(), PASSWIRD_RESET_TOKEN_EXPIRATION_COOLDOWN)) {
+			if (DataUtils.isUseable(existingToken.getCreatedDate(), PASSWORD_RESET_TOKEN_EXPIRATION_COOLDOWN)) {
 				//cooldown period not passed, do nothing
-				LocalDateTime cooldownEnd = existingToken.getCreatedDate().plus(PASSWIRD_RESET_TOKEN_EXPIRATION_COOLDOWN);
+				LocalDateTime cooldownEnd = existingToken.getCreatedDate().plus(PASSWORD_RESET_TOKEN_EXPIRATION_COOLDOWN);
 				Duration timeSinceCreation = Duration.between(LocalDateTime.now(), cooldownEnd);
 				throw new PasswordResetTokenCooldownException("Please wait more " + DataUtils.timeLeftString(timeSinceCreation) + " before requesting a new password reset.");
 			}
@@ -72,7 +69,7 @@ public class PasswordResetTokenService {
 		newToken.setToken(UUID.randomUUID().toString());
 		newToken.setUser(user);
 		newToken.setCreatedDate(LocalDateTime.now());
-		newToken.setDuration(PASSWIRD_RESET_TOKEN_EXPIRATION_TIME);
+		newToken.setDuration(PASSWORD_RESET_TOKEN_EXPIRATION_TIME);
 		//save the token
 		return passwordResetTokenRepository.save(newToken);
 	}

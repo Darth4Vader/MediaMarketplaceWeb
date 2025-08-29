@@ -19,10 +19,15 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.WebUtils;
 
 import backend.CookieNames;
+import backend.DataUtils;
 import backend.dtos.users.LogInDto;
 import backend.dtos.users.LoginResponse;
+import backend.dtos.users.RegisterLocal;
 import backend.dtos.users.UserBasicInformationDto;
 import backend.dtos.users.UserInformationDto;
+import backend.dtos.users.VerifyAccountDto;
+import backend.entities.AccountVerificationToken;
+import backend.exceptions.EmailSendFailedException;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
@@ -31,13 +36,17 @@ import backend.exceptions.MissingCookieException;
 import backend.exceptions.UserAlreadyExistsException;
 import backend.exceptions.UserDoesNotExistsException;
 import backend.exceptions.UserNotLoggedInException;
+import backend.exceptions.UserNotVerifiedException;
 import backend.exceptions.UserPasswordIsIncorrectException;
+import backend.services.EmailSenderService;
 import backend.services.RefreshTokenService;
 import backend.services.TokenService;
 import backend.services.UserAuthenticateService;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 
 /**
  * REST controller for user authentication and management.
@@ -52,6 +61,9 @@ public class UserAuthenticateController {
 
     @Autowired
     private UserAuthenticateService userAuthService;
+    
+    @Autowired
+    private EmailSenderService emailSenderService;
     
     private static ResponseEntity<?> createAuthenticationResponse(LoginResponse loginResponse) {
     	HttpCookie accessTokenCookie = createAccessTokenCookie(
@@ -115,15 +127,32 @@ public class UserAuthenticateController {
      * @throws UserAlreadyExistsException If a user with the same details already exists.
      * @throws LogValuesAreIncorrectException If the provided values are incorrect.
      * @throws UserPasswordIsIncorrectException If the password provided is incorrect.
+     * @throws EmailSendFailedException 
      */
     @PostMapping(value = "/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserInformationDto registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException {
-        try {
-        	LoginResponse loginResponse = userAuthService.registerUser(registerDto);
-        	return createAuthenticationResponse(loginResponse);
+    public ResponseEntity<?> registerUser(@RequestBody RegisterLocal registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException, EmailSendFailedException {
+    	try {
+    		AccountVerificationToken verify = userAuthService.registerUser(registerDto);
+			//send email with the token
+			try {
+				emailSenderService.sendRegistrationConfirmationEmail(verify.getUser().getEmail(), registerDto.getRedirectUrl() + verify.getToken(), DataUtils.timeLeftString(UserAuthenticateService.ACCOUNT_VERIFICATION_EXPIRATION_TIME));
+			} catch (MessagingException e2) {
+			    throw new EmailSendFailedException("Unable to send verification email. Please try again later.");
+			}
+			return ResponseEntity.ok("User registered successfully. Please check your email to verify your account.");
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to register the user", e);
         }
+    }
+    
+    @PostMapping(value = "verify")
+    public ResponseEntity<?> verifyAccount(@RequestBody @Valid VerifyAccountDto verifyAccountDto) throws EntityNotFoundException {
+    	try {
+			userAuthService.verifyAccount(verifyAccountDto);
+			return ResponseEntity.ok("Account has been verified successfully");
+		} catch (DataAccessException e) {
+			throw new EntityAdditionException("Unable to verify account", e);
+		}
     }
     
     /**
@@ -138,18 +167,28 @@ public class UserAuthenticateController {
      * @throws UserDoesNotExistsException If the user does not exist.
      * @throws UserPasswordIsIncorrectException If the provided password is incorrect.
      * @throws LogValuesAreIncorrectException If the provided login values are incorrect.
+     * @throws EmailSendFailedException 
+     * @throws UserNotVerifiedException 
      */
     @PostMapping(value = "/login")
-    public ResponseEntity<?> loginUser(@RequestBody LogInDto loginDto/*, HttpServletResponse response*/) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
-    	LoginResponse loginResponse = userAuthService.loginUser(loginDto);
-    	/*Cookie cookie = new Cookie("accessToken", null);
-    	cookie.setPath("/");
-    	cookie.setMaxAge((int) TokenService.ACCESS_TOKEN_EXPIRATION_TIME.toSeconds());
-    	cookie.setHttpOnly(true);
-    	cookie.setSecure(true);
-    	response.addCookie(cookie);*/
-    	
-    	return createAuthenticationResponse(loginResponse);
+    public ResponseEntity<?> loginUser(@RequestBody LogInDto loginDto) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException, EmailSendFailedException, UserNotVerifiedException {
+    	try {
+    		LoginResponse loginResponse = userAuthService.loginUser(loginDto);
+        	return createAuthenticationResponse(loginResponse);
+    	}
+    	catch(UserNotVerifiedException e) {
+    		//check if new verification token created
+    		VerifyAccountDto verify = e.getVerifyAccountDto();
+    		if(verify != null) {
+    			//send email with the token
+    			try {
+    				emailSenderService.sendRegistrationConfirmationEmail(verify.getEmail(), e.getRedirectUrl() + verify.getToken(), DataUtils.timeLeftString(UserAuthenticateService.ACCOUNT_VERIFICATION_EXPIRATION_TIME));
+    			} catch (MessagingException e2) {
+    			    throw new EmailSendFailedException("Unable to send new verification email. Please try again later.");
+    			}
+    		}
+    		throw e;
+    	}
     }
     
     @PostMapping(value = "/refresh")
@@ -177,9 +216,11 @@ public class UserAuthenticateController {
      * @throws UserNotLoggedInException If the user is not logged in.
      * @throws UserPasswordIsIncorrectException If the provided password is incorrect.
      * @throws LogValuesAreIncorrectException If the provided values are incorrect.
+     * @throws UserNotVerifiedException 
+     * @throws UserDoesNotExistsException 
      */
     @PutMapping("/current")
-    public void updateUserInformation(@RequestBody UserInformationDto userDto) throws UserNotLoggedInException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
+    public void updateUserInformation(@RequestBody UserInformationDto userDto) throws UserNotLoggedInException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException, UserDoesNotExistsException, UserNotVerifiedException {
         try {
         	userAuthService.updateUserInformation(userDto);
         } catch (DataAccessException e) {

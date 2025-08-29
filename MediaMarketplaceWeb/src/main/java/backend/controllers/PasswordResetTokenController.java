@@ -18,7 +18,7 @@ import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
 import backend.exceptions.PasswordResetTokenCooldownException;
 import backend.exceptions.UserDoesNotExistsException;
-import backend.exceptions.UserNotLoggedInException;
+import backend.exceptions.UserNotVerifiedException;
 import backend.exceptions.UserPasswordIsIncorrectException;
 import backend.services.EmailSenderService;
 import backend.services.PasswordResetTokenService;
@@ -36,12 +36,12 @@ public class PasswordResetTokenController {
 	private EmailSenderService emailSenderService;
 
     @PostMapping(value = "/request")
-    public ResponseEntity<?> createResetPasswordToken(@RequestBody @Valid ResetPasswordTokenRequest resetPasswordTokenRequest) throws UserDoesNotExistsException, PasswordResetTokenCooldownException, LogValuesAreIncorrectException, EmailSendFailedException {
+    public ResponseEntity<?> createResetPasswordToken(@RequestBody @Valid ResetPasswordTokenRequest resetPasswordTokenRequest) throws UserDoesNotExistsException, PasswordResetTokenCooldownException, LogValuesAreIncorrectException, EmailSendFailedException, UserNotVerifiedException {
     	try {
     		PasswordResetToken passwordResetToken = passwordResetTokenService.createPasswordResetToken(resetPasswordTokenRequest);
     		//send email with the token
     		try {
-    			emailSenderService.sendResetPasswordEmail(passwordResetToken.getUser().getEmail(), resetPasswordTokenRequest.getRedirectUrl() + passwordResetToken.getToken(), DataUtils.timeLeftString(PasswordResetTokenService.PASSWIRD_RESET_TOKEN_EXPIRATION_TIME));
+    			emailSenderService.sendResetPasswordEmail(passwordResetToken.getUser().getEmail(), resetPasswordTokenRequest.getRedirectUrl() + passwordResetToken.getToken(), DataUtils.timeLeftString(PasswordResetTokenService.PASSWORD_RESET_TOKEN_EXPIRATION_TIME));
     		} catch (MessagingException e) {
     		    // Log the error
     		    //log.error("Failed to send password reset email to {}", user.getEmail(), e);

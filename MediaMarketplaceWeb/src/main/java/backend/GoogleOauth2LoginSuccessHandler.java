@@ -12,6 +12,7 @@ import backend.controllers.UserAuthenticateController;
 import backend.dtos.users.LoginResponse;
 import backend.dtos.users.UserInformationDto;
 import backend.entities.User;
+import backend.exceptions.LogValuesAreIncorrectException;
 import backend.repositories.UserRepository;
 import backend.services.RefreshTokenService;
 import backend.services.TokenService;
@@ -43,8 +44,15 @@ public class GoogleOauth2LoginSuccessHandler implements AuthenticationSuccessHan
         		.orElseGet(() -> {
                     UserInformationDto userInfo = new UserInformationDto();
                     userInfo.setEmail(email);
-            		return userAuthenticateService.registerNewUser(userInfo);
+            		try {
+						return userAuthenticateService.registerViaOAuth(userInfo);
+					} catch (LogValuesAreIncorrectException e) {
+						throw new RuntimeException(e);
+					}
                 });
+        
+        // oauth verified email, so we set the user as verified
+        userAuthenticateService.verifyAccount(user);
         
         //update user info from oauth2 provider
         user.setName(oauth2User.getAttribute("name"));

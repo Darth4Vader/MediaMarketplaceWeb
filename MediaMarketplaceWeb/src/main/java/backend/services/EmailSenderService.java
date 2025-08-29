@@ -7,8 +7,6 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import backend.ConfigValues;
-import backend.utils.UrlUtils;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
@@ -27,7 +25,7 @@ public class EmailSenderService {
 
 	    Context context = new Context();
 	    context.setVariable("resetLink", resetLink);
-	    context.setVariable("expirationText", expirationText); // 👈 dynamic text like "30 seconds"
+	    context.setVariable("expirationText", expirationText);
 
 	    String htmlContent = templateEngine.process("reset_password_template", context);
 
@@ -37,4 +35,21 @@ public class EmailSenderService {
 
 	    mailSender.send(message);
 	}
+	
+    public void sendRegistrationConfirmationEmail(String toEmail, String confirmLink, String expirationText) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        Context context = new Context();
+        context.setVariable("confirmLink", confirmLink);
+        context.setVariable("expirationText", expirationText);
+
+        String htmlContent = templateEngine.process("confirm_email_template", context);
+
+        helper.setTo(toEmail);
+        helper.setSubject("MediaMarketplace: Confirm your registration");
+        helper.setText(htmlContent, true);
+
+        mailSender.send(message);
+    }
 }

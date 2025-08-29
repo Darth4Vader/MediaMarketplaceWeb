@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Confirm Your Email</title>
+    <style>
+        body { font-family: Arial; background-color: #f4f6f8; margin: 0; padding: 0; }
+        .container { background-color: #fff; max-width: 600px; margin: 30px auto; padding: 30px; border-radius: 8px; }
+        .button { padding: 12px 20px; cursor: pointer; background-color: #43a047; color: white !important; text-decoration: none; border-radius: 4px; }
+        .footer { margin-top: 30px; font-size: 12px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Welcome to MediaMarketplace!</h2>
+    <p>Hello,</p>
+    <p>Thanks for registering. Please confirm your email by clicking the button below:</p>
+    <p style="text-align: center;">
+        <a th:href="${confirmLink}" class="button">Confirm Email</a>
+    </p>
+    <p>If you didn’t register, you can ignore this email.</p>
+    <p>This link will expire in <strong th:text="${expirationText}">?</strong>.</p>
+    <p>Thanks,<br/>MediaMarketplace Team</p>
+    <div class="footer">
+        &copy; 2025 MediaMarketplace Inc. All rights reserved.
+    </div>
+</div>
+</body>
+</html>

@@ -14,27 +14,29 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "password_reset_tokens")
-public class PasswordResetToken {
-    
+@Table(name = "account_verification_tokens")
+public class AccountVerificationToken {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
- 
+    
     private String token;
- 
+
     @OneToOne(targetEntity = User.class, fetch = FetchType.EAGER)
     @JoinColumn(nullable = false, name = "user_id")
     private User user;
- 
     
     @Column(name = "created_date", nullable = false)
     private LocalDateTime createdDate;
     
     private Duration duration;
-	
-	public PasswordResetToken() {}
-	
+    
+    @Column(name = "redirect_url")
+    private String redirectUrl;
+
+    public AccountVerificationToken() {}
+    
 	public Long getId() {
 		return id;
 	}
@@ -69,5 +71,13 @@ public class PasswordResetToken {
 	
 	public void setDuration(Duration duration) {
 		this.duration = duration;
+	}
+	
+	public String getRedirectUrl() {
+		return redirectUrl;
+	}
+	
+	public void setRedirectUrl(String redirectUrl) {
+		this.redirectUrl = redirectUrl;
 	}
 }

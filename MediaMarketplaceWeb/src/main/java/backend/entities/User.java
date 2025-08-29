@@ -71,12 +71,16 @@ public class User implements UserDetails {
             inverseJoinColumns = {@JoinColumn(name = "role_id")}
     )
     private Set<Role> authorities;
+    
+    @Column(name = "account_validated", nullable = false)
+    private boolean isAccountValidated;
 
     /**
      * Default constructor for JPA.
      */
     public User() {
         this.authorities = new HashSet<>();
+        this.isAccountValidated = false;
     }
 
     /**
@@ -100,6 +104,13 @@ public class User implements UserDetails {
         this.email = email;
         this.password = password;
         this.authorities = authorities;
+        this.isAccountValidated = false;
+    }
+    
+    public User(String email, Set<Role> authorities) {
+    	this.email = email;
+        this.authorities = authorities;
+        this.isAccountValidated = false;
     }
 
     /**
@@ -187,5 +198,13 @@ public class User implements UserDetails {
     
     public void setProfilePicture(String profilePicture) {
 		this.profilePicture = profilePicture;
+    }
+    
+    public boolean isAccountValidated() {
+		return isAccountValidated;
+    }
+    
+    public void setAccountValidated(boolean isAccountValidated) {
+		this.isAccountValidated = isAccountValidated;
     }
 }

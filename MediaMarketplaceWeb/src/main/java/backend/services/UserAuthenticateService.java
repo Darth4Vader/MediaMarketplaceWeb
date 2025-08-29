@@ -1,5 +1,7 @@
 package backend.services;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,8 +29,11 @@ import backend.DataUtils;
 import backend.auth.AuthenticateAdmin;
 import backend.dtos.users.LogInDto;
 import backend.dtos.users.LoginResponse;
+import backend.dtos.users.RegisterLocal;
 import backend.dtos.users.UserBasicInformationDto;
 import backend.dtos.users.UserInformationDto;
+import backend.dtos.users.VerifyAccountDto;
+import backend.entities.AccountVerificationToken;
 import backend.entities.RefreshToken;
 import backend.entities.Role;
 import backend.entities.User;
@@ -38,8 +44,10 @@ import backend.exceptions.LogValuesAreIncorrectException;
 import backend.exceptions.UserAlreadyExistsException;
 import backend.exceptions.UserDoesNotExistsException;
 import backend.exceptions.UserNotLoggedInException;
+import backend.exceptions.UserNotVerifiedException;
 import backend.exceptions.UserPasswordIsIncorrectException;
 import backend.exceptions.enums.UserLogInfo;
+import backend.repositories.AccountVerificationTokenRepository;
 import backend.repositories.RoleRepository;
 import backend.repositories.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -54,6 +62,9 @@ import jakarta.servlet.http.HttpServletRequest;
  */
 @Service
 public class UserAuthenticateService {
+	
+	public static final Duration ACCOUNT_VERIFICATION_EXPIRATION_TIME = Duration.ofMinutes(1); // 1 minute
+	public static final Duration ACCOUNT_VERIFICATION_EXPIRATION_COOLDOWN = Duration.ofSeconds(10); // 10 seconds
 
     @Autowired
     private UserRepository userRepository;
@@ -72,6 +83,9 @@ public class UserAuthenticateService {
     
     @Autowired
     private RefreshTokenService refreshTokenService;
+    
+    @Autowired
+    private AccountVerificationTokenRepository accountVerificationTokenRepository;
 
     /**
      * Registers a new user with the provided information.
@@ -86,52 +100,126 @@ public class UserAuthenticateService {
      * @throws LogValuesAreIncorrectException If the provided login values are incorrect.
      */
     @Transactional
-    public LoginResponse registerUser(UserInformationDto registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException {
-        // Check that the email does not exist
-        validateUserDto(registerDto);
+    public AccountVerificationToken registerUser(RegisterLocal registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException {
+    	validateRegisteration(registerDto);
+    	// Check that the email does not exist
         String email = registerDto.getEmail();
-        if (findUserByEmail(email).isPresent()) {
-            throw new UserAlreadyExistsException();
+        Optional<User> existingUserOpt = findUserByEmail(email); 
+        if (existingUserOpt.isPresent()) {
+        	// check if account is not verified and the duration for verification token is not expired
+        	boolean userExists = true;
+        	User existingUser = existingUserOpt.get();
+        	if(!existingUser.isAccountValidated()) {
+        		AccountVerificationToken token = getActiveAccountVerificationToken(existingUser);
+				if(token == null) {
+					// Account verification token expired, delete the token and the user and notify them to register again
+					userRepository.delete(existingUser);
+					userExists = false;
+				}
+        	}
+        	if(userExists) {
+        		// if we reach here, then the user already exists and is verified
+        		throw new UserAlreadyExistsException();
+        	}
         }
         
         // Register the new user
-        registerNewUser(registerDto);
-        
-        String password = registerDto.getPassword();
-        
-        // Log in the user after registration
-        try {
-            return loginUser(email, password);
-        } catch (UserDoesNotExistsException | UserPasswordIsIncorrectException | LogValuesAreIncorrectException e) {
-        	// We just created so no exception can be made
-        	// Handle unexpected exceptions that shouldn't occur after successful registration
-            throw new RuntimeException("Error during login after registration", e);
+        email = DataUtils.emailFormatted(email);
+        String encodedPassword = encodePassword(registerDto.getPassword());
+        User user = new User(email, encodedPassword, getUserDefaultRoles());
+        user.setAccountValidated(false); // Local users need to verify their email
+        String name = registerDto.getName();
+        if(DataUtils.isNotBlank(name)) {
+        	user.setName(name);
         }
+        user = userRepository.save(user);
+        
+        // after registering user, create account verification token
+        return createAccountVerificationToken(user, registerDto.getRedirectUrl());
     }
     
-    public User registerNewUser(UserInformationDto registerDto) {
-        String email = registerDto.getEmail();
-        if(email != null)
-        	email = email.toLowerCase();
-        email = email.trim();
-        
-    	// Encode the password
-        String password = registerDto.getPassword();
-        String encodedPassword = password != null ? encodePassword(password) : null;
-
-        // Create the authorities for the new user
-        Role userRole = getRoleByType(RoleType.ROLE_USER);
-        Set<Role> authorities = new HashSet<>();
-        authorities.add(userRole);
+    @Transactional
+    public User registerViaOAuth(UserInformationDto registerDto) throws LogValuesAreIncorrectException {
+    	String email = registerDto.getEmail();
+    	checkForEmailException(email);
+    	email = DataUtils.emailFormatted(email);
 
         // Create and save the new user
-        User newUser = new User(email, encodedPassword, authorities);
+        User newUser = new User(email, getUserDefaultRoles());
+        newUser.setAccountValidated(true); // OAuth users are considered verified
         String name = registerDto.getName();
         if(DataUtils.isNotBlank(name)) {
         	newUser.setName(name);
         }
         return userRepository.save(newUser);
     }
+    
+    @Transactional
+    private AccountVerificationToken createAccountVerificationToken(User user, String redirectUrl) {
+		AccountVerificationToken accountVerificationToken = new AccountVerificationToken();
+		accountVerificationToken.setToken(UUID.randomUUID().toString());
+		accountVerificationToken.setUser(user);
+		accountVerificationToken.setCreatedDate(LocalDateTime.now());
+		accountVerificationToken.setDuration(ACCOUNT_VERIFICATION_EXPIRATION_TIME);
+		accountVerificationToken.setRedirectUrl(redirectUrl);
+		return accountVerificationTokenRepository.save(accountVerificationToken);
+    }
+    
+    @Transactional
+    public void verifyAccount(VerifyAccountDto verifyAccountDto) throws EntityNotFoundException {
+    	// check that the token is valid
+		String token = verifyAccountDto != null ? verifyAccountDto.getToken() : null;
+		Optional<AccountVerificationToken> tokenOpt = accountVerificationTokenRepository.findByToken(token);
+		if(tokenOpt.isEmpty()) {
+			//token not found,, throw exception
+			throw new EntityNotFoundException("Account verification token not found");
+		}
+		AccountVerificationToken verifyToken = tokenOpt.get();
+		// check if token is expired
+		if (!DataUtils.isUseable(verifyToken.getCreatedDate(), verifyToken.getDuration())) {
+			//token expired, delete it and throw exception
+			accountVerificationTokenRepository.delete(verifyToken);
+			throw new EntityNotFoundException("Account verification token has expired");
+		}
+		// load the user
+		User user = verifyToken.getUser();
+		if(user == null) {
+			//user not found,, throw exception
+			throw new EntityNotFoundException("User not found for token");
+		}
+		// set user as verified
+		user.setAccountValidated(true);
+		userRepository.save(user);
+		// delete the token
+		accountVerificationTokenRepository.delete(verifyToken);
+    }
+    
+    @Transactional
+    public void verifyAccount(User user) {
+    	if(user.isAccountValidated()) {
+			//user already verified
+			return;
+		}
+    	// remove setted password, to prevent malicious activity
+    	user.setPassword(null);
+		// set user as verified
+		user.setAccountValidated(true);
+		userRepository.save(user);
+    	// load the token
+		Optional<AccountVerificationToken> tokenOpt = accountVerificationTokenRepository.findByUser(user);
+		if(tokenOpt.isPresent()) {
+			AccountVerificationToken verifyToken = tokenOpt.get();
+			// delete the token
+			accountVerificationTokenRepository.delete(verifyToken);
+		}
+    }
+    
+    private Set<Role> getUserDefaultRoles() {
+    	// Create the authorities for the new user
+		Set<Role> roles = new HashSet<>();
+		roles.add(getRoleByType(RoleType.ROLE_USER));
+		return roles;
+	}
 
     /**
      * Logs in a user using the provided login information.
@@ -144,38 +232,17 @@ public class UserAuthenticateService {
      * @throws UserDoesNotExistsException If the user does not exist.
      * @throws UserPasswordIsIncorrectException If the password is incorrect.
      * @throws LogValuesAreIncorrectException If the provided login values are incorrect.
+     * @throws UserNotVerifiedException 
      */
-    public LoginResponse loginUser(LogInDto loginDto) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
-        String email = loginDto.getEmail();
-        String password = loginDto.getPassword();
-        return loginUser(email, password);
-    }
-
-    /**
-     * Logs in a user with the specified email and password.
-     * <p>
-     * This method performs authentication and generates a JWT token if the credentials are valid.
-     * </p>
-     * 
-     * @param email The email of the user.
-     * @param password The password of the user.
-     * @return A String of the generated JWT token.
-     * @throws UserDoesNotExistsException If the user does not exist.
-     * @throws UserPasswordIsIncorrectException If the password is incorrect.
-     * @throws LogValuesAreIncorrectException If the provided login values are incorrect.
-     */
-    private LoginResponse loginUser(String email, String password) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
-    	email = DataUtils.emailFormatted(email);
+    public LoginResponse loginUser(LogInDto loginDto) throws UserDoesNotExistsException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException, UserNotVerifiedException {
+    	String email = DataUtils.emailFormatted(loginDto.getEmail());
+    	String password = loginDto.getPassword();
 		// Check for missing values
-    	checkForException(email, password);
-        Optional<User> userOpt = findUserByEmail(email);
-
-        // If we can't find the user by their email, then they don't exist
-        if (userOpt.isEmpty()) {
-            throw new UserDoesNotExistsException();
-        }
+    	checkForEmailPasswordException(email, password);
+    	// If we can't find the user by their email, then they don't exist
+        User user = getExistingUserByEmail(email);
         
-        if(userOpt.get().getPassword() == null) {
+        if(user.getPassword() == null) {
 			// User registered via OAuth2 and does not have a password set
 			throw new UserPasswordIsIncorrectException("User registered via OAuth2, no password set");
 		}
@@ -183,12 +250,35 @@ public class UserAuthenticateService {
         try {
         	// Set as the current authentication user
             Authentication auth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email, password, userOpt.get().getAuthorities()));
+                    new UsernamePasswordAuthenticationToken(email, password, user.getAuthorities()));
             // Set as the current authentication user
             setAuthentication(auth);
+            
+            //check if user is verified
+            try {
+            	checkIfUserIsVerified(user);
+            }
+            catch(UserNotVerifiedException e) {
+				SecurityContextHolder.getContext().setAuthentication(null);
+				// Issue new account verification token if user tries login after the previous one cooldown expired
+				AccountVerificationToken token = getActiveAccountVerificationToken(user);
+				if(token != null && !DataUtils.isUseable(token.getCreatedDate(), ACCOUNT_VERIFICATION_EXPIRATION_COOLDOWN)) {
+					// Account verification token expired, delete the token and the user and notify them to register again
+					VerifyAccountDto verifyAccountDto = new VerifyAccountDto();
+					verifyAccountDto.setEmail(user.getEmail());
+					String redirectUrl = token.getRedirectUrl();
+					token.setUser(null);
+					accountVerificationTokenRepository.delete(token);
+					AccountVerificationToken newToken = createAccountVerificationToken(user, redirectUrl);
+					verifyAccountDto.setToken(newToken.getToken());
+					throw new UserNotVerifiedException(verifyAccountDto, redirectUrl, "User email is not verified, new verification email sent");
+				}
+				throw e;
+			}
+            
             // Generate the JWT token
-            RefreshToken refreshToken = refreshTokenService.createRefreshToken(userOpt.get());
-            String accessToken = tokenService.generateAccessToken(userOpt.get());
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+            String accessToken = tokenService.generateAccessToken(user);
             return new LoginResponse(accessToken, refreshToken.getToken());
         } catch (AuthenticationException e) {
             // If there is a problem with authenticating the user, the password is incorrect
@@ -208,11 +298,18 @@ public class UserAuthenticateService {
      * @throws UserNotLoggedInException If the user is not logged in.
      * @throws UserPasswordIsIncorrectException If the provided password is incorrect.
      * @throws LogValuesAreIncorrectException If the provided values are incorrect.
+     * @throws UserNotVerifiedException 
+     * @throws UserDoesNotExistsException 
      */
     @Transactional
-    public void updateUserInformation(UserInformationDto userDto) throws UserNotLoggedInException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException {
+    public void updateUserInformation(UserInformationDto userDto) throws UserNotLoggedInException, UserPasswordIsIncorrectException, LogValuesAreIncorrectException, UserDoesNotExistsException, UserNotVerifiedException {
         // Check that the current user is trying to change their own information
         User authUser = tokenService.getCurretUser();
+        
+        //first check if verified
+        checkIfUserIsVerified(authUser);
+        
+        //check that the email matches the logged in user
         String email = authUser.getEmail();
         email = DataUtils.emailFormatted(email);
         if (!Objects.equals(email, userDto.getEmail())) {
@@ -236,11 +333,7 @@ public class UserAuthenticateService {
         //if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
         if(email != null) {
         	System.out.println(email);
-        	Optional<User> userOpt = findUserByEmail(email);
-			if (userOpt.isEmpty()) {
-				throw new UserDoesNotExistsException();
-			}
-            User user = userOpt.get();
+        	User user = getExistingUserByEmail(email);
             if (tokenService.validateToken(token, user)) {
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -280,6 +373,42 @@ public class UserAuthenticateService {
         // Check if there is a logged user in order to allow sign out.
         refreshTokenService.revokeRefreshToken(refreshToken);
     }
+    
+    @Transactional
+    public void checkIfUserIsVerified(User user) throws UserDoesNotExistsException, UserNotVerifiedException {
+        if(!user.isAccountValidated()) {
+            AccountVerificationToken token = getActiveAccountVerificationToken(user);
+            SecurityContextHolder.getContext().setAuthentication(null);
+            if(token == null) {
+				// User is not verified, authentication is cleared
+				throw new UserDoesNotExistsException("Account verification token expired, please register again");
+            }
+            else {
+            	throw new UserNotVerifiedException("User email is not verified");
+            }
+		}
+	}
+    
+    @Transactional
+    public AccountVerificationToken getActiveAccountVerificationToken(User user) {
+        // if email and password are correct, check if the user is verified
+    	AccountVerificationToken token = null;
+    	if(!user.isAccountValidated()) {
+        	// Account is not validated from email verification
+        	// see if account verification token is expired
+			Optional<AccountVerificationToken> tokenOpt = accountVerificationTokenRepository.findByUser(user);
+			if(tokenOpt.isPresent()) {
+				token = tokenOpt.get();
+				// if the token exists, check if it is expired
+	        	if(!DataUtils.isUseable(token.getCreatedDate(), token.getDuration())) {
+					// Account verification token expired, delete the token and the user and notify them to register again
+					accountVerificationTokenRepository.delete(token);
+					token = null;
+				}
+			}
+        }
+    	return token;
+	}
 
     /**
      * Verifies if the user is currently logged in by checking the authentication token.
@@ -336,6 +465,11 @@ public class UserAuthenticateService {
     
 	public Optional<User> findUserByEmail(String email) {
 		return userRepository.findByEmail(DataUtils.emailFormatted(email));
+	}
+	
+	public User getExistingUserByEmail(String email) throws UserDoesNotExistsException {
+		return findUserByEmail(email)
+				.orElseThrow(() -> new UserDoesNotExistsException());
 	}
     
     /**
@@ -416,11 +550,17 @@ public class UserAuthenticateService {
      * @param userDto The {@link UserInformationDto} object containing user information to be validated.
      * @throws LogValuesAreIncorrectException If any of the provided values are incorrect, or if the passwords do not match.
      */
-    private void validateUserDto(UserInformationDto userDto) throws LogValuesAreIncorrectException {
-        checkForException(userDto);
-        String password = userDto.getPassword();
-        if (!Objects.equals(password, userDto.getPasswordConfirm())) {
-        	Map<UserLogInfo, String> logInfo = new HashMap<>();
+    private void validateRegisteration(RegisterLocal registerDto) throws LogValuesAreIncorrectException {
+    	Map<UserLogInfo, String> logInfo = new HashMap<>();
+        String email = registerDto.getEmail();
+        String password = registerDto.getPassword();
+        String passwordConfirm = registerDto.getPasswordConfirm();
+        loadExceptionsMailPassword(email, password, logInfo);
+        loadExceptionsPasswordConfirm(passwordConfirm, logInfo);
+        if (!logInfo.isEmpty()) {
+            throw new LogValuesAreIncorrectException(logInfo, "One or more values are missing or incorrect");
+        }
+        if (!Objects.equals(password, passwordConfirm)) {
         	logInfo.put(UserLogInfo.PASSWORD, "Field is not matching");
         	logInfo.put(UserLogInfo.PASSWORD_CONFIRM, "Field is not matching");
             throw new LogValuesAreIncorrectException(logInfo, "Password confirmation does not match");
@@ -454,7 +594,7 @@ public class UserAuthenticateService {
         return userDto;
     }
     
-    public static void checkForException(String email) throws LogValuesAreIncorrectException {
+    public static void checkForEmailException(String email) throws LogValuesAreIncorrectException {
         Map<UserLogInfo, String> logInfo = new HashMap<>();
         loadMailExceptions(email, logInfo);
         if (!logInfo.isEmpty()) {
@@ -473,34 +613,11 @@ public class UserAuthenticateService {
      * @param password The password to be checked.
      * @throws LogValuesAreIncorrectException if any of the values (email or password) are missing or incorrect.
      */
-    public static void checkForException(String email, String password) throws LogValuesAreIncorrectException {
+    public static void checkForEmailPasswordException(String email, String password) throws LogValuesAreIncorrectException {
         Map<UserLogInfo, String> logInfo = new HashMap<>();
         loadExceptionsMailPassword(email, password, logInfo);
         if (!logInfo.isEmpty()) {
             throw new LogValuesAreIncorrectException(logInfo, "One or more values are missing");
-        }
-    }
-
-    /**
-     * Checks for missing or incorrect values in the provided UserInformationDto.
-     * <p>
-     * This method verifies that the email, password, and password confirmation fields are not blank. 
-     * If any of these fields are missing, or if the password confirmation does not match, an exception is thrown
-     * with details about the missing values.
-     * </p>
-     * 
-     * @param userInformationDto The UserInformationDto containing user information to be checked.
-     * @throws LogValuesAreIncorrectException if any of the values (email, password, or password confirmation) are missing or incorrect.
-     */
-    public static void checkForException(UserInformationDto userInformationDto) throws LogValuesAreIncorrectException {
-    	Map<UserLogInfo, String> logInfo = new HashMap<>();
-        String email = userInformationDto.getEmail();
-        String password = userInformationDto.getPassword();
-        String passwordConfirm = userInformationDto.getPasswordConfirm();
-        loadExceptionsMailPassword(email, password, logInfo);
-        loadExceptionsPasswordConfirm(passwordConfirm, logInfo);
-        if (!logInfo.isEmpty()) {
-            throw new LogValuesAreIncorrectException(logInfo, "One or more values are missing or incorrect");
         }
     }
     

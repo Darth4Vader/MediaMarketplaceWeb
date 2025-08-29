@@ -16,16 +16,6 @@ public class UserInformationDto {
     private String name;
 
     /**
-     * The password of the user.
-     */
-    private String password;
-
-    /**
-     * The confirmation of the user's password to verify it matches.
-     */
-    private String passwordConfirm;
-
-    /**
      * Gets the email of the user.
      * 
      * @return the email of the user
@@ -59,41 +49,5 @@ public class UserInformationDto {
      */
     public void setName(String name) {
         this.name = name;
-    }
-
-    /**
-     * Gets the password of the user.
-     * 
-     * @return the password of the user
-     */
-    public String getPassword() {
-        return password;
-    }
-
-    /**
-     * Sets the password of the user.
-     * 
-     * @param password the password of the user
-     */
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    /**
-     * Gets the confirmation of the user's password.
-     * 
-     * @return the password confirmation
-     */
-    public String getPasswordConfirm() {
-        return passwordConfirm;
-    }
-
-    /**
-     * Sets the confirmation of the user's password.
-     * 
-     * @param passwordConfirm the password confirmation
-     */
-    public void setPasswordConfirm(String passwordConfirm) {
-        this.passwordConfirm = passwordConfirm;
     }
 }

@@ -30,6 +30,7 @@ import backend.exceptions.RevokedRefreshTokenAccessException;
 import backend.exceptions.UserAlreadyExistsException;
 import backend.exceptions.UserDoesNotExistsException;
 import backend.exceptions.UserNotLoggedInException;
+import backend.exceptions.UserNotVerifiedException;
 import backend.exceptions.UserPasswordIsIncorrectException;
 
 @RestControllerAdvice
@@ -165,6 +166,12 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	public ResponseEntity<Object> handleEmailSendFailedException(EmailSendFailedException ex, WebRequest request) {
 		LOGGER.error(ex);
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
+	}
+	
+	@ExceptionHandler(UserNotVerifiedException.class)
+	public ResponseEntity<Object> handleUserNotVerifiedException(UserNotVerifiedException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.FORBIDDEN, request);
 	}
 	
 	/**
