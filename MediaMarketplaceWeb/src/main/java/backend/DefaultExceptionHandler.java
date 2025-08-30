@@ -18,6 +18,7 @@ import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityRemovalException;
 import backend.exceptions.EntityUnprocessableException;
+import backend.exceptions.HumanVerificationException;
 import backend.exceptions.JwtTokenExpiredException;
 import backend.exceptions.JwtTokenNotFoundException;
 import backend.exceptions.LogValuesAreIncorrectException;
@@ -172,6 +173,15 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	public ResponseEntity<Object> handleUserNotVerifiedException(UserNotVerifiedException ex, WebRequest request) {
 		LOGGER.error(ex);
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.FORBIDDEN, request);
+	}
+	
+	@ExceptionHandler(HumanVerificationException.class)
+	public ResponseEntity<Object> handleHumanVerificationException(HumanVerificationException ex, WebRequest request) {
+		LOGGER.error(ex);
+		Map<String, Object> bodyOfResponse = Map.of(
+				"error", ex.getMessage()
+		);
+		return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
 	}
 	
 	/**

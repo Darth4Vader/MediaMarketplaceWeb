@@ -23,6 +23,8 @@ public class RegisterLocal {
     private String passwordConfirm;
     
     private String redirectUrl;
+    
+    private String cfTurnstileToken;
 
     /**
      * Gets the email of the user.
@@ -102,5 +104,13 @@ public class RegisterLocal {
 	
 	public void setRedirectUrl(String redirectUrl) {
 		this.redirectUrl = redirectUrl;
+	}
+	
+	public String getCfTurnstileToken() {
+		return cfTurnstileToken;
+	}
+	
+	public void setCfTurnstileToken(String cfTurnstileToken) {
+		this.cfTurnstileToken = cfTurnstileToken;
 	}
 }

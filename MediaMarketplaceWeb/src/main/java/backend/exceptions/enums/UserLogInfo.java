@@ -23,7 +23,9 @@ public enum UserLogInfo {
     /**
      * Represents the confirmation of the user's password for validation purposes.
      */
-    PASSWORD_CONFIRM("passwordConfirm");
+    PASSWORD_CONFIRM("passwordConfirm"),
+	
+    HUMAN_VERIFICATION("humanVerification");
 	
 	private String value;
 	

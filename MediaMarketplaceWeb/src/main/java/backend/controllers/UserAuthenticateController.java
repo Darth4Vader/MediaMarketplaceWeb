@@ -2,6 +2,8 @@ package backend.controllers;
 
 import java.time.Duration;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -20,6 +22,7 @@ import org.springframework.web.util.WebUtils;
 
 import backend.CookieNames;
 import backend.DataUtils;
+import backend.dtos.general.TurnstileResponse;
 import backend.dtos.users.LogInDto;
 import backend.dtos.users.LoginResponse;
 import backend.dtos.users.RegisterLocal;
@@ -31,6 +34,7 @@ import backend.exceptions.EmailSendFailedException;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
+import backend.exceptions.HumanVerificationException;
 import backend.exceptions.LogValuesAreIncorrectException;
 import backend.exceptions.MissingCookieException;
 import backend.exceptions.UserAlreadyExistsException;
@@ -38,10 +42,12 @@ import backend.exceptions.UserDoesNotExistsException;
 import backend.exceptions.UserNotLoggedInException;
 import backend.exceptions.UserNotVerifiedException;
 import backend.exceptions.UserPasswordIsIncorrectException;
+import backend.services.CloudflareTurnstileService;
 import backend.services.EmailSenderService;
 import backend.services.RefreshTokenService;
 import backend.services.TokenService;
 import backend.services.UserAuthenticateService;
+import backend.utils.RequestUtils;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -58,12 +64,17 @@ import jakarta.validation.Valid;
 @RequestMapping("api/users")
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class UserAuthenticateController {
+	
+	private final Log LOGGER = LogFactory.getLog(getClass());
 
     @Autowired
     private UserAuthenticateService userAuthService;
     
     @Autowired
     private EmailSenderService emailSenderService;
+    
+    @Autowired
+    private CloudflareTurnstileService cloudflareTurnstileService;
     
     private static ResponseEntity<?> createAuthenticationResponse(LoginResponse loginResponse) {
     	HttpCookie accessTokenCookie = createAccessTokenCookie(
@@ -128,9 +139,21 @@ public class UserAuthenticateController {
      * @throws LogValuesAreIncorrectException If the provided values are incorrect.
      * @throws UserPasswordIsIncorrectException If the password provided is incorrect.
      * @throws EmailSendFailedException 
+     * @throws HumanVerificationException 
      */
     @PostMapping(value = "/register")
-    public ResponseEntity<?> registerUser(@RequestBody RegisterLocal registerDto) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException, EmailSendFailedException {
+    public ResponseEntity<?> registerUser(@RequestBody RegisterLocal registerDto, HttpServletRequest request) throws UserAlreadyExistsException, LogValuesAreIncorrectException, UserPasswordIsIncorrectException, EmailSendFailedException, HumanVerificationException {
+    	// first verify the turnstile token
+    	String turnstileToken = registerDto.getCfTurnstileToken();
+    	String clientIp = RequestUtils.getClientIpForCloudflare(request);
+    	TurnstileResponse response = cloudflareTurnstileService.validateToken(turnstileToken, clientIp);
+    	if(!response.isSuccess()) {
+    		// log if there are any warning or error codes
+    		LOGGER.error("Turnstile verification warnings or errors: " + (response.getErrorCodes() != null ? String.join(", ", response.getErrorCodes()) : ""));
+    		// failed human verification
+    		throw new HumanVerificationException("Human verification failed, please try again later");
+    	}
+    	
     	try {
     		AccountVerificationToken verify = userAuthService.registerUser(registerDto);
 			//send email with the token
