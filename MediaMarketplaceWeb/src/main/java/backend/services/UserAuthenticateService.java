@@ -21,6 +21,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -152,6 +153,42 @@ public class UserAuthenticateService {
         	newUser.setName(name);
         }
         return userRepository.save(newUser);
+    }
+    
+    @Transactional
+    public User getUserViaOAuth(OAuth2User oauth2) throws LogValuesAreIncorrectException {
+        // Try to find the user by email, otherwise register a new one
+        String email = oauth2.getAttribute("email");
+    	Optional<User> userOpt = findUserByEmail(email);
+    	User user = null;
+    	if(userOpt.isPresent()) {
+    		user = userOpt.get();
+    	}
+    	else {
+            UserInformationDto userInfo = new UserInformationDto();
+            userInfo.setEmail(email);
+			user = registerViaOAuth(userInfo);
+    	}
+        
+        // oauth verified email, so we set the user as verified
+        verifyAccount(user);
+        
+        //update user info from oauth2 provider
+        user.setName(oauth2.getAttribute("name"));
+        user.setProfilePicture(oauth2.getAttribute("picture"));
+        return userRepository.save(user);
+    }
+    
+    public LoginResponse loginViaOAuth(User user) {
+        // Generate oauth2 tokens
+        String accessToken = tokenService.generateAccessToken(user);
+        String refreshToken = refreshTokenService.createRefreshToken(user).getToken();
+        
+        LoginResponse loginResponse = new LoginResponse();
+        loginResponse.setAccessToken(accessToken);
+        loginResponse.setRefreshToken(refreshToken);
+        
+        return loginResponse;
     }
     
     @Transactional

@@ -16,6 +16,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -127,7 +128,7 @@ public class SecurityConfig {
      * @throws Exception if an error occurs during configuration
      */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, ClientRegistrationRepository clientRegistrationRepository) throws Exception {
         http
         	.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable()) // Disables CSRF protection, common in stateless REST APIs.
@@ -156,6 +157,9 @@ public class SecurityConfig {
         	//.formLogin(form -> form.disable());
             .formLogin(Customizer.withDefaults())
             .oauth2Login(oauth2 -> oauth2
+            	.authorizationEndpoint(authorization -> authorization
+            			.authorizationRequestResolver(new CustomAuthorizationRequestResolver(clientRegistrationRepository))
+				)
         		.successHandler(oAuth2SuccessHandler)
 				.permitAll()
 			);
