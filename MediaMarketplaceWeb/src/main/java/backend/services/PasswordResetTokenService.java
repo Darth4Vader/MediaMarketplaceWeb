@@ -42,27 +42,14 @@ public class PasswordResetTokenService {
 	@Autowired
 	private UserRepository userRepository;
 	
-    @Transactional
 	public PasswordResetToken createPasswordResetToken(ResetPasswordTokenRequest resetPasswordTokenRequest) throws UserDoesNotExistsException, PasswordResetTokenCooldownException, LogValuesAreIncorrectException, UserNotVerifiedException {
 		String email = resetPasswordTokenRequest != null ? resetPasswordTokenRequest.getEmail() : null;
 		UserAuthenticateService.checkForEmailException(email);
 		User user = userAuthenticateService.getExistingUserByEmail(email);
 		//check if user is verified
 		userAuthenticateService.checkIfUserIsVerified(user);
-		Optional<PasswordResetToken> existingTokenOpt = passwordResetTokenRepository.findByUser(user);
 		// check if already exists
-		if (existingTokenOpt.isPresent()) {
-			PasswordResetToken existingToken = existingTokenOpt.get();
-			// check if cooldown period has passed
-			if (DataUtils.isUseable(existingToken.getCreatedDate(), PASSWORD_RESET_TOKEN_EXPIRATION_COOLDOWN)) {
-				//cooldown period not passed, do nothing
-				LocalDateTime cooldownEnd = existingToken.getCreatedDate().plus(PASSWORD_RESET_TOKEN_EXPIRATION_COOLDOWN);
-				Duration timeSinceCreation = Duration.between(LocalDateTime.now(), cooldownEnd);
-				throw new PasswordResetTokenCooldownException("Please wait more " + DataUtils.timeLeftString(timeSinceCreation) + " before requesting a new password reset.");
-			}
-			//delete existing token
-			passwordResetTokenRepository.delete(existingToken);
-		}
+		removeExpiredPasswordResetTokenOfUser(user);
 		
 		// create new token
 		PasswordResetToken newToken = new PasswordResetToken();
@@ -120,6 +107,31 @@ public class PasswordResetTokenService {
 		// After the change we will reloging the user again to a new session with his updated information.
 		userAuthenticateService.reloadAuthentication(user);
     }
+    
+    @Transactional
+    public void removeExpiredPasswordResetTokenOfUser(User user) throws PasswordResetTokenCooldownException {
+		Optional<PasswordResetToken> existingTokenOpt = passwordResetTokenRepository.findByUser(user);
+		// check if already exists
+		if (existingTokenOpt.isPresent()) {
+			PasswordResetToken existingToken = existingTokenOpt.get();
+			// check if cooldown period has passed
+			if (DataUtils.isUseable(existingToken.getCreatedDate(), PASSWORD_RESET_TOKEN_EXPIRATION_COOLDOWN)) {
+				//cooldown period not passed, do nothing
+				LocalDateTime cooldownEnd = existingToken.getCreatedDate().plus(PASSWORD_RESET_TOKEN_EXPIRATION_COOLDOWN);
+				Duration timeSinceCreation = Duration.between(LocalDateTime.now(), cooldownEnd);
+				System.out.println(timeSinceCreation);
+				System.out.println(cooldownEnd);
+				System.out.println(existingToken.getCreatedDate());
+				System.out.println(LocalDateTime.now());
+				System.out.println(PASSWORD_RESET_TOKEN_EXPIRATION_COOLDOWN);
+				throw new PasswordResetTokenCooldownException("Please wait more " + DataUtils.timeLeftString(timeSinceCreation) + " before requesting a new password reset.");
+			}
+			//delete existing token
+			existingToken.setUser(null);
+			passwordResetTokenRepository.delete(existingToken);
+			System.out.println("Deleted By Bye");
+		}
+	}
     
     @Transactional
     public void removePasswordResetTokenOfUser(User user) throws EntityNotFoundException {
