@@ -33,7 +33,7 @@ import jakarta.validation.Valid;
  * </p>
  */
 @RestController
-@RequestMapping("/api/main/movies")
+@RequestMapping("/main/movies")
 public class MovieController {
 
     @Autowired

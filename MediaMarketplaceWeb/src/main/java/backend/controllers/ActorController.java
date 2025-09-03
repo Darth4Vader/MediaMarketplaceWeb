@@ -37,7 +37,7 @@ import jakarta.validation.Valid;
  * </p>
  */
 @RestController
-@RequestMapping("api/main/actors")
+@RequestMapping("/main/actors")
 public class ActorController {
 
     @Autowired

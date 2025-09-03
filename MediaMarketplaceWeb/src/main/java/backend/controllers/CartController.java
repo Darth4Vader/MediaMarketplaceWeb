@@ -33,7 +33,7 @@ import jakarta.servlet.http.HttpSession;
  * </p>
  */
 @RestController
-@RequestMapping("api/users/carts")
+@RequestMapping("/users/carts")
 public class CartController {
 
     @Autowired

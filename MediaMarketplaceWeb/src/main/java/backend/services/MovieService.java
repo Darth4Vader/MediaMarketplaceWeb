@@ -61,6 +61,9 @@ public class MovieService {
     
     @Autowired
     private GenreService genreService;
+    
+    @Autowired
+    private UrlUtils urlUtils;
 
     /**
      * Retrieves a list of all movies.
@@ -76,7 +79,7 @@ public class MovieService {
 		
         // Then convert them to DTOs.
         Page<MovieReference> movieReferencesPage = moviePage.map(movie -> {
-        	return MovieService.convertMovieToReference(movie);
+        	return convertMovieToReference(movie);
 		});
         return movieReferencesPage;
     }
@@ -99,7 +102,7 @@ public class MovieService {
 		Page<Movie> moviePage = searchMoviesResult(movieFilter, pageable);
 		// Then convert them to DTOs.
 		Page<MovieDto> movieDtosPage = moviePage.map(movie -> {
-			return MovieService.convertMovieToDto(movie);
+			return convertMovieToDto(movie);
 		});
 		return movieDtosPage;
 	}
@@ -453,11 +456,11 @@ public class MovieService {
      * @param movie The {@link Movie} entity to convert.
      * @return A {@link MovieReference} DTO representing the movie.
      */
-    public static MovieReference convertMovieToReference(Movie movie) {
+    public MovieReference convertMovieToReference(Movie movie) {
         MovieReference movieReference = new MovieReference();
         movieReference.setId(movie.getId());
         movieReference.setName(movie.getName());
-        movieReference.setPosterPath(UrlUtils.getFullImageURL(movie.getPosterPath()));
+        movieReference.setPosterPath(urlUtils.getFullImageURL(movie.getPosterPath()));
         return movieReference;
     }
 
@@ -467,12 +470,12 @@ public class MovieService {
      * @param movie The {@link Movie} entity to convert.
      * @return A {@link MovieDto} object containing detailed information about the movie.
      */
-    public static MovieDto convertMovieToDto(Movie movie) {
+    public MovieDto convertMovieToDto(Movie movie) {
         MovieDto movieDto = new MovieDto();
         movieDto.setId(movie.getId());
         movieDto.setSynopsis(movie.getSynopsis());
-        movieDto.setPosterPath(UrlUtils.getFullImageURL(movie.getPosterPath()));
-        movieDto.setBackdropPath(UrlUtils.getFullImageURL(movie.getBackdropPath()));
+        movieDto.setPosterPath(urlUtils.getFullImageURL(movie.getPosterPath()));
+        movieDto.setBackdropPath(urlUtils.getFullImageURL(movie.getBackdropPath()));
         movieDto.setRuntime(convertRuntimeToDto(movie.getRuntime()));
         movieDto.setName(movie.getName());
         List<Genre> genres = movie.getGenres();

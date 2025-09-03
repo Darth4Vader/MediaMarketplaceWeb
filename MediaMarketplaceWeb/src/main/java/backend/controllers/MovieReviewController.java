@@ -29,7 +29,7 @@ import backend.services.MovieReviewService;
  * </p>
  */
 @RestController
-@RequestMapping("api/main/movie-reviews")
+@RequestMapping("/main/movie-reviews")
 public class MovieReviewController {
 
     @Autowired

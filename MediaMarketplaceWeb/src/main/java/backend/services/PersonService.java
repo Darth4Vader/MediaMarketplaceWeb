@@ -47,6 +47,9 @@ public class PersonService {
     @Autowired
     private DirectorRepository directorRepository;
     
+    @Autowired
+    private UrlUtils urlUtils;
+    
     public PersonDto getPerson(Long id) throws EntityNotFoundException {
 		// Retrieve the person by ID and convert it to a DTO.
 		Person person = getPersonByID(id);
@@ -161,28 +164,28 @@ public class PersonService {
      * @param person The {@link Person} entity to convert.
      * @return A {@link PersonDto} containing the details of the person.
      */
-    public static PersonDto convertPersonToDto(Person person) {
+    public PersonDto convertPersonToDto(Person person) {
         PersonDto personDto = new PersonDto();
-        personDto.setImagePath(UrlUtils.getFullImageURL(person.getImagePath()));
+        personDto.setImagePath(urlUtils.getFullImageURL(person.getImagePath()));
         personDto.setName(person.getName());
         personDto.setBirthDate(person.getBirthDate());
         return personDto;
     }
     
-    public static PersonDto convertPersonToAdminDto(Person person) {
+    public PersonDto convertPersonToAdminDto(Person person) {
         PersonAdminDto personDto = new PersonAdminDto();
         personDto.setPersonMediaID(person.getMediaId());
-        personDto.setImagePath(UrlUtils.getFullImageURL(person.getImagePath()));
+        personDto.setImagePath(urlUtils.getFullImageURL(person.getImagePath()));
         personDto.setName(person.getName());
         personDto.setBirthDate(person.getBirthDate());
         return personDto;
     }
     
-    public static PersonReference convertPersonToReference(Person person) {
+    public PersonReference convertPersonToReference(Person person) {
         PersonReference personReference = new PersonReference();
         personReference.setId(person.getId());
         personReference.setName(person.getName());
-        personReference.setImagePath(UrlUtils.getFullImageURL(person.getImagePath()));
+        personReference.setImagePath(urlUtils.getFullImageURL(person.getImagePath()));
         return personReference;
     }
 }

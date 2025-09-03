@@ -61,7 +61,7 @@ import jakarta.validation.Valid;
  * </p>
  */
 @RestController
-@RequestMapping("api/users")
+@RequestMapping("/users")
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class UserAuthenticateController {
 	

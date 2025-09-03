@@ -26,7 +26,7 @@ import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("api/users/reset-password")
+@RequestMapping("/users/reset-password")
 public class PasswordResetTokenController {
 	
 	@Autowired

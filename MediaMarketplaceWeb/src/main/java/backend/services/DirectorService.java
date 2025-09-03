@@ -57,7 +57,7 @@ public class DirectorService {
 		
         // Then convert them to DTOs.
         Page<PersonReference> directorReferencesPage = directorPage.map(director -> {
-        	return PersonService.convertPersonToReference(director);
+        	return personService.convertPersonToReference(director);
 		});
         return directorReferencesPage;
     }
@@ -110,7 +110,7 @@ public class DirectorService {
             for (Director director : directors) {
                 DirectorDto directorDto = new DirectorDto();
                 directorDto.setMovieId(movieId);
-                directorDto.setPerson(PersonService.convertPersonToDto(director.getPerson()));
+                directorDto.setPerson(personService.convertPersonToDto(director.getPerson()));
                 directorsDto.add(directorDto);
             }
         }

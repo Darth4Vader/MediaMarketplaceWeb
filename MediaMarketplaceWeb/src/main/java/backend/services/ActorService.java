@@ -58,7 +58,7 @@ public class ActorService {
 		
         // Then convert them to DTOs.
         Page<PersonReference> actorReferencesPage = actorPage.map(actor -> {
-        	return PersonService.convertPersonToReference(actor);
+        	return personService.convertPersonToReference(actor);
 		});
         return actorReferencesPage;
     }
@@ -116,7 +116,7 @@ public class ActorService {
             for (Actor actor : actors) {
                 ActorDto actorDto = new ActorDto();
                 actorDto.setMovieId(movieId);
-                actorDto.setPerson(PersonService.convertPersonToDto(actor.getPerson()));
+                actorDto.setPerson(personService.convertPersonToDto(actor.getPerson()));
                 actorDto.setRoleName(actor.getRoleName());
                 actorsDto.add(actorDto);
             }

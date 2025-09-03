@@ -3,6 +3,7 @@ package backend.utils;
 import java.net.URI;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -15,6 +16,9 @@ public class UrlUtils {
 	@Autowired
 	private ConfigValues configValues;
 	
+	@Value("${PROFILE}")
+	private String profile;
+	
 	public String getFullURL(String relativePath) {
 	    if (relativePath == null || relativePath.isBlank()) return null;
 
@@ -24,11 +28,13 @@ public class UrlUtils {
 	    return fullUri.toString();
 	}
 
-	public static String getServerURL() {
-		return ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+	public String getServerURL() {
+		if(profile != null && profile.equals("dev"))
+			return ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+		return ServletUriComponentsBuilder.fromCurrentContextPath().replacePath("").build().toUriString();
 	}
 	
-	public static String getFullImageURL(String imageUri) {
+	public String getFullImageURL(String imageUri) {
 		if(imageUri == null) return null;
 		return getServerURL() + "/" + ActivateSpringApplication.IMAGES_FOLDER + "/" + imageUri;
 	}

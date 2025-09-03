@@ -139,11 +139,11 @@ public class SecurityConfig {
             		//This is for swagger, remove when using javafx
             		.requestMatchers("/images/**").permitAll()
             		.requestMatchers(AUTH_WHITELIST).permitAll()
-            		.requestMatchers("/api/users/login", "/api/users/register", "/api/users/verify", "/api/users/refresh", "/api/users/refresh/logout", "/oauth2/authorization/google").permitAll()
-            		.requestMatchers(HttpMethod.GET, "/api/main/**").permitAll()
-            		.requestMatchers("/api/users/carts/**").permitAll()
-            		.requestMatchers("/api/users/reset-password/**").permitAll()
-            		.requestMatchers("/error").permitAll()
+            		.requestMatchers("/users/login", "/users/register", "/users/verify", "/users/refresh", "/users/refresh/logout", "/oauth2/authorization/google").permitAll()
+            		.requestMatchers(HttpMethod.GET, "/main/**").permitAll()
+            		.requestMatchers("/users/carts/**").permitAll()
+            		.requestMatchers("/users/reset-password/**").permitAll()
+            		.requestMatchers("/error", "/login", "/login/oauth2/code/google").permitAll()
             		.anyRequest().authenticated()
                 /*
             	.requestMatchers("/auth").permitAll()

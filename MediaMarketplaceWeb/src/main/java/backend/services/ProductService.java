@@ -221,10 +221,10 @@ public class ProductService {
      * @param product The {@link Product} entity to convert.
      * @return A {@link ProductDto} containing the details of the product.
      */
-    public static ProductDto convertProductToDto(Product product) {
+    public ProductDto convertProductToDto(Product product) {
         ProductDto productDto = new ProductDto();
         productDto.setId(product.getId());
-        productDto.setMovie(MovieService.convertMovieToReference(product.getMovie()));
+        productDto.setMovie(movieService.convertMovieToReference(product.getMovie()));
         productDto.setFinalBuyPrice(calculateBuyPrice(product));
         productDto.setFinalRentPrice(calculateRentPrice(product));
         return productDto;

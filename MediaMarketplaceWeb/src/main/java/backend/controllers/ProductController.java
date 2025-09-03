@@ -33,7 +33,7 @@ import jakarta.validation.Valid;
  * </p>
  */
 @RestController
-@RequestMapping("/api/main/products")
+@RequestMapping("/main/products")
 public class ProductController {
 
     @Autowired

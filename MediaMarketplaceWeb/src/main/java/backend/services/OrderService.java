@@ -48,6 +48,9 @@ public class OrderService {
 
     @Autowired
     private TokenService tokenService;
+    
+    @Autowired
+    private MoviePurchasedService moviePurchasedService;
 
     /**
      * Retrieves a list of orders made by the current user.
@@ -155,7 +158,7 @@ public class OrderService {
         if (moviePurchasedList != null) {
             for (MoviePurchased moviePurchased : moviePurchasedList) {
                 if (moviePurchased != null) {
-                    MoviePurchasedDto moviePurchasedDto = MoviePurchasedService.convertMoviePurchasedtoDto(moviePurchased);
+                    MoviePurchasedDto moviePurchasedDto = moviePurchasedService.convertMoviePurchasedtoDto(moviePurchased);
                     moviePurchasedDtoList.add(moviePurchasedDto);
                 }
             }

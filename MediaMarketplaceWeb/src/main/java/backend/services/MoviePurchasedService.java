@@ -73,7 +73,7 @@ public class MoviePurchasedService {
         // Then convert the active ones to movie references.
         Page<MovieReference> movieReferencesPage = moviePurchasedPage.map(purchased -> {
 			Movie movie = purchased.getMovie();
-			return MovieService.convertMovieToReference(movie);
+			return movieService.convertMovieToReference(movie);
 		});
         return movieReferencesPage;
     }
@@ -200,10 +200,10 @@ public class MoviePurchasedService {
      * @param moviePurchased The MoviePurchased entity to convert.
      * @return A MoviePurchasedDto object representing the converted entity.
      */
-    public static MoviePurchasedDto convertMoviePurchasedtoDto(MoviePurchased moviePurchased) {
+    public MoviePurchasedDto convertMoviePurchasedtoDto(MoviePurchased moviePurchased) {
         MoviePurchasedDto moviePurchasedDto = new MoviePurchasedDto();
         moviePurchasedDto.setId(moviePurchased.getId());
-        moviePurchasedDto.setMovie(MovieService.convertMovieToReference(moviePurchased.getMovie()));
+        moviePurchasedDto.setMovie(movieService.convertMovieToReference(moviePurchased.getMovie()));
         moviePurchasedDto.setPurchasePrice(moviePurchased.getPurchasePrice());
         boolean isRented = moviePurchased.isRented();
         moviePurchasedDto.setRented(isRented);

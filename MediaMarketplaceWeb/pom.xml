@@ -10,7 +10,7 @@
     <maven.compiler.source>24</maven.compiler.source>
     <maven.compiler.target>24</maven.compiler.target>
     <mainClass>Main</mainClass>
-    <spring.version>3.4.4</spring.version>
+    <spring.version>3.5.5</spring.version>
     <javafx.version>25-ea+11</javafx.version>
 </properties>
   
@@ -28,7 +28,7 @@
   <dependency>
     <groupId>org.springframework.data</groupId>
     <artifactId>spring-data-envers</artifactId>
-    <version>${spring.version}</version>
+    <version>3.5.3</version>
   </dependency>
   <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -68,7 +68,7 @@
 <dependency>
     <groupId>org.springframework.session</groupId>
     <artifactId>spring-session-jdbc</artifactId>
-    <version>${spring.version}</version>
+    <version>3.5.2</version>
 </dependency>
 
 

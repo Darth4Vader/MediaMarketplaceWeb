@@ -37,7 +37,7 @@ import jakarta.validation.Valid;
  * </p>
  */
 @RestController
-@RequestMapping("/api/main/directors")
+@RequestMapping("/main/directors")
 public class DirectorController {
 
     @Autowired

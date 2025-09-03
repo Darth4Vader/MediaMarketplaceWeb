@@ -21,7 +21,7 @@ import backend.services.OrderService;
  * </p>
  */
 @RestController
-@RequestMapping("/api/users/current/orders")
+@RequestMapping("/users/current/orders")
 public class OrderController {
 
     @Autowired

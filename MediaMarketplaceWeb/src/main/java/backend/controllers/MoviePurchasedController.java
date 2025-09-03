@@ -25,7 +25,7 @@ import backend.services.MoviePurchasedService;
  * </p>
  */
 @RestController
-@RequestMapping("/api/users/current/movie-purchased")
+@RequestMapping("/users/current/movie-purchased")
 public class MoviePurchasedController {
 
     @Autowired

@@ -26,7 +26,7 @@ import jakarta.validation.Valid;
  * </p>
  */
 @RestController
-@RequestMapping("api/main/genres")
+@RequestMapping("/main/genres")
 public class GenreController {
 
     @Autowired

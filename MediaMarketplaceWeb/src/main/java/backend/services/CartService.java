@@ -465,10 +465,10 @@ public class CartService {
     	return cartProductRepository.findAll(spec, pageable);
     }
     
-    public static CartProductDto convertCartProductToDto(CartProduct cartProduct) {
+    public CartProductDto convertCartProductToDto(CartProduct cartProduct) {
 		CartProductDto cartProductDto = new CartProductDto();
 		Product product = cartProduct.getProduct();
-		ProductDto productDto = ProductService.convertProductToDto(product);
+		ProductDto productDto = productService.convertProductToDto(product);
 		cartProductDto.setProduct(productDto);
 		String purchaseType = cartProduct.getPurchaseType();
 		cartProductDto.setPurchaseType(purchaseType);
