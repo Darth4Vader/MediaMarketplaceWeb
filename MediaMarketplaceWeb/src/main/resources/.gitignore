@@ -1,3 +1,5 @@
 /Dockerfile
 /tmdb.key
 /env.properties
+/application-prod.properties
+/application-dev.properties
