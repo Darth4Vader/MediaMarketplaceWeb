@@ -40,6 +40,16 @@ public class GenreService {
     @Autowired
     private GenreRepository genreRepository;
     
+    public List<GenreReference> getGenres(List<Long> ids) {
+    	List<Genre> genreList = genreRepository.findAllById(ids);
+		
+        // Then convert them to DTOs.
+        List<GenreReference> genreReferences = genreList.stream()
+				.map(genre -> convertGenreToReference(genre))
+				.toList();
+        return genreReferences;
+    }
+    
     public Page<GenreReference> searchGenres(GenreFilter genreFilter, Pageable pageable) {
     	Specification<Genre> specification = createGenreSearchSpecification(genreFilter);
 		Page<Genre> genrePage = genreRepository.findAll(specification, pageable);

@@ -55,6 +55,16 @@ public class PersonService {
 		Person person = getPersonByID(id);
 		return convertPersonToDto(person);
 	}
+    
+    public List<PersonReference> getPeople(List<Long> ids) {
+    	List<Person> peopleList = personRepository.findAllById(ids);
+		
+        // Then convert them to DTOs.
+        List<PersonReference> peopleReferences = peopleList.stream()
+				.map(genre -> convertPersonToReference(genre))
+				.toList();
+        return peopleReferences;
+    }
 
     /**
      * Adds a new person to the database.
