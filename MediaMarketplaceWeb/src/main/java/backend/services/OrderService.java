@@ -99,8 +99,9 @@ public class OrderService {
         User user = tokenService.getCurretUser();
         Cart cart = cartService.getCartByUser(user);
         List<CartProduct> cartProducts = cart.getCartProducts();
+        List<CartProduct> selectedCartProducts = new ArrayList<>();
         double totalPrice = 0;
-        Order order = new Order();
+        List<MoviePurchased> purchasedItems = new ArrayList<>();
 
         // If the cart is empty, throw an exception.
         if (cartProducts.isEmpty()) {
@@ -109,30 +110,50 @@ public class OrderService {
 
         // Convert CartProducts to MoviePurchased items and calculate the total price.
         for (CartProduct cartProduct : cartProducts) {
-            Product product = cartProduct.getProduct();
-            String purchaseType = cartProduct.getPurchaseType();
-            double price = CartService.calculateCartProductPrice(product, purchaseType);
-            Movie movie = product.getMovie();
-
-            // Create the movie purchased item from the cart product.
-            MoviePurchased orderItem = new MoviePurchased();
-            orderItem.setMovie(movie);
-            orderItem.setPurchasePrice(price);
-            PurchaseType purchaseTypeEnum = PurchaseType.fromString(purchaseType);
-            orderItem.setRented(purchaseTypeEnum == PurchaseType.RENT);
-            
-            // Check if it is a rent or a purchase.
-            if (purchaseTypeEnum == PurchaseType.RENT) {
-                orderItem.setRentTime(Duration.ofMinutes(RENT_TIME)); // Setting default rent time
-            }
-
-            totalPrice += price;
-            order.addToPurchasedItems(orderItem);
+        	// only process selected products
+        	if(cartProduct.isSelected()) {
+	            Product product = cartProduct.getProduct();
+	            String purchaseType = cartProduct.getPurchaseType();
+	            double price = CartService.calculateCartProductPrice(product, purchaseType);
+	            Movie movie = product.getMovie();
+	
+	            // Create the movie purchased item from the cart product.
+	            MoviePurchased orderItem = new MoviePurchased();
+	            orderItem.setMovie(movie);
+	            orderItem.setPurchasePrice(price);
+	            PurchaseType purchaseTypeEnum = PurchaseType.fromString(purchaseType);
+	            orderItem.setRented(purchaseTypeEnum == PurchaseType.RENT);
+	            
+	            // Check if it is a rent or a purchase.
+	            if (purchaseTypeEnum == PurchaseType.RENT) {
+	                orderItem.setRentTime(Duration.ofMinutes(RENT_TIME)); // Setting default rent time
+	            }
+	
+	            totalPrice += price;
+	            purchasedItems.add(orderItem);
+	            selectedCartProducts.add(cartProduct);
+        	}
         }
 
+        // first check if there are selected products, can't place order with no products selected
+        if(purchasedItems.isEmpty()) {
+			throw new PurchaseOrderException("No products selected in the cart");
+		}
+        
+        // create the order and set its properties
+        Order order = new Order();
+        purchasedItems.stream().forEach(orderItem -> {
+        	order.addToPurchasedItems(orderItem);
+		});
         order.setTotalPrice(totalPrice);
         order.setUser(user);
-        cartService.removeCartFromUser(cart);
+        
+        // remove selected cart products from the cart
+        cartProducts.removeAll(selectedCartProducts);
+        // if cart is empty, then remove the cart from the user
+        if(cartProducts.isEmpty()) {
+			cartService.removeCartFromUser(cart);
+		}
         Order createdOrder = orderRepository.save(order);
         return createdOrder.getId();
     }

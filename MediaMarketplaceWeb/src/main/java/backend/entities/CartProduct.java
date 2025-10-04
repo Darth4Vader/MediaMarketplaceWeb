@@ -60,6 +60,9 @@ public class CartProduct {
     
     @JoinColumn(name = "purchase_type", nullable = false)
     private String purchaseType;
+    
+    @JoinColumn(name = "is_selected", nullable = false)
+    private boolean isSelected;
 
     /**
      * Gets the unique identifier for this cart product.
@@ -121,5 +124,13 @@ public class CartProduct {
     
     public void setPurchaseType(String purchaseType) {
 		this.purchaseType = purchaseType;
+    }
+    
+    public boolean isSelected() {
+		return isSelected;
+    }
+    
+    public void setSelected(boolean isSelected) {
+		this.isSelected = isSelected;
     }
 }

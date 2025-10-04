@@ -1,5 +1,7 @@
 package backend.dtos;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Data Transfer Object for representing a product in a shopping cart.
  */
@@ -19,6 +21,8 @@ public class CartProductDto {
      * The price of the product.
      */
     private double price;
+    
+    private boolean isSelected;
 
     /**
      * Gets the product in the cart.
@@ -62,5 +66,14 @@ public class CartProductDto {
      */
     public void setPrice(double price) {
         this.price = price;
+    }
+    
+    @JsonProperty("isSelected")
+    public boolean isSelected() {
+		return isSelected;
+    }
+    
+    public void setSelected(boolean isSelected) {
+    	this.isSelected = isSelected;
     }
 }

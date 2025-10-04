@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import backend.exceptions.BadRequestException;
 import backend.exceptions.EmailSendFailedException;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
@@ -106,7 +107,7 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(PurchaseOrderException.class)
 	public ResponseEntity<Object> handlePurchaseOrderException(PurchaseOrderException ex, WebRequest request) {
 		LOGGER.error(ex);
-		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
 	}
 	
 	@ExceptionHandler(MovieReviewValuesAreIncorrectException.class)
@@ -182,6 +183,12 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 				"error", ex.getMessage()
 		);
 		return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+	}
+	
+	@ExceptionHandler(BadRequestException.class)
+	public ResponseEntity<Object> handleBadRequestException(BadRequestException ex, WebRequest request) {
+		LOGGER.error(ex);
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
 	}
 	
 	/**

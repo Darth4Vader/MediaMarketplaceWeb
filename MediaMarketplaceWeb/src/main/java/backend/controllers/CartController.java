@@ -8,9 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import backend.dtos.CartDto;
 import backend.dtos.carts.UpdatedCartProductDto;
 import backend.dtos.references.CartProductReference;
+import backend.exceptions.BadRequestException;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
@@ -69,7 +70,7 @@ public class CartController {
      */
     @PostMapping("/")
     public ResponseEntity<?> addProductToCart(@RequestBody CartProductReference dto, HttpSession session) 
-            throws EntityNotFoundException, EntityAlreadyExistsException, EntityUnprocessableException {
+            throws EntityNotFoundException, EntityAlreadyExistsException, BadRequestException {
         try {
             cartService.addProductToCart(dto, session);
         } catch (DataAccessException e) {
@@ -101,9 +102,9 @@ public class CartController {
         return new ResponseEntity<>("Removed Successfully", HttpStatus.OK);
     }
     
-    @PutMapping("/{productId}")
+    @PatchMapping("/{productId}")
     public UpdatedCartProductDto updateCartProduct(@NonNull @PathVariable("productId") Long productId, @RequestBody CartProductReference dto, HttpSession session) 
-            throws EntityNotFoundException, EntityUnprocessableException {
+            throws EntityNotFoundException, BadRequestException {
         try {
             return cartService.updateCartProduct(productId, dto, session);
         } catch (DataAccessException e) {

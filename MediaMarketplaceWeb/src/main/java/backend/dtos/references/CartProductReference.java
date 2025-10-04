@@ -1,5 +1,7 @@
 package backend.dtos.references;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -18,6 +20,8 @@ public class CartProductReference {
      * Indicates whether the product is being bought.
      */
     private String purchaseType;
+    
+    private Boolean isSelected;
 
     /**
      * Gets the unique identifier for the product.
@@ -43,5 +47,14 @@ public class CartProductReference {
     
     public void setPurchaseType(String purchaseType) {
 		this.purchaseType = purchaseType;
+    }
+    
+    @JsonProperty("isSelected")
+    public Boolean isSelected() {
+		return isSelected;
+    }
+    
+    public void setSelected(Boolean isSelected) {
+		this.isSelected = isSelected;
     }
 }

@@ -13,7 +13,6 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException.UnprocessableEntity;
 
 import backend.dtos.CartDto;
 import backend.dtos.CartProductDto;
@@ -24,9 +23,9 @@ import backend.entities.Cart;
 import backend.entities.CartProduct;
 import backend.entities.Product;
 import backend.entities.User;
+import backend.exceptions.BadRequestException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
-import backend.exceptions.EntityUnprocessableException;
 import backend.exceptions.UserNotLoggedInException;
 import backend.repositories.CartProductRepository;
 import backend.repositories.CartRepository;
@@ -162,11 +161,11 @@ public class CartService {
      *                             buying type.
      * @throws EntityNotFoundException if the product is not found.
      * @throws EntityAlreadyExistsException if the product is already in the cart with the same purchase type.
-     * @throws EntityUnprocessableException 
+     * @throws BadRequestException 
      * @throws  
      */
     @Transactional
-    public void addProductToCart(CartProductReference cartProductReference, HttpSession session) throws EntityNotFoundException, EntityAlreadyExistsException, EntityUnprocessableException {
+    public void addProductToCart(CartProductReference cartProductReference, HttpSession session) throws EntityNotFoundException, EntityAlreadyExistsException, BadRequestException {
     	// check that the request content is valid
     	validateCartProductReference(cartProductReference);
     	// First load or create the user's cart.
@@ -187,6 +186,7 @@ public class CartService {
         cartProduct.setProduct(product);
         cartProduct.setCart(cart);
         cartProduct.setPurchaseType(cartProductReference.getPurchaseType());
+        cartProduct.setSelected(true);
         addProductToCart(cart, cartProduct);
     }
     
@@ -210,9 +210,11 @@ public class CartService {
     }
     
     @Transactional
-    public UpdatedCartProductDto updateCartProduct(Long productId, CartProductReference cartProductReference, HttpSession session) throws EntityNotFoundException, EntityUnprocessableException {
+    public UpdatedCartProductDto updateCartProduct(Long productId, CartProductReference cartProductReference, HttpSession session) throws EntityNotFoundException, BadRequestException {
     	// check that the request content is valid
-    	validateCartProductReference(cartProductReference);
+    	String newPurchaseType = cartProductReference.getPurchaseType();
+    	if(newPurchaseType != null)
+    		validateCartProductPurchaseType(newPurchaseType);
     	// load the cart of the current session and the product
         Cart cart = getCartOfSession(session);
         Product product = productService.getProductByID(productId);
@@ -220,7 +222,11 @@ public class CartService {
         if (cartProduct != null) {
 			// Update the cart product as needed
 			// For example, you can change the buying type or other properties
-			cartProduct.setPurchaseType(cartProductReference.getPurchaseType());
+        	if(newPurchaseType != null)
+        		cartProduct.setPurchaseType(newPurchaseType);
+        	Boolean isSelected = cartProductReference.isSelected();
+        	if(isSelected != null)
+        		cartProduct.setSelected(isSelected);
 			CartProduct updatedCartProduct = cartProductRepository.save(cartProduct);
 			UpdatedCartProductDto dto = new UpdatedCartProductDto();
 			dto.setCartProduct(convertCartProductToDto(updatedCartProduct));
@@ -247,10 +253,14 @@ public class CartService {
         return cartRepository.save(cart);
     }
     
-    private void validateCartProductReference(CartProductReference cartProductReference) throws UnprocessableEntity, EntityUnprocessableException {
+    private void validateCartProductReference(CartProductReference cartProductReference) throws BadRequestException {
 		String type = cartProductReference.getPurchaseType();
+    	validateCartProductPurchaseType(type);
+	}
+    
+    private void validateCartProductPurchaseType(String type) throws BadRequestException {
     	if (PurchaseType.fromString(type) == null) {
-			throw new EntityUnprocessableException(type + " is not a valid purchase type");
+			throw new BadRequestException(type + " is not a valid purchase type");
 		}
 	}
     
@@ -472,6 +482,8 @@ public class CartService {
 		cartProductDto.setProduct(productDto);
 		String purchaseType = cartProduct.getPurchaseType();
 		cartProductDto.setPurchaseType(purchaseType);
+		boolean isSelected = cartProduct.isSelected();
+		cartProductDto.setSelected(isSelected);
 		double price = calculateCartProductPrice(product, purchaseType);
 		cartProductDto.setPrice(price);
 		return cartProductDto;
