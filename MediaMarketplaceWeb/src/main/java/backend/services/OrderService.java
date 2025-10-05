@@ -14,6 +14,7 @@ import backend.dtos.MoviePurchasedDto;
 import backend.dtos.OrderDto;
 import backend.entities.Cart;
 import backend.entities.CartProduct;
+import backend.entities.CurrencyKind;
 import backend.entities.Movie;
 import backend.entities.MoviePurchased;
 import backend.entities.Order;
@@ -51,6 +52,9 @@ public class OrderService {
     
     @Autowired
     private MoviePurchasedService moviePurchasedService;
+    
+    @Autowired
+    private CurrencyService currencyService;
 
     /**
      * Retrieves a list of orders made by the current user.
@@ -107,6 +111,9 @@ public class OrderService {
         if (cartProducts.isEmpty()) {
             throw new PurchaseOrderException("The Cart is empty");
         }
+        
+        // get the current currency of the user
+        CurrencyKind purchaseCurrency = currencyService.getCurrentUserPreferredCurrency(user);
 
         // Convert CartProducts to MoviePurchased items and calculate the total price.
         for (CartProduct cartProduct : cartProducts) {
@@ -114,13 +121,14 @@ public class OrderService {
         	if(cartProduct.isSelected()) {
 	            Product product = cartProduct.getProduct();
 	            String purchaseType = cartProduct.getPurchaseType();
-	            double price = CartService.calculateCartProductPrice(product, purchaseType);
+	            double price = cartService.calculateCartProductTypePriceInCurrency(cartProduct, purchaseCurrency);
 	            Movie movie = product.getMovie();
 	
 	            // Create the movie purchased item from the cart product.
 	            MoviePurchased orderItem = new MoviePurchased();
 	            orderItem.setMovie(movie);
 	            orderItem.setPurchasePrice(price);
+	            orderItem.setPurchasedCurrency(purchaseCurrency);
 	            PurchaseType purchaseTypeEnum = PurchaseType.fromString(purchaseType);
 	            orderItem.setRented(purchaseTypeEnum == PurchaseType.RENT);
 	            
@@ -146,6 +154,7 @@ public class OrderService {
         	order.addToPurchasedItems(orderItem);
 		});
         order.setTotalPrice(totalPrice);
+        order.setPurchasedCurrency(purchaseCurrency);
         order.setUser(user);
         
         // remove selected cart products from the cart
@@ -172,6 +181,7 @@ public class OrderService {
         OrderDto orderDto = new OrderDto();
         orderDto.setId(order.getId());
         orderDto.setPurchasedDate(TimezoneUtils.convertToRequestTimezone(order.getPurchasedDate()));
+        orderDto.setCurrencyCode(order.getPurchasedCurrency().getCode());
         orderDto.setTotalPrice(order.getTotalPrice());
         List<MoviePurchased> moviePurchasedList = order.getPurchasedItems();
         List<MoviePurchasedDto> moviePurchasedDtoList = new ArrayList<>();

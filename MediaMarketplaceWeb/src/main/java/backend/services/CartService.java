@@ -1,5 +1,6 @@
 package backend.services;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import backend.dtos.carts.UpdatedCartProductDto;
 import backend.dtos.references.CartProductReference;
 import backend.entities.Cart;
 import backend.entities.CartProduct;
+import backend.entities.CurrencyKind;
 import backend.entities.Product;
 import backend.entities.User;
 import backend.exceptions.BadRequestException;
@@ -63,6 +65,9 @@ public class CartService {
     @Autowired
     private TokenService tokenService;
     
+    @Autowired
+    private CurrencyService currencyService;
+    
     /**
      * Retrieves the current user's shopping cart as a DTO.
      * <p>
@@ -74,18 +79,37 @@ public class CartService {
      * @return A {@link CartDto} representing the user's cart.
      * @throws EntityNotFoundException if the user does not have a cart.
      */
-    public CartDto getCart(Pageable pageable, HttpSession session) {
+    public CartDto getCart(Pageable pageable, HttpSession session) throws EntityNotFoundException {
     	// first we load the cart of the current session
         Cart cart = getCartOfSession(session);
         // load the cart products for the requested page
         Page<CartProduct> cartProductsPage = searchCartProductsResult(cart, pageable);
+        // then load the current currency of the session or user
+		CurrencyKind currentCurrency = currencyService.getCurrencyFromSessionOrUser(session);
         // And then we convert it to a cart DTO
         CartDto cartDto = new CartDto();
-        Page<CartProductDto> cartProductsDtoPage = cartProductsPage.map(cartProduct -> {
-        	return convertCartProductToDto(cartProduct);
-		});
+        Page<CartProductDto> cartProductsDtoPage;
+        // temporary try catch to handle the exception thrown inside the lambda of map function (if one of the exchange rates does not exist)
+        // maybe in the future fix this, like adding to individual cart product dto a message that says if success or fail conversion
+        try {
+        	cartProductsDtoPage = cartProductsPage.map(cartProduct -> {
+	        	try {
+					return convertCartProductToDto(cartProduct, currentCurrency);
+				} catch (EntityNotFoundException e) {
+					throw new RuntimeException(e);
+				}
+			});
+        }
+        catch(RuntimeException e) {
+        	if(e.getCause() instanceof EntityNotFoundException) {
+        		throw (EntityNotFoundException) e.getCause();
+			}
+			else {
+				throw e;
+        	}
+		}
         cartDto.setCartProducts(cartProductsDtoPage);
-        cartDto.setTotalPrice(calculateCartTotalPrice(cart));
+        cartDto.setTotalPrice(calculateCartTotalPrice(cart, currentCurrency));
         cartDto.setTotalItems(calculateCartProductTotalItems(cart));
         return cartDto;
     }
@@ -228,10 +252,11 @@ public class CartService {
         	if(isSelected != null)
         		cartProduct.setSelected(isSelected);
 			CartProduct updatedCartProduct = cartProductRepository.save(cartProduct);
+			CurrencyKind currentCurrency = currencyService.getCurrencyFromSessionOrUser(session);
 			UpdatedCartProductDto dto = new UpdatedCartProductDto();
-			dto.setCartProduct(convertCartProductToDto(updatedCartProduct));
+			dto.setCartProduct(convertCartProductToDto(updatedCartProduct, currentCurrency));
 			dto.setTotalItems(calculateCartProductTotalItems(cart));
-			dto.setTotalPrice(calculateCartTotalPrice(cart));
+			dto.setTotalPrice(calculateCartTotalPrice(cart, currentCurrency));
 			return dto;
 		} else {
 			throw new EntityNotFoundException("Product not found in the cart");
@@ -475,7 +500,7 @@ public class CartService {
     	return cartProductRepository.findAll(spec, pageable);
     }
     
-    public CartProductDto convertCartProductToDto(CartProduct cartProduct) {
+    public CartProductDto convertCartProductToDto(CartProduct cartProduct, CurrencyKind currentCurrency) throws EntityNotFoundException {
 		CartProductDto cartProductDto = new CartProductDto();
 		Product product = cartProduct.getProduct();
 		ProductDto productDto = productService.convertProductToDto(product);
@@ -484,8 +509,8 @@ public class CartService {
 		cartProductDto.setPurchaseType(purchaseType);
 		boolean isSelected = cartProduct.isSelected();
 		cartProductDto.setSelected(isSelected);
-		double price = calculateCartProductPrice(product, purchaseType);
-		cartProductDto.setPrice(price);
+		cartProductDto.setPrice(calculateCartProductTypePriceInCurrency(cartProduct, currentCurrency));
+		cartProductDto.setCurrencyCode(currentCurrency.getCode());
 		return cartProductDto;
 	}
     
@@ -498,20 +523,28 @@ public class CartService {
 		return totalItems;
 	}
     
-    public static double calculateCartTotalPrice(Cart cart) {
+    public double calculateCartTotalPrice(Cart cart, CurrencyKind currentCurrency) throws EntityNotFoundException {
         double totalPrice = 0;
         List<CartProduct> cartProducts = cart.getCartProducts();
         if (cartProducts != null) {
             for (CartProduct cartProduct : cartProducts) {
                 if (cartProduct != null) {
-                    Product product = cartProduct.getProduct();
-                    String purchaseType = cartProduct.getPurchaseType();
-                    double price = calculateCartProductPrice(product, purchaseType);
+                    // get the calculated price of the product in the current currency
+                	double price = calculateCartProductTypePriceInCurrency(cartProduct, currentCurrency);
                     totalPrice += price;
                 }
             }
         }
         return totalPrice;
+    }
+    
+    public double calculateCartProductTypePriceInCurrency(CartProduct cartProduct, CurrencyKind targetCurrency) throws EntityNotFoundException {
+    	Product product = cartProduct.getProduct();
+		String purchaseType = cartProduct.getPurchaseType();
+    	double typePrice = getCartProductTypePrice(product, purchaseType);
+		CurrencyKind productCurrency = product.getCurrency();
+		BigDecimal convertedPrice = currencyService.exchangeCurrencyAmount(productCurrency, targetCurrency, typePrice);
+		return convertedPrice.doubleValue();
     }
     
     /**
@@ -521,7 +554,7 @@ public class CartService {
      * @param isBuying Whether the product is being bought or rented.
      * @return The price of the product based on the buying status.
      */
-    public static double calculateCartProductPrice(Product product, String purchaseType) {
+    public static double getCartProductTypePrice(Product product, String purchaseType) {
         return switch(PurchaseType.fromString(purchaseType)) {
 			case BUY -> product.getBuyPrice();
 			case RENT -> product.getRentPrice();

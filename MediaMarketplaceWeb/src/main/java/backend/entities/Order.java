@@ -55,6 +55,10 @@ public class Order {
     @Column(name = "total_price")
     private double totalPrice;
     
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "purchased_currency_code")
+    private CurrencyKind purchasedCurrency;
+    
     /**
      * The date and time when the order was created.
      * This field maps to the 'purchased_date' column in the 'orders' table and is automatically set by the auditing system.
@@ -186,4 +190,12 @@ public class Order {
     public void setUser(User user) {
         this.user = user;
     }
+    
+	public CurrencyKind getPurchasedCurrency() {
+		return purchasedCurrency;
+	}
+	
+	public void setPurchasedCurrency(CurrencyKind purchasedCurrency) {
+		this.purchasedCurrency = purchasedCurrency;
+	}
 }

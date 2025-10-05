@@ -22,6 +22,11 @@ public class CartProductDto {
      */
     private double price;
     
+    /**
+     * The currency code for the price (e.g., USD, EUR).
+     */
+    private String currencyCode;
+    
     private boolean isSelected;
 
     /**
@@ -66,6 +71,14 @@ public class CartProductDto {
      */
     public void setPrice(double price) {
         this.price = price;
+    }
+    
+    public String getCurrencyCode() {
+		return currencyCode;
+    }
+    
+    public void setCurrencyCode(String currencyCode) {
+		this.currencyCode = currencyCode;
     }
     
     @JsonProperty("isSelected")

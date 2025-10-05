@@ -17,6 +17,8 @@ public class OrderDto {
      * The total price of the order.
      */
     private double totalPrice;
+    
+    private String currencyCode;
 
     /**
      * The date and time when the order was purchased.
@@ -99,4 +101,12 @@ public class OrderDto {
     public void setPurchasedItems(List<MoviePurchasedDto> purchasedItems) {
         this.purchasedItems = purchasedItems;
     }
+    
+	public String getCurrencyCode() {
+		return currencyCode;
+	}
+	
+	public void setCurrencyCode(String currencyCode) {
+		this.currencyCode = currencyCode;
+	}
 }

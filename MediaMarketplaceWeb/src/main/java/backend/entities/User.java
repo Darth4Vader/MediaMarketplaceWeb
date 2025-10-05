@@ -16,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 /**
@@ -74,6 +75,10 @@ public class User implements UserDetails {
     
     @Column(name = "account_validated", nullable = false)
     private boolean isAccountValidated;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "preferred_currency_id")
+    private CurrencyKind preferredCurrency;
 
     /**
      * Default constructor for JPA.
@@ -206,5 +211,13 @@ public class User implements UserDetails {
     
     public void setAccountValidated(boolean isAccountValidated) {
 		this.isAccountValidated = isAccountValidated;
+    }
+    
+    public CurrencyKind getPreferredCurrency() {
+		return preferredCurrency;
+    }
+    
+    public void setPreferredCurrency(CurrencyKind preferredCurrency) {
+    	this.preferredCurrency = preferredCurrency;
     }
 }

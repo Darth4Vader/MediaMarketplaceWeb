@@ -5,10 +5,12 @@ import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
@@ -77,6 +79,10 @@ public class Product {
     @Column(precision=5, scale=2)
     private BigDecimal rentDiscount;
     
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "currency_id")
+    private CurrencyKind currency;
+    
     /**
      * The movie associated with this product.
      * This field represents a one-to-one relationship with the Movie entity.
@@ -130,6 +136,10 @@ public class Product {
      */
     public BigDecimal getRentDiscount() {
         return rentDiscount;
+    }
+    
+    public CurrencyKind getCurrency() {
+		return currency;
     }
 
     /**
@@ -193,6 +203,10 @@ public class Product {
      */
     public void setRentDiscount(BigDecimal rentDiscount) {
         this.rentDiscount = rentDiscount;
+    }
+    
+    public void setCurrency(CurrencyKind currency) {
+    	this.currency = currency;
     }
 
     /**

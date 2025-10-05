@@ -54,6 +54,10 @@ public class MoviePurchased {
     @Column(name = "purchase_price", nullable = false)
     private double purchasePrice;
     
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "purchased_currency_code")
+    private CurrencyKind purchasedCurrency;
+    
     /**
      * The date and time when the movie was purchased.
      * This field maps to the 'purchased_date' column in the 'movie_purchased' table.
@@ -228,4 +232,12 @@ public class MoviePurchased {
     public void setOrder(Order order) {
         this.order = order;
     }
+    
+	public CurrencyKind getPurchasedCurrency() {
+		return purchasedCurrency;
+	}
+	
+	public void setPurchasedCurrency(CurrencyKind purchasedCurrency) {
+		this.purchasedCurrency = purchasedCurrency;
+	}
 }

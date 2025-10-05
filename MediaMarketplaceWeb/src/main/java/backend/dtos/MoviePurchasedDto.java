@@ -21,6 +21,8 @@ public class MoviePurchasedDto {
      * The purchase price of the movie.
      */
     private double purchasePrice;
+    
+    private String currencyCode;
 
     /**
      * The date and time when the movie was purchased.
@@ -185,4 +187,11 @@ public class MoviePurchasedDto {
 		this.isUseable = isUseable;
 	}
     
+	public String getCurrencyCode() {
+		return currencyCode;
+	}
+	
+	public void setCurrencyCode(String currencyCode) {
+		this.currencyCode = currencyCode;
+	}
 }

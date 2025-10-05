@@ -209,6 +209,7 @@ public class MoviePurchasedService {
         moviePurchasedDto.setRented(isRented);
         LocalDateTime purchaseDate = moviePurchased.getPurchaseDate();
         moviePurchasedDto.setPurchaseDate(TimezoneUtils.convertToRequestTimezone(purchaseDate));
+        moviePurchasedDto.setCurrencyCode(moviePurchased.getPurchasedCurrency().getCode());
         Duration rentTime = moviePurchased.getRentTime();
         moviePurchasedDto.setRentTime(rentTime);
         moviePurchasedDto.setRentTimeSincePurchase(TimezoneUtils.convertToRequestTimezone(getCurrentRentTime(isRented, purchaseDate, rentTime)));

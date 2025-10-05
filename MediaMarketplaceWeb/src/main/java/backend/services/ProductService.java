@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import backend.auth.AuthenticateAdmin;
 import backend.dtos.ProductDto;
 import backend.dtos.references.ProductReference;
+import backend.entities.CurrencyKind;
 import backend.entities.Movie;
 import backend.entities.Product;
 import backend.exceptions.EntityNotFoundException;
@@ -37,6 +38,9 @@ public class ProductService {
     
     @Autowired
     private MovieService movieService;
+    
+    @Autowired
+    private CurrencyService currencyService;
 
     /**
      * Retrieves a list of all products in the database.
@@ -74,6 +78,11 @@ public class ProductService {
     public Long addProduct(ProductReference productReference) throws EntityNotFoundException {
         Movie movie = movieService.getMovieByID(productReference.getMovieId());
         Product product = getProductFromDto(productReference, movie);
+        
+        // Set the product currency to the user's current currency
+        CurrencyKind userCurrency = currencyService.getCurrentUserPreferredCurrency();
+        product.setCurrency(userCurrency);
+        
         Product resultProduct = productRepository.save(product);
         return resultProduct.getId();
     }
@@ -93,6 +102,11 @@ public class ProductService {
     public void updateProduct(ProductReference productReference) throws EntityNotFoundException {
         Product product = getProductByID(productReference.getId());
         updateProductFromReference(product, productReference);
+        
+        // Update currency as well on price update
+        CurrencyKind userCurrency = currencyService.getCurrentUserPreferredCurrency();
+        product.setCurrency(userCurrency);
+        
         productRepository.save(product);
     }
     
@@ -179,7 +193,7 @@ public class ProductService {
      * @param movie The {@link Movie} associated with the product.
      * @return A {@link Product} entity populated with the provided details.
      */
-    public static Product getProductFromDto(ProductReference productDto, Movie movie) {
+    public Product getProductFromDto(ProductReference productDto, Movie movie) {
         Product product = new Product();
         product.setMovie(movie);
         updateProductFromReference(product, productDto);
