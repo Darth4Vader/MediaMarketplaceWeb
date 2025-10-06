@@ -141,7 +141,7 @@ public class SecurityConfig {
             		.requestMatchers(AUTH_WHITELIST).permitAll()
             		.requestMatchers("/users/login", "/users/register", "/users/verify", "/users/refresh", "/users/refresh/logout", "/oauth2/authorization/google").permitAll()
             		.requestMatchers(HttpMethod.GET, "/main/**").permitAll()
-            		.requestMatchers("/users/carts/**").permitAll()
+            		.requestMatchers("/users/carts/**", "/users/currency/**").permitAll()
             		.requestMatchers("/users/reset-password/**").permitAll()
             		.requestMatchers("/error", "/login", "/login/oauth2/code/google").permitAll()
             		.anyRequest().authenticated()

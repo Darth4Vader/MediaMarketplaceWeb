@@ -55,8 +55,8 @@ public class Order {
     @Column(name = "total_price")
     private double totalPrice;
     
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "purchased_currency_code")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "purchased_currency_code", referencedColumnName = "id")
     private CurrencyKind purchasedCurrency;
     
     /**

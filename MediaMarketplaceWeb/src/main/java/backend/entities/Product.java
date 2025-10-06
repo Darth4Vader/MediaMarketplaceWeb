@@ -5,7 +5,6 @@ import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -79,8 +78,8 @@ public class Product {
     @Column(precision=5, scale=2)
     private BigDecimal rentDiscount;
     
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "currency_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "currency_id", referencedColumnName = "id")
     private CurrencyKind currency;
     
     /**

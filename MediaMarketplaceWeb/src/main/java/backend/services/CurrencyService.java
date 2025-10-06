@@ -2,8 +2,11 @@ package backend.services;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -17,6 +20,8 @@ import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import backend.dtos.CurrencyKindDto;
+import backend.dtos.CurrencyKindDto.CountryDto;
 import backend.entities.CurrencyExchange;
 import backend.entities.CurrencyKind;
 import backend.entities.User;
@@ -48,6 +53,43 @@ public class CurrencyService {
 		    "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/%s.json";
 	
 	private static final String DEFAULT_CURRENCY = "USD";
+	private static final String DEFAULT_COUNTRY = "US";
+	
+	/**
+	 * created using chatgpt, if you need to add more currencies, please ask chatgpt to make the new map with: currency, most prominent country code that uses it
+	 */
+	public static final Map<String, String> CURRENCY_TO_COUNTRY = Map.ofEntries(
+			Map.entry("DKK", "DK"), // Denmark
+			Map.entry("CAD", "CA"), // Canada
+			Map.entry("USD", "US"), // United States
+			Map.entry("JPY", "JP"), // Japan
+			Map.entry("NOK", "NO"), // Norway
+			Map.entry("NZD", "NZ"), // New Zealand
+			Map.entry("ILS", "IL"), // Israel
+			Map.entry("AUD", "AU"), // Australia
+			Map.entry("GBP", "GB"), // United Kingdom
+			Map.entry("SEK", "SE"), // Sweden
+			Map.entry("EUR", "EU"), // European Union
+			Map.entry("CHF", "CH"), // Switzerland
+			Map.entry("CNY", "CN")  // China
+	);
+	
+	/**
+	 * Supported currencies in the system
+	 */
+	public static final List<String> supportedCurrencies = List.of("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "CNY", "SEK", "NOK", "DKK", "ILS");
+	
+	public List<CurrencyKindDto> getAllCurrencyKinds() {
+		// Load the currencies
+		List<CurrencyKind> currencyKinds = currencyKindRepository.findAll();
+		// Convert them to DTOs
+		List<CurrencyKindDto> currencyDtos = new ArrayList<>();
+		for (CurrencyKind currencyKind : currencyKinds) {
+			CurrencyKindDto currencyDto = convertCurrencyKindToDto(currencyKind);
+			currencyDtos.add(currencyDto);
+		}
+		return currencyDtos;
+	}
 	
 	@Transactional
 	public CurrencyKind getCurrencyFromSessionOrUser(HttpSession session) throws EntityNotFoundException {
@@ -110,12 +152,14 @@ public class CurrencyService {
 	
 	public void saveAllCurrencyKinds() {
 		Set<Currency> cuurencies = Currency.getAvailableCurrencies();
-		List<String> allowedCurrencies = List.of("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "CNY", "SEK", "NOK", "DKK", "ILS");
 		for(Currency currency : cuurencies) {
-			if(allowedCurrencies.contains(currency.getCurrencyCode())) {
+			if(supportedCurrencies.contains(currency.getCurrencyCode())) {
 				String code = currency.getCurrencyCode();
 				String name = currency.getDisplayName();
-				String symbol = currency.getSymbol();
+				// to get the symbol withou locale issues, we use the country code map
+				String countryCode = CURRENCY_TO_COUNTRY.getOrDefault(code, DEFAULT_COUNTRY);
+				Locale country = getLocaleForCountry(countryCode); //Locale.of("", countryCode);
+				String symbol = currency.getSymbol(country);
 				updateOrCreateCurrencyKind(code, name, symbol);
 			}
 		}
@@ -236,5 +280,34 @@ public class CurrencyService {
     
     public Optional<CurrencyExchange> getCurrencyExchange(CurrencyKind fromCurrency, CurrencyKind toCurrency) {
 		return currencyExchangeRepository.findByFromCurrencyKindAndToCurrencyKind(fromCurrency, toCurrency);
+	}
+    
+    public CurrencyKindDto convertCurrencyKindToDto(CurrencyKind currencyKind) {
+		CurrencyKindDto currencyDto = new CurrencyKindDto();
+		currencyDto.setCurrencyCode(currencyKind.getCode());
+		currencyDto.setCurrencyName(currencyKind.getName());
+		currencyDto.setCurrencySymbol(currencyKind.getSymbol());
+		String countryCode = CURRENCY_TO_COUNTRY.getOrDefault(currencyKind.getCode(), DEFAULT_COUNTRY);
+		Locale country = getLocaleForCountry(countryCode);
+		currencyDto.setMainCountry(new CountryDto(countryCode, country.getDisplayCountry()));
+		
+		CurrencyUnit currencyUnit = CurrencyUnit.of(currencyKind.getCode());
+		Set<String> list = currencyUnit.getCountryCodes();
+		List<CountryDto> countries = new ArrayList<>();
+		for(String cc : list) {
+			Locale locale = getLocaleForCountry(cc);;
+			countries.add(new CountryDto(cc, locale.getDisplayCountry()));
+		}
+		currencyDto.setCountries(countries);
+		return currencyDto;
+    }
+    
+	public static Locale getLocaleForCountry(String countryCode) {
+		for (Locale locale : Locale.getAvailableLocales()) {
+			if (locale.getCountry().equalsIgnoreCase(countryCode) && !locale.getLanguage().isEmpty()) {
+				return locale;
+			}
+		}
+		return Locale.of("", countryCode);  // fallback with no language
 	}
 }

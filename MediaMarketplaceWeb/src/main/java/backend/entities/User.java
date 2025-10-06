@@ -76,7 +76,7 @@ public class User implements UserDetails {
     @Column(name = "account_validated", nullable = false)
     private boolean isAccountValidated;
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne()
     @JoinColumn(name = "preferred_currency_id")
     private CurrencyKind preferredCurrency;
 

@@ -21,11 +21,11 @@ public class CurrencyExchange {
 	private Long id;
 	
 	@ManyToOne(optional = false)
-	@JoinColumn(name = "from_currency_code")
+	@JoinColumn(name = "from_currency_code", referencedColumnName = "id")
 	private CurrencyKind fromCurrencyKind;
 	
 	@ManyToOne(optional = false)
-	@JoinColumn(name = "to_currency_code")
+	@JoinColumn(name = "to_currency_code", referencedColumnName = "id")
 	private CurrencyKind toCurrencyKind;
 	
 	@Column(nullable = false, precision = 19, scale = 6)

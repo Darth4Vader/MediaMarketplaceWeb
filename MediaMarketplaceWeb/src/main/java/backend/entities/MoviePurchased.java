@@ -54,8 +54,8 @@ public class MoviePurchased {
     @Column(name = "purchase_price", nullable = false)
     private double purchasePrice;
     
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "purchased_currency_code")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "purchased_currency_code", referencedColumnName = "id")
     private CurrencyKind purchasedCurrency;
     
     /**
