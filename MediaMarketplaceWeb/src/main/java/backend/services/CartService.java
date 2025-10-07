@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.joda.money.Money;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +33,7 @@ import backend.exceptions.UserNotLoggedInException;
 import backend.repositories.CartProductRepository;
 import backend.repositories.CartRepository;
 import backend.sort.entities.CartProductSort;
+import backend.utils.MoneyCurrencyUtils;
 import backend.utils.PurchaseType;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
@@ -109,7 +111,8 @@ public class CartService {
         	}
 		}
         cartDto.setCartProducts(cartProductsDtoPage);
-        cartDto.setTotalPrice(calculateCartTotalPrice(cart, currentCurrency));
+        Money totalPrice = calculateCartTotalPrice(cart, currentCurrency);
+        cartDto.setTotalPrice(MoneyCurrencyUtils.convertMoneyToDto(totalPrice, currentCurrency));
         cartDto.setTotalItems(calculateCartProductTotalItems(cart));
         return cartDto;
     }
@@ -256,7 +259,8 @@ public class CartService {
 			UpdatedCartProductDto dto = new UpdatedCartProductDto();
 			dto.setCartProduct(convertCartProductToDto(updatedCartProduct, currentCurrency));
 			dto.setTotalItems(calculateCartProductTotalItems(cart));
-			dto.setTotalPrice(calculateCartTotalPrice(cart, currentCurrency));
+			Money totalPrice = calculateCartTotalPrice(cart, currentCurrency);
+			dto.setTotalPrice(MoneyCurrencyUtils.convertMoneyToDto(totalPrice, currentCurrency));
 			return dto;
 		} else {
 			throw new EntityNotFoundException("Product not found in the cart");
@@ -503,14 +507,14 @@ public class CartService {
     public CartProductDto convertCartProductToDto(CartProduct cartProduct, CurrencyKind currentCurrency) throws EntityNotFoundException {
 		CartProductDto cartProductDto = new CartProductDto();
 		Product product = cartProduct.getProduct();
-		ProductDto productDto = productService.convertProductToDto(product);
+		ProductDto productDto = productService.convertProductToDto(product, currentCurrency);
 		cartProductDto.setProduct(productDto);
 		String purchaseType = cartProduct.getPurchaseType();
 		cartProductDto.setPurchaseType(purchaseType);
 		boolean isSelected = cartProduct.isSelected();
 		cartProductDto.setSelected(isSelected);
-		cartProductDto.setPrice(calculateCartProductTypePriceInCurrency(cartProduct, currentCurrency));
-		cartProductDto.setCurrencyCode(currentCurrency.getCode());
+		Money price = calculateCartProductTypePriceInCurrency(cartProduct, currentCurrency);
+		cartProductDto.setPrice(MoneyCurrencyUtils.convertMoneyToDto(price, currentCurrency));
 		return cartProductDto;
 	}
     
@@ -518,33 +522,38 @@ public class CartService {
 		int totalItems = 0;
 		List<CartProduct> cartProducts = cart.getCartProducts();
 		if (cartProducts != null) {
-			totalItems = cartProducts.size();
+			// we count the selected products only
+			totalItems = cartProducts.stream()
+							.filter(CartProduct::isSelected)
+							.toList()
+							.size();
 		}
 		return totalItems;
 	}
     
-    public double calculateCartTotalPrice(Cart cart, CurrencyKind currentCurrency) throws EntityNotFoundException {
-        double totalPrice = 0;
+    public Money calculateCartTotalPrice(Cart cart, CurrencyKind currentCurrency) throws EntityNotFoundException {
+        Money totalPrice = Money.zero(CurrencyService.getCurrencyUnit(currentCurrency));
         List<CartProduct> cartProducts = cart.getCartProducts();
         if (cartProducts != null) {
             for (CartProduct cartProduct : cartProducts) {
-                if (cartProduct != null) {
+                // we calculate the price of the selected products only
+            	if (cartProduct != null && cartProduct.isSelected()) {
                     // get the calculated price of the product in the current currency
-                	double price = calculateCartProductTypePriceInCurrency(cartProduct, currentCurrency);
-                    totalPrice += price;
+                	Money price = calculateCartProductTypePriceInCurrency(cartProduct, currentCurrency);
+                	totalPrice = totalPrice.plus(price);
                 }
             }
         }
         return totalPrice;
     }
     
-    public double calculateCartProductTypePriceInCurrency(CartProduct cartProduct, CurrencyKind targetCurrency) throws EntityNotFoundException {
+    public Money calculateCartProductTypePriceInCurrency(CartProduct cartProduct, CurrencyKind targetCurrency) throws EntityNotFoundException {
     	Product product = cartProduct.getProduct();
 		String purchaseType = cartProduct.getPurchaseType();
-    	double typePrice = getCartProductTypePrice(product, purchaseType);
+    	BigDecimal typePrice = getCartProductTypePrice(product, purchaseType);
 		CurrencyKind productCurrency = product.getCurrency();
-		BigDecimal convertedPrice = currencyService.exchangeCurrencyAmount(productCurrency, targetCurrency, typePrice);
-		return convertedPrice.doubleValue();
+		Money convertedPrice = currencyService.exchangeCurrencyAmount(productCurrency, targetCurrency, typePrice);
+		return convertedPrice;
     }
     
     /**
@@ -554,11 +563,11 @@ public class CartService {
      * @param isBuying Whether the product is being bought or rented.
      * @return The price of the product based on the buying status.
      */
-    public static double getCartProductTypePrice(Product product, String purchaseType) {
+    public static BigDecimal getCartProductTypePrice(Product product, String purchaseType) {
         return switch(PurchaseType.fromString(purchaseType)) {
 			case BUY -> product.getBuyPrice();
 			case RENT -> product.getRentPrice();
-			default -> 0;
+			default -> BigDecimal.valueOf(0);
 		};
     }
 }

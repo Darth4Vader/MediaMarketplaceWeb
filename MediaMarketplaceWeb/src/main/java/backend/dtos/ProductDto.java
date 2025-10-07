@@ -1,5 +1,6 @@
 package backend.dtos;
 
+import backend.dtos.general.PriceDto;
 import backend.dtos.references.MovieReference;
 
 /**
@@ -20,12 +21,12 @@ public class ProductDto {
     /**
      * The final purchase price of the product.
      */
-    private double finalBuyPrice;
+    private PriceDto finalBuyPrice;
 
     /**
      * The final rental price of the product.
      */
-    private double finalRentPrice;
+    private PriceDto finalRentPrice;
 
     /**
      * Gets the unique identifier for the product.
@@ -68,7 +69,7 @@ public class ProductDto {
      * 
      * @return the final purchase price
      */
-    public double getFinalBuyPrice() {
+    public PriceDto getFinalBuyPrice() {
         return finalBuyPrice;
     }
 
@@ -77,7 +78,7 @@ public class ProductDto {
      * 
      * @param finalBuyPrice the final purchase price
      */
-    public void setFinalBuyPrice(double finalBuyPrice) {
+    public void setFinalBuyPrice(PriceDto finalBuyPrice) {
         this.finalBuyPrice = finalBuyPrice;
     }
 
@@ -86,7 +87,7 @@ public class ProductDto {
      * 
      * @return the final rental price
      */
-    public double getFinalRentPrice() {
+    public PriceDto getFinalRentPrice() {
         return finalRentPrice;
     }
 
@@ -95,7 +96,7 @@ public class ProductDto {
      * 
      * @param finalRentPrice the final rental price
      */
-    public void setFinalRentPrice(double finalRentPrice) {
+    public void setFinalRentPrice(PriceDto finalRentPrice) {
         this.finalRentPrice = finalRentPrice;
     }
 }

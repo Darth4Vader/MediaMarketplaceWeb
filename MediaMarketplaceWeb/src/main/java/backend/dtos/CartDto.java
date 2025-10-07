@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 
+import backend.dtos.general.PriceDto;
+
 /**
  * Data Transfer Object for representing a shopping cart.
  */
@@ -17,7 +19,7 @@ public class CartDto {
     /**
      * The total price of all products in the cart.
      */
-    private double totalPrice;
+    private PriceDto totalPrice;
     
     private int totalItems;
 
@@ -44,7 +46,7 @@ public class CartDto {
      * 
      * @return the total price of the products in the cart
      */
-    public double getTotalPrice() {
+    public PriceDto getTotalPrice() {
         return totalPrice;
     }
 
@@ -53,7 +55,7 @@ public class CartDto {
      * 
      * @param totalPrice the total price to set for the products in the cart
      */
-    public void setTotalPrice(double totalPrice) {
+    public void setTotalPrice(PriceDto totalPrice) {
         this.totalPrice = totalPrice;
     }
     

@@ -1,5 +1,6 @@
 package backend.entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,8 +53,8 @@ public class Order {
      * 
      * @return the total price of the order
      */
-    @Column(name = "total_price")
-    private double totalPrice;
+    @Column(nullable = false, name = "total_price", precision=10, scale=2)
+    private BigDecimal totalPrice;
     
     @ManyToOne(optional = false)
     @JoinColumn(name = "purchased_currency_code", referencedColumnName = "id")
@@ -119,7 +120,7 @@ public class Order {
      * 
      * @return the total price
      */
-    public double getTotalPrice() {
+    public BigDecimal getTotalPrice() {
         return totalPrice;
     }
 
@@ -128,7 +129,7 @@ public class Order {
      * 
      * @param totalPrice the total price to set
      */
-    public void setTotalPrice(double totalPrice) {
+    public void setTotalPrice(BigDecimal totalPrice) {
         this.totalPrice = totalPrice;
     }
 

@@ -26,12 +26,12 @@ public class ProductReference {
     /**
      * The price at which the product can be purchased.
      */
-    private double buyPrice;
+    private BigDecimal buyPrice;
 
     /**
      * The price at which the product can be rented.
      */
-    private double rentPrice;
+    private BigDecimal rentPrice;
 
     /**
      * The discount applicable to the purchase price of the product.
@@ -42,6 +42,8 @@ public class ProductReference {
      * The discount applicable to the rental price of the product.
      */
     private BigDecimal rentDiscount;
+    
+    private String currencyCode;
 
     /**
      * Gets the unique identifier for the product.
@@ -84,7 +86,7 @@ public class ProductReference {
      * 
      * @return the purchase price of the product
      */
-    public double getBuyPrice() {
+    public BigDecimal getBuyPrice() {
         return buyPrice;
     }
 
@@ -93,7 +95,7 @@ public class ProductReference {
      * 
      * @param buyPrice the purchase price of the product
      */
-    public void setBuyPrice(double buyPrice) {
+    public void setBuyPrice(BigDecimal buyPrice) {
         this.buyPrice = buyPrice;
     }
 
@@ -102,7 +104,7 @@ public class ProductReference {
      * 
      * @return the rental price of the product
      */
-    public double getRentPrice() {
+    public BigDecimal getRentPrice() {
         return rentPrice;
     }
 
@@ -111,7 +113,7 @@ public class ProductReference {
      * 
      * @param rentPrice the rental price of the product
      */
-    public void setRentPrice(double rentPrice) {
+    public void setRentPrice(BigDecimal rentPrice) {
         this.rentPrice = rentPrice;
     }
 
@@ -150,4 +152,12 @@ public class ProductReference {
     public void setRentDiscount(BigDecimal rentDiscount) {
         this.rentDiscount = rentDiscount;
     }
+
+	public String getCurrencyCode() {
+		return currencyCode;
+	}
+
+	public void setCurrencyCode(String currencyCode) {
+		this.currencyCode = currencyCode;
+	}
 }

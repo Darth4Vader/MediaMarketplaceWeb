@@ -1,9 +1,11 @@
 package backend.services;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.joda.money.Money;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +25,7 @@ import backend.entities.User;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.PurchaseOrderException;
 import backend.repositories.OrderRepository;
+import backend.utils.MoneyCurrencyUtils;
 import backend.utils.PurchaseType;
 import backend.utils.TimezoneUtils;
 
@@ -104,7 +107,6 @@ public class OrderService {
         Cart cart = cartService.getCartByUser(user);
         List<CartProduct> cartProducts = cart.getCartProducts();
         List<CartProduct> selectedCartProducts = new ArrayList<>();
-        double totalPrice = 0;
         List<MoviePurchased> purchasedItems = new ArrayList<>();
 
         // If the cart is empty, throw an exception.
@@ -114,6 +116,7 @@ public class OrderService {
         
         // get the current currency of the user
         CurrencyKind purchaseCurrency = currencyService.getCurrentUserPreferredCurrency(user);
+        Money totalPrice = Money.zero(CurrencyService.getCurrencyUnit(purchaseCurrency));
 
         // Convert CartProducts to MoviePurchased items and calculate the total price.
         for (CartProduct cartProduct : cartProducts) {
@@ -121,13 +124,13 @@ public class OrderService {
         	if(cartProduct.isSelected()) {
 	            Product product = cartProduct.getProduct();
 	            String purchaseType = cartProduct.getPurchaseType();
-	            double price = cartService.calculateCartProductTypePriceInCurrency(cartProduct, purchaseCurrency);
+	            Money price = cartService.calculateCartProductTypePriceInCurrency(cartProduct, purchaseCurrency);
 	            Movie movie = product.getMovie();
 	
 	            // Create the movie purchased item from the cart product.
 	            MoviePurchased orderItem = new MoviePurchased();
 	            orderItem.setMovie(movie);
-	            orderItem.setPurchasePrice(price);
+	            orderItem.setPurchasePrice(price.getAmount());
 	            orderItem.setPurchasedCurrency(purchaseCurrency);
 	            PurchaseType purchaseTypeEnum = PurchaseType.fromString(purchaseType);
 	            orderItem.setRented(purchaseTypeEnum == PurchaseType.RENT);
@@ -137,7 +140,7 @@ public class OrderService {
 	                orderItem.setRentTime(Duration.ofMinutes(RENT_TIME)); // Setting default rent time
 	            }
 	
-	            totalPrice += price;
+	            totalPrice = totalPrice.plus(price);
 	            purchasedItems.add(orderItem);
 	            selectedCartProducts.add(cartProduct);
         	}
@@ -153,7 +156,7 @@ public class OrderService {
         purchasedItems.stream().forEach(orderItem -> {
         	order.addToPurchasedItems(orderItem);
 		});
-        order.setTotalPrice(totalPrice);
+        order.setTotalPrice(totalPrice.getAmount());
         order.setPurchasedCurrency(purchaseCurrency);
         order.setUser(user);
         
@@ -181,8 +184,9 @@ public class OrderService {
         OrderDto orderDto = new OrderDto();
         orderDto.setId(order.getId());
         orderDto.setPurchasedDate(TimezoneUtils.convertToRequestTimezone(order.getPurchasedDate()));
-        orderDto.setCurrencyCode(order.getPurchasedCurrency().getCode());
-        orderDto.setTotalPrice(order.getTotalPrice());
+        BigDecimal totalPriceAmount = order.getTotalPrice();
+        CurrencyKind totalPriceCurrency = order.getPurchasedCurrency();
+        orderDto.setTotalPrice(MoneyCurrencyUtils.convertMoneyToDto(totalPriceAmount, totalPriceCurrency));
         List<MoviePurchased> moviePurchasedList = order.getPurchasedItems();
         List<MoviePurchasedDto> moviePurchasedDtoList = new ArrayList<>();
         // Convert all the movie purchased items into DTOs.

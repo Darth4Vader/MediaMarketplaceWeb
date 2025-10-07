@@ -1,6 +1,7 @@
 package backend.dtos.carts;
 
 import backend.dtos.CartProductDto;
+import backend.dtos.general.PriceDto;
 
 public class UpdatedCartProductDto {
 	
@@ -8,11 +9,7 @@ public class UpdatedCartProductDto {
 	
 	private int totalItems;
 	
-	private double totalPrice;
-
-	public UpdatedCartProductDto() {
-		
-	}
+	private PriceDto totalPrice;
 
 	public CartProductDto getCartProduct() {
 		return cartProduct;
@@ -22,7 +19,7 @@ public class UpdatedCartProductDto {
 		return totalItems;
 	}
 
-	public double getTotalPrice() {
+	public PriceDto getTotalPrice() {
 		return totalPrice;
 	}
 
@@ -34,7 +31,7 @@ public class UpdatedCartProductDto {
 		this.totalItems = totalItems;
 	}
 
-	public void setTotalPrice(double totalPrice) {
+	public void setTotalPrice(PriceDto totalPrice) {
 		this.totalPrice = totalPrice;
 	}
 }

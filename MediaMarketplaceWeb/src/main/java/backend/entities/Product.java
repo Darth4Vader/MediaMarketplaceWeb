@@ -46,8 +46,8 @@ public class Product {
      * 
      * @return the buy price
      */
-    @Column(nullable = false)
-    private double buyPrice;
+    @Column(nullable = false, precision=10, scale=2)
+    private BigDecimal buyPrice;
     
     /**
      * The price for renting this product.
@@ -55,8 +55,8 @@ public class Product {
      * 
      * @return the rent price
      */
-    @Column(nullable = false)
-    private double rentPrice;
+    @Column(nullable = false, precision=10, scale=2)
+    private BigDecimal rentPrice;
     
     /**
      * The discount applicable when buying this product.
@@ -106,7 +106,7 @@ public class Product {
      * 
      * @return the buy price
      */
-    public double getBuyPrice() {
+    public BigDecimal getBuyPrice() {
         return buyPrice;
     }
 
@@ -115,7 +115,7 @@ public class Product {
      * 
      * @return the rent price
      */
-    public double getRentPrice() {
+    public BigDecimal getRentPrice() {
         return rentPrice;
     }
 
@@ -155,7 +155,7 @@ public class Product {
      * 
      * @param buyPrice the buy price to set
      */
-    public void setBuyPrice(double buyPrice) {
+    public void setBuyPrice(BigDecimal buyPrice) {
         this.buyPrice = buyPrice;
     }
 
@@ -164,7 +164,7 @@ public class Product {
      * 
      * @param rentPrice the rent price to set
      */
-    public void setRentPrice(double rentPrice) {
+    public void setRentPrice(BigDecimal rentPrice) {
         this.rentPrice = rentPrice;
     }
 

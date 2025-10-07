@@ -1,11 +1,11 @@
 package backend.services;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.joda.money.Money;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +18,8 @@ import backend.entities.Movie;
 import backend.entities.Product;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.ProductRepository;
+import backend.utils.MoneyCurrencyUtils;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Service class for managing product entities related to movies.
@@ -49,14 +51,17 @@ public class ProductService {
      * </p>
      * 
      * @return A list of {@link ProductDto} objects representing all products in the database.
+     * @throws EntityNotFoundException 
      */
-    public List<ProductDto> getAllProducts() {
+    public List<ProductDto> getAllProducts(HttpSession session) throws EntityNotFoundException {
         // Load the products
         List<Product> products = productRepository.findAll();
+        // Load the current session/user currency
+        CurrencyKind currentCurrency = currencyService.getCurrencyFromSessionOrUser(session);
         // Convert them to DTOs
         List<ProductDto> productDtos = new ArrayList<>();
         for (Product product : products) {
-            ProductDto productDto = convertProductToDto(product);
+            ProductDto productDto = convertProductToDto(product, currentCurrency);
             productDtos.add(productDto);
         }
         return productDtos;
@@ -136,8 +141,9 @@ public class ProductService {
      * @return The {@link ProductDto} representing the product associated with the specified movie.
      * @throws EntityNotFoundException if no product exists for the specified movie.
      */
-    public ProductDto getProductOfMovie(Long movieId) throws EntityNotFoundException {
-        return convertProductToDto(getProductByMovieId(movieId));
+    public ProductDto getProductOfMovie(Long movieId, HttpSession session) throws EntityNotFoundException {
+    	CurrencyKind currentCurrency = currencyService.getCurrencyFromSessionOrUser(session);
+        return convertProductToDto(getProductByMovieId(movieId), currentCurrency);
     }
     
     /**
@@ -147,8 +153,9 @@ public class ProductService {
      * @return The {@link ProductDto} representing the product associated with the specified movie.
      * @throws EntityNotFoundException if no product exists for the specified movie.
      */
-    public ProductDto getProduct(Long productId) throws EntityNotFoundException {
-        return convertProductToDto(getProductByID(productId));
+    public ProductDto getProduct(Long productId, HttpSession session) throws EntityNotFoundException {
+    	CurrencyKind currentCurrency = currencyService.getCurrencyFromSessionOrUser(session);
+        return convertProductToDto(getProductByID(productId), currentCurrency);
     }
     
     /**
@@ -218,14 +225,20 @@ public class ProductService {
      * 
      * @param product The {@link Product} entity to convert.
      * @return A {@link ProductReference} containing the details of the product.
+     * @throws EntityNotFoundException 
      */
-    public static ProductReference convertProductToReference(Product product) {
+    public ProductReference convertProductToReference(Product product) throws EntityNotFoundException {
         ProductReference productReference = new ProductReference();
         productReference.setId(product.getId());
         productReference.setBuyPrice(product.getBuyPrice());
         productReference.setRentPrice(product.getRentPrice());
         productReference.setBuyDiscount(product.getBuyDiscount());
         productReference.setRentDiscount(product.getRentDiscount());
+        CurrencyKind currency = product.getCurrency();
+        if (currency == null) {
+			currency = currencyService.getCurrencyFromCode(CurrencyService.DEFAULT_CURRENCY);
+		}
+        productReference.setCurrencyCode(currency.getCode());
         return productReference;
     }
 
@@ -234,13 +247,21 @@ public class ProductService {
      * 
      * @param product The {@link Product} entity to convert.
      * @return A {@link ProductDto} containing the details of the product.
+     * @throws EntityNotFoundException 
      */
-    public ProductDto convertProductToDto(Product product) {
+    public ProductDto convertProductToDto(Product product, CurrencyKind currentCurrency) throws EntityNotFoundException {
         ProductDto productDto = new ProductDto();
         productDto.setId(product.getId());
         productDto.setMovie(movieService.convertMovieToReference(product.getMovie()));
-        productDto.setFinalBuyPrice(calculateBuyPrice(product));
-        productDto.setFinalRentPrice(calculateRentPrice(product));
+        // first we calculate the final prices (with discount) with the product currency
+        CurrencyKind productCurrency = product.getCurrency();
+        Money finalBuyPrice = calculateBuyPrice(product);
+        Money finalRentPrice = calculateRentPrice(product);
+        // we will return the session/user currency for the user
+        Money exchangedBuyPrice = currencyService.exchangeCurrencyAmount(productCurrency, currentCurrency, finalBuyPrice);
+        Money exchangedRentPrice = currencyService.exchangeCurrencyAmount(productCurrency, currentCurrency, finalRentPrice);
+        productDto.setFinalBuyPrice(MoneyCurrencyUtils.convertMoneyToDto(exchangedBuyPrice, currentCurrency));
+        productDto.setFinalRentPrice(MoneyCurrencyUtils.convertMoneyToDto(exchangedRentPrice, currentCurrency));
         return productDto;
     }
 
@@ -250,8 +271,8 @@ public class ProductService {
      * @param product The {@link Product} entity for which the buy price is calculated.
      * @return The final buy price of the product.
      */
-    public static double calculateBuyPrice(Product product) {
-        return calculatePrice(product.getBuyPrice(), product.getBuyDiscount());
+    public static Money calculateBuyPrice(Product product) {
+        return calculatePrice(product.getBuyPrice(), product.getBuyDiscount(), product.getCurrency());
     }
 
     /**
@@ -260,8 +281,8 @@ public class ProductService {
      * @param product The {@link Product} entity for which the rent price is calculated.
      * @return The final rent price of the product.
      */
-    public static double calculateRentPrice(Product product) {
-        return calculatePrice(product.getRentPrice(), product.getRentDiscount());
+    public static Money calculateRentPrice(Product product) {
+        return calculatePrice(product.getRentPrice(), product.getRentDiscount(), product.getCurrency());
     }
     
     private static final BigDecimal ONE_HUNDRED = new BigDecimal(100);
@@ -273,13 +294,13 @@ public class ProductService {
      * @param discount The discount to be applied.
      * @return The final price after applying the discount.
      */
-    private static double calculatePrice(double price, BigDecimal discount) {
-        if (discount == null || discount.compareTo(BigDecimal.ZERO) == 0) {
+    private static Money calculatePrice(BigDecimal amount, BigDecimal discount, CurrencyKind currency) {
+        Money price = Money.of(CurrencyService.getCurrencyUnit(currency), amount);
+    	if (discount == null || discount.compareTo(BigDecimal.ZERO) == 0) {
             return price;
         }
-        return ONE_HUNDRED.subtract(discount)
-                .divide(ONE_HUNDRED)
-                .multiply(new BigDecimal(price, new MathContext(2, RoundingMode.HALF_EVEN)))
-                .doubleValue();
+    	BigDecimal discountMultiplier = BigDecimal.ONE.subtract(discount.divide(ONE_HUNDRED));
+    	Money priceWithDiscount = price.multipliedBy(discountMultiplier, RoundingMode.HALF_EVEN);
+    	return priceWithDiscount;
     }
 }

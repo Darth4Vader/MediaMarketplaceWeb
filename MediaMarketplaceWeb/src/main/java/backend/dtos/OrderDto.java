@@ -3,6 +3,8 @@ package backend.dtos;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import backend.dtos.general.PriceDto;
+
 /**
  * Data Transfer Object for representing an order.
  */
@@ -16,9 +18,7 @@ public class OrderDto {
     /**
      * The total price of the order.
      */
-    private double totalPrice;
-    
-    private String currencyCode;
+    private PriceDto totalPrice;
 
     /**
      * The date and time when the order was purchased.
@@ -53,7 +53,7 @@ public class OrderDto {
      * 
      * @return the total price of the order
      */
-    public double getTotalPrice() {
+    public PriceDto getTotalPrice() {
         return totalPrice;
     }
 
@@ -62,7 +62,7 @@ public class OrderDto {
      * 
      * @param totalPrice the total price of the order
      */
-    public void setTotalPrice(double totalPrice) {
+    public void setTotalPrice(PriceDto totalPrice) {
         this.totalPrice = totalPrice;
     }
 
@@ -101,12 +101,4 @@ public class OrderDto {
     public void setPurchasedItems(List<MoviePurchasedDto> purchasedItems) {
         this.purchasedItems = purchasedItems;
     }
-    
-	public String getCurrencyCode() {
-		return currencyCode;
-	}
-	
-	public void setCurrencyCode(String currencyCode) {
-		this.currencyCode = currencyCode;
-	}
 }

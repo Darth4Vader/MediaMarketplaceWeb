@@ -1,6 +1,7 @@
 package backend.services;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Currency;
@@ -52,7 +53,7 @@ public class CurrencyService {
 	private static final String CURRENCY_API_URL_TEMPLATE =
 		    "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/%s.json";
 	
-	private static final String DEFAULT_CURRENCY = "USD";
+	public static final String DEFAULT_CURRENCY = "USD";
 	private static final String DEFAULT_COUNTRY = "US";
 	
 	/**
@@ -233,27 +234,30 @@ public class CurrencyService {
 		currencyExchangeRepository.save(currencyExchange);
 	}
 	
-	public BigDecimal exchangeCurrencyAmount(CurrencyKind fromCurrency, CurrencyKind toCurrency, double amount) throws EntityNotFoundException {
+	public Money exchangeCurrencyAmount(CurrencyKind fromCurrency, CurrencyKind toCurrency, double amount) throws EntityNotFoundException {
 		return exchangeCurrencyAmount(fromCurrency, toCurrency, BigDecimal.valueOf(amount));
 	}
 	
-	public BigDecimal exchangeCurrencyAmount(CurrencyKind fromCurrency, CurrencyKind toCurrency, BigDecimal amount) throws EntityNotFoundException {
+	public Money exchangeCurrencyAmount(CurrencyKind fromCurrency, CurrencyKind toCurrency, BigDecimal amount) throws EntityNotFoundException {
+		// Wrap in Joda-Money just for styling, optional
+		Money amountFromCurrency = Money.of(getCurrencyUnit(fromCurrency), amount);
+		return exchangeCurrencyAmount(fromCurrency, toCurrency, amountFromCurrency);
+	}
+	
+	public Money exchangeCurrencyAmount(CurrencyKind fromCurrency, CurrencyKind toCurrency, Money amountFromCurrency) throws EntityNotFoundException {
 		// If same currency, return unchanged
 		if (fromCurrency.equals(toCurrency)) {
-			return amount;
+			return amountFromCurrency;
 		}
 
 		// Look up exchange rate
 		CurrencyExchange exchange = getCurrencyExchange(fromCurrency, toCurrency)
 			.orElseThrow(() -> new EntityNotFoundException("Exchange rate not found."));
-
 		BigDecimal exchangeRate = exchange.getRate();
-
-		// Wrap in Joda-Money just for styling, optional
-		Money money = Money.of(CurrencyUnit.of(fromCurrency.getCode()), amount);
-		BigDecimal convertedAmount = money.getAmount().multiply(exchangeRate);
-
-		return convertedAmount;
+		
+		// convert the amount from the source currency to the target currency (using bankers rounding)
+		Money amountToCurrency = amountFromCurrency.convertedTo(getCurrencyUnit(toCurrency), exchangeRate, RoundingMode.HALF_EVEN);
+		return amountToCurrency;
 	}
 	
     public CurrencyExchange getLatestExchange() {
@@ -291,7 +295,7 @@ public class CurrencyService {
 		Locale country = getLocaleForCountry(countryCode);
 		currencyDto.setMainCountry(new CountryDto(countryCode, country.getDisplayCountry()));
 		
-		CurrencyUnit currencyUnit = CurrencyUnit.of(currencyKind.getCode());
+		CurrencyUnit currencyUnit = getCurrencyUnit(currencyKind);
 		Set<String> list = currencyUnit.getCountryCodes();
 		List<CountryDto> countries = new ArrayList<>();
 		for(String cc : list) {
@@ -309,5 +313,9 @@ public class CurrencyService {
 			}
 		}
 		return Locale.of("", countryCode);  // fallback with no language
+	}
+	
+	public static CurrencyUnit getCurrencyUnit(CurrencyKind currencyKind) {
+		return CurrencyUnit.of(currencyKind.getCode());
 	}
 }

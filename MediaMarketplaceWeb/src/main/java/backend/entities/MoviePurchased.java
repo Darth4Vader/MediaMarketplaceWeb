@@ -1,5 +1,6 @@
 package backend.entities;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -51,8 +52,8 @@ public class MoviePurchased {
      * 
      * @return the purchase price
      */
-    @Column(name = "purchase_price", nullable = false)
-    private double purchasePrice;
+    @Column(nullable = false, name = "purchase_price", precision=10, scale=2)
+    private BigDecimal purchasePrice;
     
     @ManyToOne(optional = false)
     @JoinColumn(name = "purchased_currency_code", referencedColumnName = "id")
@@ -129,7 +130,7 @@ public class MoviePurchased {
      * 
      * @return the purchase price
      */
-    public double getPurchasePrice() {
+    public BigDecimal getPurchasePrice() {
         return purchasePrice;
     }
 
@@ -138,7 +139,7 @@ public class MoviePurchased {
      * 
      * @param purchasePrice the purchase price to set
      */
-    public void setPurchasePrice(double purchasePrice) {
+    public void setPurchasePrice(BigDecimal purchasePrice) {
         this.purchasePrice = purchasePrice;
     }
 

@@ -2,6 +2,8 @@ package backend.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import backend.dtos.general.PriceDto;
+
 /**
  * Data Transfer Object for representing a product in a shopping cart.
  */
@@ -20,12 +22,7 @@ public class CartProductDto {
     /**
      * The price of the product.
      */
-    private double price;
-    
-    /**
-     * The currency code for the price (e.g., USD, EUR).
-     */
-    private String currencyCode;
+    private PriceDto price;
     
     private boolean isSelected;
 
@@ -60,7 +57,7 @@ public class CartProductDto {
      * 
      * @return the price of the product
      */
-    public double getPrice() {
+    public PriceDto getPrice() {
         return price;
     }
 
@@ -69,16 +66,8 @@ public class CartProductDto {
      * 
      * @param price the price of the product
      */
-    public void setPrice(double price) {
+    public void setPrice(PriceDto price) {
         this.price = price;
-    }
-    
-    public String getCurrencyCode() {
-		return currencyCode;
-    }
-    
-    public void setCurrencyCode(String currencyCode) {
-		this.currencyCode = currencyCode;
     }
     
     @JsonProperty("isSelected")

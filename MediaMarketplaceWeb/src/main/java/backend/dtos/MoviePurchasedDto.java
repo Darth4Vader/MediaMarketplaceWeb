@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import backend.dtos.general.PriceDto;
 import backend.dtos.references.MovieReference;
 
 /**
@@ -20,9 +21,7 @@ public class MoviePurchasedDto {
     /**
      * The purchase price of the movie.
      */
-    private double purchasePrice;
-    
-    private String currencyCode;
+    private PriceDto purchasePrice;
 
     /**
      * The date and time when the movie was purchased.
@@ -74,7 +73,7 @@ public class MoviePurchasedDto {
      * 
      * @return the purchase price of the movie
      */
-    public double getPurchasePrice() {
+    public PriceDto getPurchasePrice() {
         return purchasePrice;
     }
 
@@ -83,7 +82,7 @@ public class MoviePurchasedDto {
      * 
      * @param purchasePrice the purchase price of the movie
      */
-    public void setPurchasePrice(double purchasePrice) {
+    public void setPurchasePrice(PriceDto purchasePrice) {
         this.purchasePrice = purchasePrice;
     }
 
@@ -185,13 +184,5 @@ public class MoviePurchasedDto {
 	@JsonProperty("isUseable")
 	public void setUseable(boolean isUseable) {
 		this.isUseable = isUseable;
-	}
-    
-	public String getCurrencyCode() {
-		return currencyCode;
-	}
-	
-	public void setCurrencyCode(String currencyCode) {
-		this.currencyCode = currencyCode;
 	}
 }

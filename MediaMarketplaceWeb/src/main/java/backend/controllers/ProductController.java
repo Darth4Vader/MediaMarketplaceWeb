@@ -24,6 +24,7 @@ import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityRemovalException;
 import backend.services.ProductService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
 /**
@@ -46,10 +47,11 @@ public class ProductController {
      * </p>
      *
      * @return A list of {@link ProductDto} objects representing all products.
+     * @throws EntityNotFoundException 
      */
     @GetMapping("/")
-    public List<ProductDto> getAllProducts() {
-        return productService.getAllProducts();
+    public List<ProductDto> getAllProducts(HttpSession session) throws EntityNotFoundException {
+        return productService.getAllProducts(session);
     }
     
     /**
@@ -63,8 +65,8 @@ public class ProductController {
      * @throws EntityNotFoundException If the movie with the provided ID cannot be found.
      */
     @GetMapping("")
-    public ProductDto getProductOfMovie(@RequestParam("movieId") Long movieId) throws EntityNotFoundException {
-        return productService.getProductOfMovie(movieId);
+    public ProductDto getProductOfMovie(@RequestParam("movieId") Long movieId, HttpSession session) throws EntityNotFoundException {
+        return productService.getProductOfMovie(movieId, session);
     }
 
     /**
@@ -96,8 +98,8 @@ public class ProductController {
     }
     
     @GetMapping("/{id}")
-    public ProductDto getProduct(@Valid @PathVariable("id") Long productId) throws EntityNotFoundException {
-    	return productService.getProduct(productId);
+    public ProductDto getProduct(@Valid @PathVariable("id") Long productId, HttpSession session) throws EntityNotFoundException {
+    	return productService.getProduct(productId, session);
     }
 
     /**

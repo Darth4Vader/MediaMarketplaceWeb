@@ -1,5 +1,6 @@
 package backend.services;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,11 +17,13 @@ import backend.DataUtils;
 import backend.dtos.MoviePurchasedDto;
 import backend.dtos.orders.UserActiveMoviePurchaseInfo;
 import backend.dtos.references.MovieReference;
+import backend.entities.CurrencyKind;
 import backend.entities.Movie;
 import backend.entities.MoviePurchased;
 import backend.entities.User;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.MoviePurchasedRepository;
+import backend.utils.MoneyCurrencyUtils;
 import backend.utils.TimezoneUtils;
 import jakarta.persistence.criteria.AbstractQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -204,12 +207,13 @@ public class MoviePurchasedService {
         MoviePurchasedDto moviePurchasedDto = new MoviePurchasedDto();
         moviePurchasedDto.setId(moviePurchased.getId());
         moviePurchasedDto.setMovie(movieService.convertMovieToReference(moviePurchased.getMovie()));
-        moviePurchasedDto.setPurchasePrice(moviePurchased.getPurchasePrice());
+        BigDecimal priceAmount = moviePurchased.getPurchasePrice();
+        CurrencyKind priceCurrency = moviePurchased.getPurchasedCurrency();
+        moviePurchasedDto.setPurchasePrice(MoneyCurrencyUtils.convertMoneyToDto(priceAmount, priceCurrency));
         boolean isRented = moviePurchased.isRented();
         moviePurchasedDto.setRented(isRented);
         LocalDateTime purchaseDate = moviePurchased.getPurchaseDate();
         moviePurchasedDto.setPurchaseDate(TimezoneUtils.convertToRequestTimezone(purchaseDate));
-        moviePurchasedDto.setCurrencyCode(moviePurchased.getPurchasedCurrency().getCode());
         Duration rentTime = moviePurchased.getRentTime();
         moviePurchasedDto.setRentTime(rentTime);
         moviePurchasedDto.setRentTimeSincePurchase(TimezoneUtils.convertToRequestTimezone(getCurrentRentTime(isRented, purchaseDate, rentTime)));
