@@ -32,6 +32,7 @@ public class CurrencyController {
 
 	@GetMapping("/current")
 	public CurrencyKindDto getSessionCurrentCurrency(HttpSession session) throws EntityNotFoundException {
+		//also manage to save the country in the session
 		CurrencyKind currency = currencyService.getCurrencyFromSessionOrUser(session);
 		return currencyService.convertCurrencyKindToDto(currency);
 	}

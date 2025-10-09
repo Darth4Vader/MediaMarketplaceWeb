@@ -6,6 +6,7 @@
 -- thus the maximum string length this implementation can handle is also limited to 255 characters.
 
 DELIMITER $$
+use market $$
 DROP FUNCTION IF EXISTS LEVENSHTEIN $$
 CREATE FUNCTION LEVENSHTEIN(s1 VARCHAR(255) CHARACTER SET utf8, s2 VARCHAR(255) CHARACTER SET utf8)
   RETURNS INT

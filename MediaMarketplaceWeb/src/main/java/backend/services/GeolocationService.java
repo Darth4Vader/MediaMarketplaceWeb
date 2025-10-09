@@ -1,0 +1,68 @@
+package backend.services;
+
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import backend.dtos.general.IpApiResponse;
+import backend.utils.RequestUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+
+@Service
+public class GeolocationService {
+	
+	/*@Autowired
+	private CurrencyService currencyService;*/
+	
+	private static final String GEO_SEARCHED = "geoSearched";
+	
+	private static final String IPAPI_URL_TEMPLATE = "https://ipinfo.io/%s/json/";
+	
+	public void loadGeolocationInformation(HttpSession session, HttpServletRequest request) {
+    	if(session != null && session.getAttribute("Country") == null) {
+        	if(session.getAttribute(GEO_SEARCHED) == null) {
+        		System.out.println("Search " + session.getAttribute(GEO_SEARCHED));
+        		session.setAttribute(GEO_SEARCHED, "TRUE");
+        		String clientIp = RequestUtils.getClientIpForCloudflare(request);
+        		System.out.println("Client IP: " + clientIp);
+        		if(RequestUtils.isIpReal(clientIp)) {
+	        		IpApiResponse geo = fetchGeolocation(clientIp);
+	        		String country = geo != null ? geo.getCountry() : null;
+	        		session.setAttribute("Country", country);
+	        		System.out.println("Country: " + country);
+	        		// let's get the defualt currency for the country
+	        		String currency = CurrencyService.getDefaultCurrencyOfCountry(country);
+	        		System.out.println(currency);
+        		}
+        	}
+    	}
+	}
+	
+	public String getGeolocationCountry(HttpSession session, HttpServletRequest request) {
+		if(session != null) {
+			loadGeolocationInformation(session, request);
+			return (String)session.getAttribute("Country");
+		}
+		return null;
+	}
+
+	private IpApiResponse fetchGeolocation(String ip) {
+		String url = String.format(IPAPI_URL_TEMPLATE, ip);
+		try {
+			// Make POST request using RestClient
+			RestClient restClient = RestClient.create();
+			ResponseEntity<IpApiResponse> response = restClient.get()
+					.uri(url)
+					.accept(MediaType.APPLICATION_JSON)
+					.retrieve()
+					.toEntity(IpApiResponse.class); // Convert the response to IpApiResponse
+			return response.getBody();
+		} catch (Exception e) {
+			// Handle errors (e.g., logging), return null or default response as fallback
+			e.printStackTrace();
+			return null;
+		}
+	}
+}

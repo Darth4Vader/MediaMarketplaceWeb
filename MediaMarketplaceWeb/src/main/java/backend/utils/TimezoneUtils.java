@@ -4,9 +4,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.WebUtils;
 
 import jakarta.servlet.http.Cookie;
@@ -14,17 +11,8 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public class TimezoneUtils {
 	
-	public static HttpServletRequest getCurrentHttpRequest(){
-	    RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
-	    if (requestAttributes instanceof ServletRequestAttributes) {
-	        HttpServletRequest request = ((ServletRequestAttributes)requestAttributes).getRequest();
-	        return request;
-	    }
-	    return null;
-	}
-	
 	public static ZoneId getRequestTimezone() {
-		HttpServletRequest request = getCurrentHttpRequest();
+		HttpServletRequest request = RequestUtils.getCurrentHttpRequest();
 		if(request != null) {
 			Cookie timezoneCookie = WebUtils.getCookie(request, "timezone");
 			if(timezoneCookie != null) {

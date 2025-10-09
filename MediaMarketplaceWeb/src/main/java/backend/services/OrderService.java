@@ -114,11 +114,11 @@ public class OrderService {
             throw new PurchaseOrderException("The Cart is empty");
         }
         
-        // get the current currency of the user
+        // get the current currency of the user and total price of the cart
         CurrencyKind purchaseCurrency = currencyService.getCurrentUserPreferredCurrency(user);
-        Money totalPrice = Money.zero(CurrencyService.getCurrencyUnit(purchaseCurrency));
-
-        // Convert CartProducts to MoviePurchased items and calculate the total price.
+        Money totalPrice =  cartService.calculateCartTotalPrice(cart, purchaseCurrency);
+        
+        // Convert CartProducts to MoviePurchased items
         for (CartProduct cartProduct : cartProducts) {
         	// only process selected products
         	if(cartProduct.isSelected()) {
@@ -139,8 +139,6 @@ public class OrderService {
 	            if (purchaseTypeEnum == PurchaseType.RENT) {
 	                orderItem.setRentTime(Duration.ofMinutes(RENT_TIME)); // Setting default rent time
 	            }
-	
-	            totalPrice = totalPrice.plus(price);
 	            purchasedItems.add(orderItem);
 	            selectedCartProducts.add(cartProduct);
         	}

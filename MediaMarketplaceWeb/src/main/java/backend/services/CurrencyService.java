@@ -32,6 +32,8 @@ import backend.exceptions.UserNotLoggedInException;
 import backend.repositories.CurrencyExchangeRepository;
 import backend.repositories.CurrencyKindRepository;
 import backend.repositories.UserRepository;
+import backend.utils.RequestUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 
@@ -49,6 +51,9 @@ public class CurrencyService {
 	
 	@Autowired
 	private UserRepository userRepository;
+	
+	@Autowired
+	private GeolocationService geolocationService;
 	
 	private static final String CURRENCY_API_URL_TEMPLATE =
 		    "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/%s.json";
@@ -124,9 +129,10 @@ public class CurrencyService {
 		if (sessionCurrencyCode != null) {
 			return getCurrencyFromCode(sessionCurrencyCode);
 		}
-
-		// 4. Final fallback
-		return getCurrencyFromCode(DEFAULT_CURRENCY);
+    	// get the current request
+    	HttpServletRequest request = RequestUtils.getCurrentHttpRequest();
+		// we will get the default currency for the session country
+		return getCurrencyFromCode(getDefaultCurrencyOfSessionCountry(request));
 	}
 	
 	@Transactional
@@ -273,8 +279,10 @@ public class CurrencyService {
     	if (user != null && user.getPreferredCurrency() != null) {
     		return user.getPreferredCurrency();
 		}
-    	// Fallback or default currency
-    	return getCurrencyFromCode(DEFAULT_CURRENCY);
+    	// get the current request
+    	HttpServletRequest request = RequestUtils.getCurrentHttpRequest();
+		// we will get the default currency for the session country
+		return getCurrencyFromCode(getDefaultCurrencyOfSessionCountry(request));
     }
     
     public CurrencyKind getCurrencyFromCode(String code) throws EntityNotFoundException {
@@ -317,5 +325,29 @@ public class CurrencyService {
 	
 	public static CurrencyUnit getCurrencyUnit(CurrencyKind currencyKind) {
 		return CurrencyUnit.of(currencyKind.getCode());
+	}
+	
+	public String getDefaultCurrencyOfSessionCountry(HttpServletRequest request) {
+		// if we use AWS Cloudfront, then it will get the country from there
+		String countryCode = request.getHeader("CloudFront-Viewer-Country");
+		System.out.println("Limp country: " + countryCode);
+		if(countryCode == null || countryCode.isEmpty()) {
+			// if cloudfront does not work, then we will the geolocation service
+			countryCode = geolocationService.getGeolocationCountry(request.getSession(), request);
+		}
+		return getDefaultCurrencyOfCountry(countryCode);
+	}
+	
+	public static String getDefaultCurrencyOfCountry(String countryCode) {
+		if(countryCode == null || countryCode.isEmpty()) return DEFAULT_CURRENCY;
+		Locale locale = getLocaleForCountry(countryCode);
+		try {
+			Currency currency = Currency.getInstance(locale);
+			if(currency != null && supportedCurrencies.contains(currency.getCurrencyCode()))
+				return currency.getCurrencyCode();
+		} catch (IllegalArgumentException e) {
+			// invalid country code
+		}
+		return DEFAULT_CURRENCY;
 	}
 }

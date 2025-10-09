@@ -1,6 +1,8 @@
 DROP FUNCTION IF EXISTS `levenshtein_ratio`;
 DELIMITER $$
 
+use market $$
+
 CREATE FUNCTION `levenshtein_ratio`(
     `s1` VARCHAR(1024) CHARACTER SET utf8,
     `s2` VARCHAR(1024) CHARACTER SET utf8
