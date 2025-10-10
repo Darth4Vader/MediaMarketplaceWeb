@@ -18,7 +18,7 @@ import backend.entities.Movie;
 import backend.entities.Product;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.ProductRepository;
-import backend.utils.MoneyCurrencyUtils;
+import backend.utils.I18nUtils;
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -260,8 +260,8 @@ public class ProductService {
         // we will return the session/user currency for the user
         Money exchangedBuyPrice = currencyService.exchangeCurrencyAmount(productCurrency, currentCurrency, finalBuyPrice);
         Money exchangedRentPrice = currencyService.exchangeCurrencyAmount(productCurrency, currentCurrency, finalRentPrice);
-        productDto.setFinalBuyPrice(MoneyCurrencyUtils.convertMoneyToDto(exchangedBuyPrice, currentCurrency));
-        productDto.setFinalRentPrice(MoneyCurrencyUtils.convertMoneyToDto(exchangedRentPrice, currentCurrency));
+        productDto.setFinalBuyPrice(I18nUtils.convertMoneyToDto(exchangedBuyPrice, currentCurrency));
+        productDto.setFinalRentPrice(I18nUtils.convertMoneyToDto(exchangedRentPrice, currentCurrency));
         return productDto;
     }
 

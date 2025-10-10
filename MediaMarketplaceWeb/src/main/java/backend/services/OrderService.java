@@ -25,7 +25,7 @@ import backend.entities.User;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.PurchaseOrderException;
 import backend.repositories.OrderRepository;
-import backend.utils.MoneyCurrencyUtils;
+import backend.utils.I18nUtils;
 import backend.utils.PurchaseType;
 import backend.utils.TimezoneUtils;
 
@@ -184,7 +184,7 @@ public class OrderService {
         orderDto.setPurchasedDate(TimezoneUtils.convertToRequestTimezone(order.getPurchasedDate()));
         BigDecimal totalPriceAmount = order.getTotalPrice();
         CurrencyKind totalPriceCurrency = order.getPurchasedCurrency();
-        orderDto.setTotalPrice(MoneyCurrencyUtils.convertMoneyToDto(totalPriceAmount, totalPriceCurrency));
+        orderDto.setTotalPrice(I18nUtils.convertMoneyToDto(totalPriceAmount, totalPriceCurrency));
         List<MoviePurchased> moviePurchasedList = order.getPurchasedItems();
         List<MoviePurchasedDto> moviePurchasedDtoList = new ArrayList<>();
         // Convert all the movie purchased items into DTOs.

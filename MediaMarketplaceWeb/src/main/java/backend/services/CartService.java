@@ -33,11 +33,12 @@ import backend.exceptions.UserNotLoggedInException;
 import backend.repositories.CartProductRepository;
 import backend.repositories.CartRepository;
 import backend.sort.entities.CartProductSort;
-import backend.utils.MoneyCurrencyUtils;
+import backend.utils.I18nUtils;
 import backend.utils.PurchaseType;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -70,6 +71,9 @@ public class CartService {
     @Autowired
     private CurrencyService currencyService;
     
+    @Autowired
+    private GeolocationService geolocationService;
+    
     /**
      * Retrieves the current user's shopping cart as a DTO.
      * <p>
@@ -81,7 +85,7 @@ public class CartService {
      * @return A {@link CartDto} representing the user's cart.
      * @throws EntityNotFoundException if the user does not have a cart.
      */
-    public CartDto getCart(Pageable pageable, HttpSession session) throws EntityNotFoundException {
+    public CartDto getCart(Pageable pageable, HttpSession session, HttpServletRequest request) throws EntityNotFoundException {
     	// first we load the cart of the current session
         Cart cart = getCartOfSession(session);
         // load the cart products for the requested page
@@ -112,8 +116,10 @@ public class CartService {
 		}
         cartDto.setCartProducts(cartProductsDtoPage);
         Money totalPrice = calculateCartTotalPrice(cart, currentCurrency);
-        cartDto.setTotalPrice(MoneyCurrencyUtils.convertMoneyToDto(totalPrice, currentCurrency));
+        cartDto.setTotalPrice(I18nUtils.convertMoneyToDto(totalPrice, currentCurrency));
         cartDto.setTotalItems(calculateCartProductTotalItems(cart));
+        String countryCode = geolocationService.getCountryOfSession(request);
+        cartDto.setCountry(I18nUtils.convertCountryToDto(countryCode));
         return cartDto;
     }
     
@@ -237,7 +243,7 @@ public class CartService {
     }
     
     @Transactional
-    public UpdatedCartProductDto updateCartProduct(Long productId, CartProductReference cartProductReference, HttpSession session) throws EntityNotFoundException, BadRequestException {
+    public UpdatedCartProductDto updateCartProduct(Long productId, CartProductReference cartProductReference, HttpSession session, HttpServletRequest request) throws EntityNotFoundException, BadRequestException {
     	// check that the request content is valid
     	String newPurchaseType = cartProductReference.getPurchaseType();
     	if(newPurchaseType != null)
@@ -260,7 +266,9 @@ public class CartService {
 			dto.setCartProduct(convertCartProductToDto(updatedCartProduct, currentCurrency));
 			dto.setTotalItems(calculateCartProductTotalItems(cart));
 			Money totalPrice = calculateCartTotalPrice(cart, currentCurrency);
-			dto.setTotalPrice(MoneyCurrencyUtils.convertMoneyToDto(totalPrice, currentCurrency));
+			dto.setTotalPrice(I18nUtils.convertMoneyToDto(totalPrice, currentCurrency));
+	        String countryCode = geolocationService.getCountryOfSession(request);
+	        dto.setCountry(I18nUtils.convertCountryToDto(countryCode));
 			return dto;
 		} else {
 			throw new EntityNotFoundException("Product not found in the cart");
@@ -514,7 +522,7 @@ public class CartService {
 		boolean isSelected = cartProduct.isSelected();
 		cartProductDto.setSelected(isSelected);
 		Money price = calculateCartProductTypePriceInCurrency(cartProduct, currentCurrency);
-		cartProductDto.setPrice(MoneyCurrencyUtils.convertMoneyToDto(price, currentCurrency));
+		cartProductDto.setPrice(I18nUtils.convertMoneyToDto(price, currentCurrency));
 		return cartProductDto;
 	}
     

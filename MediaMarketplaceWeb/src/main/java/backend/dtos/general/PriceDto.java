@@ -9,13 +9,13 @@ public class PriceDto {
 	@JsonFormat(shape=JsonFormat.Shape.STRING)
 	private BigDecimal amount;
 	
-	private String currency;
+	private CurrencyDto currency;
 
 	public BigDecimal getAmount() {
 		return amount;
 	}
 
-	public String getCurrency() {
+	public CurrencyDto getCurrency() {
 		return currency;
 	}
 
@@ -23,7 +23,7 @@ public class PriceDto {
 		this.amount = amount;
 	}
 
-	public void setCurrency(String currency) {
+	public void setCurrency(CurrencyDto currency) {
 		this.currency = currency;
 	}
 }

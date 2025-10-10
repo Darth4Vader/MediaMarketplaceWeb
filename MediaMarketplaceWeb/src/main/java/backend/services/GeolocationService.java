@@ -13,14 +13,31 @@ import jakarta.servlet.http.HttpSession;
 @Service
 public class GeolocationService {
 	
-	/*@Autowired
-	private CurrencyService currencyService;*/
-	
 	private static final String GEO_SEARCHED = "geoSearched";
 	
 	private static final String IPAPI_URL_TEMPLATE = "https://ipinfo.io/%s/json/";
 	
-	public void loadGeolocationInformation(HttpSession session, HttpServletRequest request) {
+	public String getCountryOfSession(HttpServletRequest request) {
+		if(request == null) return null;
+		// if we use AWS Cloudfront, then it will get the country from there
+		String countryCode = request.getHeader("CloudFront-Viewer-Country");
+		System.out.println("Limp country: " + countryCode);
+		if(countryCode == null || countryCode.isEmpty()) {
+			// if cloudfront does not work, then we will the geolocation service
+			countryCode = getGeolocationCountry(request.getSession(), request);
+		}
+		return countryCode;
+	}
+	
+	private String getGeolocationCountry(HttpSession session, HttpServletRequest request) {
+		if(session != null) {
+			loadGeolocationInformation(session, request);
+			return (String)session.getAttribute("Country");
+		}
+		return null;
+	}
+	
+	private void loadGeolocationInformation(HttpSession session, HttpServletRequest request) {
     	if(session != null && session.getAttribute("Country") == null) {
         	if(session.getAttribute(GEO_SEARCHED) == null) {
         		System.out.println("Search " + session.getAttribute(GEO_SEARCHED));
@@ -38,14 +55,6 @@ public class GeolocationService {
         		}
         	}
     	}
-	}
-	
-	public String getGeolocationCountry(HttpSession session, HttpServletRequest request) {
-		if(session != null) {
-			loadGeolocationInformation(session, request);
-			return (String)session.getAttribute("Country");
-		}
-		return null;
 	}
 
 	private IpApiResponse fetchGeolocation(String ip) {

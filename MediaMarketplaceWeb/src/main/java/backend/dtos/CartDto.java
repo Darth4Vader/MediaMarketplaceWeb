@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 
+import backend.dtos.general.CountryDto;
 import backend.dtos.general.PriceDto;
 
 /**
@@ -22,6 +23,8 @@ public class CartDto {
     private PriceDto totalPrice;
     
     private int totalItems;
+    
+    private CountryDto country;
 
     /**
      * Gets the list of products in the cart.
@@ -65,5 +68,13 @@ public class CartDto {
 	
 	public void setTotalItems(int totalItems) {
 		this.totalItems = totalItems;
+	}
+
+	public CountryDto getCountry() {
+		return country;
+	}
+
+	public void setCountry(CountryDto country) {
+		this.country = country;
 	}
 }

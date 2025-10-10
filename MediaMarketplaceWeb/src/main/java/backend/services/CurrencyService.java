@@ -32,6 +32,7 @@ import backend.exceptions.UserNotLoggedInException;
 import backend.repositories.CurrencyExchangeRepository;
 import backend.repositories.CurrencyKindRepository;
 import backend.repositories.UserRepository;
+import backend.utils.I18nUtils;
 import backend.utils.RequestUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -165,7 +166,7 @@ public class CurrencyService {
 				String name = currency.getDisplayName();
 				// to get the symbol withou locale issues, we use the country code map
 				String countryCode = CURRENCY_TO_COUNTRY.getOrDefault(code, DEFAULT_COUNTRY);
-				Locale country = getLocaleForCountry(countryCode); //Locale.of("", countryCode);
+				Locale country = I18nUtils.getLocaleForCountry(countryCode); //Locale.of("", countryCode);
 				String symbol = currency.getSymbol(country);
 				updateOrCreateCurrencyKind(code, name, symbol);
 			}
@@ -300,47 +301,32 @@ public class CurrencyService {
 		currencyDto.setCurrencyName(currencyKind.getName());
 		currencyDto.setCurrencySymbol(currencyKind.getSymbol());
 		String countryCode = CURRENCY_TO_COUNTRY.getOrDefault(currencyKind.getCode(), DEFAULT_COUNTRY);
-		Locale country = getLocaleForCountry(countryCode);
+		Locale country = I18nUtils.getLocaleForCountry(countryCode);
 		currencyDto.setMainCountry(new CountryDto(countryCode, country.getDisplayCountry()));
 		
 		CurrencyUnit currencyUnit = getCurrencyUnit(currencyKind);
 		Set<String> list = currencyUnit.getCountryCodes();
 		List<CountryDto> countries = new ArrayList<>();
 		for(String cc : list) {
-			Locale locale = getLocaleForCountry(cc);;
+			Locale locale = I18nUtils.getLocaleForCountry(cc);;
 			countries.add(new CountryDto(cc, locale.getDisplayCountry()));
 		}
 		currencyDto.setCountries(countries);
 		return currencyDto;
     }
-    
-	public static Locale getLocaleForCountry(String countryCode) {
-		for (Locale locale : Locale.getAvailableLocales()) {
-			if (locale.getCountry().equalsIgnoreCase(countryCode) && !locale.getLanguage().isEmpty()) {
-				return locale;
-			}
-		}
-		return Locale.of("", countryCode);  // fallback with no language
-	}
 	
 	public static CurrencyUnit getCurrencyUnit(CurrencyKind currencyKind) {
 		return CurrencyUnit.of(currencyKind.getCode());
 	}
 	
 	public String getDefaultCurrencyOfSessionCountry(HttpServletRequest request) {
-		// if we use AWS Cloudfront, then it will get the country from there
-		String countryCode = request.getHeader("CloudFront-Viewer-Country");
-		System.out.println("Limp country: " + countryCode);
-		if(countryCode == null || countryCode.isEmpty()) {
-			// if cloudfront does not work, then we will the geolocation service
-			countryCode = geolocationService.getGeolocationCountry(request.getSession(), request);
-		}
+		String countryCode = geolocationService.getCountryOfSession(request);
 		return getDefaultCurrencyOfCountry(countryCode);
 	}
 	
 	public static String getDefaultCurrencyOfCountry(String countryCode) {
 		if(countryCode == null || countryCode.isEmpty()) return DEFAULT_CURRENCY;
-		Locale locale = getLocaleForCountry(countryCode);
+		Locale locale = I18nUtils.getLocaleForCountry(countryCode);
 		try {
 			Currency currency = Currency.getInstance(locale);
 			if(currency != null && supportedCurrencies.contains(currency.getCurrencyCode()))

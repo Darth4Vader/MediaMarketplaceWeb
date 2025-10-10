@@ -25,6 +25,7 @@ import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityRemovalException;
 import backend.exceptions.EntityUnprocessableException;
 import backend.services.CartService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -50,8 +51,8 @@ public class CartController {
      * @throws EntityNotFoundException If the cart is not found.
      */
     @GetMapping("")
-    public CartDto getCart(Pageable pageable, HttpSession session) throws EntityNotFoundException {
-        return cartService.getCart(pageable, session);
+    public CartDto getCart(Pageable pageable, HttpSession session, HttpServletRequest request) throws EntityNotFoundException {
+        return cartService.getCart(pageable, session, request);
     }
 
     /**
@@ -103,10 +104,10 @@ public class CartController {
     }
     
     @PatchMapping("/{productId}")
-    public UpdatedCartProductDto updateCartProduct(@NonNull @PathVariable("productId") Long productId, @RequestBody CartProductReference dto, HttpSession session) 
+    public UpdatedCartProductDto updateCartProduct(@NonNull @PathVariable("productId") Long productId, @RequestBody CartProductReference dto, HttpSession session, HttpServletRequest request) 
             throws EntityNotFoundException, BadRequestException {
         try {
-            return cartService.updateCartProduct(productId, dto, session);
+            return cartService.updateCartProduct(productId, dto, session, request);
         } catch (DataAccessException e) {
             throw new EntityAdditionException("Unable to update the product \"" + productId + "\" in the cart", e);
         }

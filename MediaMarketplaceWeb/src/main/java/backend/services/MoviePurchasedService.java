@@ -23,7 +23,7 @@ import backend.entities.MoviePurchased;
 import backend.entities.User;
 import backend.exceptions.EntityNotFoundException;
 import backend.repositories.MoviePurchasedRepository;
-import backend.utils.MoneyCurrencyUtils;
+import backend.utils.I18nUtils;
 import backend.utils.TimezoneUtils;
 import jakarta.persistence.criteria.AbstractQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -209,7 +209,7 @@ public class MoviePurchasedService {
         moviePurchasedDto.setMovie(movieService.convertMovieToReference(moviePurchased.getMovie()));
         BigDecimal priceAmount = moviePurchased.getPurchasePrice();
         CurrencyKind priceCurrency = moviePurchased.getPurchasedCurrency();
-        moviePurchasedDto.setPurchasePrice(MoneyCurrencyUtils.convertMoneyToDto(priceAmount, priceCurrency));
+        moviePurchasedDto.setPurchasePrice(I18nUtils.convertMoneyToDto(priceAmount, priceCurrency));
         boolean isRented = moviePurchased.isRented();
         moviePurchasedDto.setRented(isRented);
         LocalDateTime purchaseDate = moviePurchased.getPurchaseDate();
