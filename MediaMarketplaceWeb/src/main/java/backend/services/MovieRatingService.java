@@ -1,5 +1,7 @@
 package backend.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +15,8 @@ import backend.repositories.MovieReviewRepository;
 
 @Service
 public class MovieRatingService {
+	
+	private static final Logger UPDATE_ENTITY_LOGGER = LoggerFactory.getLogger("myapp.logging.entity.update");
 	
 	@Autowired
 	private MovieRatingRepository movieRatingRepository;
@@ -38,8 +42,7 @@ public class MovieRatingService {
 	@Transactional
 	private void updateMovieRating(Movie movie) {
 		MovieRating movieRating = movie.getMovieRating();
-		System.out.println("Updating movie rating for: " + movie.getName() + " (" + movie.getId() + ")");
-		System.out.println("Updating movie rating for: " + movieRating);
+		UPDATE_ENTITY_LOGGER.info("MovieRatingService: Updating movie rating for movie: {}", movie);
 		Double averageRating = movieReviewRepository.findAverageRatingByMovie(movie);
 		Long totalRatings = movieReviewRepository.findCountByMovie(movie);
 		if(movieRating != null) {
@@ -62,10 +65,10 @@ public class MovieRatingService {
 				movieRating.setAverageRating(averageRating);
 				movie.setMovieRating(movieRating);
 				movieService.saveMovie(movie);
-				System.out.println(movie.getMovieRating());
+				UPDATE_ENTITY_LOGGER.info("MovieRatingService: Created new movie rating: {}", movieRating);
 			}
 		}
-		System.out.println("Updating movie rating for: " + movieRating);
+		UPDATE_ENTITY_LOGGER.info("MovieRatingService: Updated movie rating: {}", movieRating);
 	}
 
 }

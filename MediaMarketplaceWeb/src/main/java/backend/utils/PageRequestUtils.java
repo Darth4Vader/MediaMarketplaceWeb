@@ -14,7 +14,6 @@ public class PageRequestUtils {
 		int page = pageableDto.getPage();
 		int size = pageableDto.getSize();
 		SortDto sortDto = pageableDto.getSort();
-		System.out.println("Sort: " + sortDto);
 		if(sortDto != null) {
 			String property = sortDto.getProperty();
 			String directionValue = sortDto.getDirection();

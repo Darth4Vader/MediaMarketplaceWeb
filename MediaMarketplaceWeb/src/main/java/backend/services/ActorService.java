@@ -52,7 +52,6 @@ public class ActorService {
     private MovieService movieService;
     
     public Page<PersonReference> searchActors(PersonFilter personFilter, Pageable pageable) {
-    	System.out.println(personFilter);
     	Specification<Person> specification = createActorSearchSpecification(personFilter);
 		Page<Person> actorPage = personService.searchPeople(specification, pageable);
 		

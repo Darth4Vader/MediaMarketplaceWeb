@@ -3,10 +3,9 @@ package backend;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
@@ -21,19 +20,27 @@ import org.springframework.web.util.WebUtils;
 import backend.controllers.UserAuthenticateController;
 import backend.exceptions.JwtTokenExpiredException;
 import backend.exceptions.UserNotLoggedInException;
+import backend.services.GeolocationService;
+import backend.utils.RequestUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @Component
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
 	
-	private final Log LOGGER = LogFactory.getLog(getClass());
+	private static final Logger GENERAL_LOGGER = LoggerFactory.getLogger("myapp.logging.general");
+	private static final Logger AUTH_LOGGER = LoggerFactory.getLogger("myapp.logging.auth");
+	private static final Logger SESSION_LOGGER = LoggerFactory.getLogger("myapp.logging.session");
 	
 	@Autowired
 	private UserAuthenticateController userAuthenticateController;
+	
+	@Autowired
+	private GeolocationService geolocationService;
 	
 	@Autowired
 	//@Qualifier("exceptionResolver")
@@ -43,6 +50,27 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         try {
+    		// skip loading images (only for localhost development environment)
+    	    String path = request.getRequestURI();
+
+    	    if (path.startsWith("/api/images/")) {
+    	        filterChain.doFilter(request, response);  // skip your filter logic here
+    	        return;
+    	    }
+
+    	    // log new Users accessing the server by IP address
+    	    HttpSession session = request.getSession(false);
+    	    if (session != null) {
+    	        Boolean ipLogged = (Boolean) session.getAttribute("ipLogged");
+    	        if (ipLogged == null || !ipLogged) {
+    	        	session.setAttribute("ipLogged", true);
+    	            String ipAddress = RequestUtils.getClientIpForCloudflare(request);
+    	            SESSION_LOGGER.info("New connection from IP: {} Country: {}", ipAddress, geolocationService.getCountryOfSession(request));
+    	        }
+    	    } else {
+    	        // No session - could create one or handle differently
+    	    }
+    	    
 			// try log user by access token
         	// also check if access token i missingg or expired
         	// if so try to refresh it
@@ -52,7 +80,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 				if(accessTokenCookie != null) {
 					String accessToken = accessTokenCookie.getValue();
 		        	if(userAuthenticateController.loginUserFromToken(accessToken, request))
-		        		LOGGER.info("User authenticated successfully");
+		        		AUTH_LOGGER.info("User authenticated successfully");
 				}
 				else {
 					// maybe missing becuase expired and removed
@@ -68,25 +96,15 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 	        	if(refreshToken) {
 	        		Cookie refreshTokenCookie = WebUtils.getCookie(request, CookieNames.REFRESH_TOKEN);
 	        		if(refreshTokenCookie != null) {
-						LOGGER.info("Trying to refresh token");
+	        			//AUTH_LOGGER.info("Trying to refresh token");
 						String accessToken = userAuthenticateController.refreshTokenRequestForFilter(request, response, refreshTokenCookie);
 			        	if(userAuthenticateController.loginUserFromToken(accessToken, request))
-			        		LOGGER.info("User authenticated successfully");
+			        		AUTH_LOGGER.info("Token Refreshed: User authenticated successfully");
 					}
 	        	}
         	}
         	catch(Exception e) {}
-        	// DEBUG REMOVE
-        	//System.out.println(request.getRequestURI());
-        	//System.out.println(request.getParameterMap());
-        	Map<String, String[]> params = request.getParameterMap();
-        	for (Map.Entry<String, String[]> entry : params.entrySet()) {
-				String key = entry.getKey();
-				String[] values = entry.getValue();
-				System.out.println(key + ": " + Arrays.toString(values));
-			}
 	        filterChain.doFilter(request, response);
-	        //System.out.println("Filter chain passed");
 	        try {
 	        	userAuthenticateController.logoutFromCurrentUser();
 	        }
@@ -96,11 +114,9 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         }
         catch(Exception e) {
         	String uri = request.getRequestURI();
-        	LOGGER.error("Error in JWTAuthenticationFilter: " + request.getMethod() + " - " + uri);
-        	System.out.println(resolver);
+        	GENERAL_LOGGER.error("Error in JWTAuthenticationFilter: " + request.getMethod() + " - " + uri);
         	if(resolver != null) {
         		ModelAndView m = resolver.resolveException(request, response, null, e);
-        		System.out.println("ModelAndView: " + m);
         		// exception not resolved, then rethrow it
         		if(m == null) {
         			throw e;
@@ -110,7 +126,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
         		}
         	}
         	else
-        		LOGGER.error("Exception Resolver is null");
+        		GENERAL_LOGGER.error("Exception Resolver is null");
         }
     }
     

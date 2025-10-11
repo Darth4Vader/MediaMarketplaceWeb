@@ -59,9 +59,6 @@ public class CurrencyService {
 	private static final String CURRENCY_API_URL_TEMPLATE =
 		    "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/%s.json";
 	
-	public static final String DEFAULT_CURRENCY = "USD";
-	private static final String DEFAULT_COUNTRY = "US";
-	
 	/**
 	 * created using chatgpt, if you need to add more currencies, please ask chatgpt to make the new map with: currency, most prominent country code that uses it
 	 */
@@ -165,7 +162,7 @@ public class CurrencyService {
 				String code = currency.getCurrencyCode();
 				String name = currency.getDisplayName();
 				// to get the symbol withou locale issues, we use the country code map
-				String countryCode = CURRENCY_TO_COUNTRY.getOrDefault(code, DEFAULT_COUNTRY);
+				String countryCode = CURRENCY_TO_COUNTRY.getOrDefault(code, I18nUtils.DEFAULT_COUNTRY);
 				Locale country = I18nUtils.getLocaleForCountry(countryCode); //Locale.of("", countryCode);
 				String symbol = currency.getSymbol(country);
 				updateOrCreateCurrencyKind(code, name, symbol);
@@ -300,7 +297,7 @@ public class CurrencyService {
 		currencyDto.setCurrencyCode(currencyKind.getCode());
 		currencyDto.setCurrencyName(currencyKind.getName());
 		currencyDto.setCurrencySymbol(currencyKind.getSymbol());
-		String countryCode = CURRENCY_TO_COUNTRY.getOrDefault(currencyKind.getCode(), DEFAULT_COUNTRY);
+		String countryCode = CURRENCY_TO_COUNTRY.getOrDefault(currencyKind.getCode(), I18nUtils.DEFAULT_COUNTRY);
 		Locale country = I18nUtils.getLocaleForCountry(countryCode);
 		currencyDto.setMainCountry(new CountryDto(countryCode, country.getDisplayCountry()));
 		
@@ -325,7 +322,7 @@ public class CurrencyService {
 	}
 	
 	public static String getDefaultCurrencyOfCountry(String countryCode) {
-		if(countryCode == null || countryCode.isEmpty()) return DEFAULT_CURRENCY;
+		if(countryCode == null || countryCode.isEmpty()) return I18nUtils.DEFAULT_CURRENCY;
 		Locale locale = I18nUtils.getLocaleForCountry(countryCode);
 		try {
 			Currency currency = Currency.getInstance(locale);
@@ -334,6 +331,6 @@ public class CurrencyService {
 		} catch (IllegalArgumentException e) {
 			// invalid country code
 		}
-		return DEFAULT_CURRENCY;
+		return I18nUtils.DEFAULT_CURRENCY;
 	}
 }

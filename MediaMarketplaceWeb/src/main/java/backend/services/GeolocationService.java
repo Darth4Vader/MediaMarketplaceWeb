@@ -1,5 +1,7 @@
 package backend.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,8 @@ import jakarta.servlet.http.HttpSession;
 @Service
 public class GeolocationService {
 	
+	private static final Logger SESSION_LOGGER = LoggerFactory.getLogger("myapp.logging.session");
+	
 	private static final String GEO_SEARCHED = "geoSearched";
 	
 	private static final String IPAPI_URL_TEMPLATE = "https://ipinfo.io/%s/json/";
@@ -21,11 +25,12 @@ public class GeolocationService {
 		if(request == null) return null;
 		// if we use AWS Cloudfront, then it will get the country from there
 		String countryCode = request.getHeader("CloudFront-Viewer-Country");
-		System.out.println("Limp country: " + countryCode);
+		// for logging information, we will print the country code and the ip address
 		if(countryCode == null || countryCode.isEmpty()) {
 			// if cloudfront does not work, then we will the geolocation service
 			countryCode = getGeolocationCountry(request.getSession(), request);
 		}
+		SESSION_LOGGER.info("Client IP: {} has Country code : {}", RequestUtils.getClientIpForCloudflare(request), countryCode);
 		return countryCode;
 	}
 	
@@ -40,18 +45,12 @@ public class GeolocationService {
 	private void loadGeolocationInformation(HttpSession session, HttpServletRequest request) {
     	if(session != null && session.getAttribute("Country") == null) {
         	if(session.getAttribute(GEO_SEARCHED) == null) {
-        		System.out.println("Search " + session.getAttribute(GEO_SEARCHED));
         		session.setAttribute(GEO_SEARCHED, "TRUE");
         		String clientIp = RequestUtils.getClientIpForCloudflare(request);
-        		System.out.println("Client IP: " + clientIp);
         		if(RequestUtils.isIpReal(clientIp)) {
 	        		IpApiResponse geo = fetchGeolocation(clientIp);
 	        		String country = geo != null ? geo.getCountry() : null;
 	        		session.setAttribute("Country", country);
-	        		System.out.println("Country: " + country);
-	        		// let's get the defualt currency for the country
-	        		String currency = CurrencyService.getDefaultCurrencyOfCountry(country);
-	        		System.out.println(currency);
         		}
         	}
     	}

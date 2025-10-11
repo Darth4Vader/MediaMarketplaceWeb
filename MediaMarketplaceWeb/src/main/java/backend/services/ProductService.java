@@ -236,7 +236,7 @@ public class ProductService {
         productReference.setRentDiscount(product.getRentDiscount());
         CurrencyKind currency = product.getCurrency();
         if (currency == null) {
-			currency = currencyService.getCurrencyFromCode(CurrencyService.DEFAULT_CURRENCY);
+			currency = currencyService.getCurrencyFromCode(I18nUtils.DEFAULT_CURRENCY);
 		}
         productReference.setCurrencyCode(currency.getCode());
         return productReference;

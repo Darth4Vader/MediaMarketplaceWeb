@@ -1,9 +1,9 @@
 package backend;
 
 import java.util.Map;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.hibernate.exception.JDBCConnectionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,83 +38,86 @@ import backend.exceptions.UserPasswordIsIncorrectException;
 @RestControllerAdvice
 public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	
-	private final Log LOGGER = LogFactory.getLog(getClass());
-	
+	private static final Logger AUTH_LOGGER = LoggerFactory.getLogger("myapp.logging.auth");
+	private static final Logger ENTITY_LOGGER = LoggerFactory.getLogger("myapp.logging.entity");
+	private static final Logger NOTIFICATION_LOGGER = LoggerFactory.getLogger("myapp.logging.notification");
+	private static final Logger VALIDATION_LOGGER = LoggerFactory.getLogger("myapp.logging.validation");
+	private static final Logger SECURITY_LOGGER = LoggerFactory.getLogger("myapp.logging.security");
+	private static final Logger SYSTEM_LOGGER = LoggerFactory.getLogger("myapp.logging.system");
+
 	@ExceptionHandler(UserAlreadyExistsException.class)
 	public ResponseEntity<Object> handleUserAlreadyExistsException(UserAlreadyExistsException ex, WebRequest request) {
-		LOGGER.error(ex);
+		AUTH_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.CONFLICT, request);
 	}
 	
 	@ExceptionHandler(EntityAdditionException.class)
 	public ResponseEntity<Object> handleEntityAdditionException(EntityAdditionException ex, WebRequest request) {
-		LOGGER.error(ex);
+		ENTITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
 	}
 	
 	@ExceptionHandler(LogValuesAreIncorrectException.class)
 	public ResponseEntity<Object> handleLogValuesAreIncorrectException(LogValuesAreIncorrectException ex, WebRequest request) {
-		LOGGER.error(ex);
+		VALIDATION_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		Map<String, Object> bodyOfResponse = Map.of(
 				"error", ex.getMessage(),
-				"fields", ex.getUserLogInfo() //ex.getUserLogInfo().stream().map(e -> e.getValue()).toList()
+				"fields", ex.getUserLogInfo()
 		);
 		return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
 	}
 	
 	@ExceptionHandler(UserDoesNotExistsException.class)
 	public ResponseEntity<Object> handleUserDoesNotExistsException(UserDoesNotExistsException ex, WebRequest request) {
-		LOGGER.error(ex);
+		AUTH_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.NOT_FOUND, request);
 	}
 	
 	@ExceptionHandler(UserPasswordIsIncorrectException.class)
 	public ResponseEntity<Object> handleUserPasswordIsIncorrectException(UserPasswordIsIncorrectException ex, WebRequest request) {
-		LOGGER.error(ex);
+		AUTH_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
 	}
 	
 	@ExceptionHandler(JwtTokenNotFoundException.class)
 	public ResponseEntity<Object> handleJwtTokenNotFoundException(JwtTokenNotFoundException ex, WebRequest request) {
-		LOGGER.error(ex);
+		SECURITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
 	}
 	
 	@ExceptionHandler(JDBCConnectionException.class)
 	public ResponseEntity<Object> handleJDBCConnectionException(JDBCConnectionException ex, WebRequest request) {
-		LOGGER.error(ex);
+		SYSTEM_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, "Unable to connect to Server", new HttpHeaders(), HttpStatus.SERVICE_UNAVAILABLE, request);
 	}
 	
 	@ExceptionHandler(EntityNotFoundException.class)
 	public ResponseEntity<Object> handleEntityNotFoundException(EntityNotFoundException ex, WebRequest request) {
-		LOGGER.error(ex);
+		ENTITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.NOT_FOUND, request);
 	}
 	
 	@ExceptionHandler(EntityAlreadyExistsException.class)
 	public ResponseEntity<Object> handleEntityAlreadyExistsException(EntityAlreadyExistsException ex, WebRequest request) {
-		LOGGER.error(ex);
+		ENTITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.CONFLICT, request);
 	}
 	
 	@ExceptionHandler(EntityRemovalException.class)
 	public ResponseEntity<Object> handleEntityRemovalException(EntityRemovalException ex, WebRequest request) {
-		LOGGER.error(ex);
+		ENTITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.GONE, request);
 	}
 	
 	@ExceptionHandler(PurchaseOrderException.class)
 	public ResponseEntity<Object> handlePurchaseOrderException(PurchaseOrderException ex, WebRequest request) {
-		LOGGER.error(ex);
+		ENTITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
 	}
 	
 	@ExceptionHandler(MovieReviewValuesAreIncorrectException.class)
 	public ResponseEntity<Object> handleMovieReviewValuesAreIncorrectException(MovieReviewValuesAreIncorrectException ex, WebRequest request) {
-		LOGGER.error(ex);
-		System.out.println(ex.getMessage());
-		System.out.println(ex.getMap());
+		VALIDATION_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		Map<String, Object> bodyOfResponse = Map.of(
 				"error", ex.getMessage(),
 				"fields", ex.getMap()
@@ -124,61 +127,61 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	
 	@ExceptionHandler(UserNotLoggedInException.class)
 	public ResponseEntity<Object> handleUserNotLoggedInException(UserNotLoggedInException ex, WebRequest request) {
-		LOGGER.error(ex);
+		AUTH_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
 	}
 	
 	@ExceptionHandler(RefreshTokenExpiredException.class)
 	public ResponseEntity<Object> handleRefreshTokenExpiredException(RefreshTokenExpiredException ex, WebRequest request) {
-		LOGGER.error(ex);
+		SECURITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
 	}
 	
 	@ExceptionHandler(RevokedRefreshTokenAccessException.class)
 	public ResponseEntity<Object> handleRevokedRefreshTokenAccessException(RevokedRefreshTokenAccessException ex, WebRequest request) {
-		LOGGER.error(ex);
+		SECURITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.FORBIDDEN, request);
 	}
 	
 	@ExceptionHandler(JwtTokenExpiredException.class)
 	public ResponseEntity<Object> handleJwtTokenExpiredException(JwtTokenExpiredException ex, WebRequest request) {
-		LOGGER.error(ex);
+		SECURITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNAUTHORIZED, request);
 	}
 	
 	@ExceptionHandler(EntityUnprocessableException.class)
 	public ResponseEntity<Object> handleEntityUnprocessableException(EntityUnprocessableException ex, WebRequest request) {
-		LOGGER.error(ex);
+		ENTITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
 	}
 	
 	@ExceptionHandler(MissingCookieException.class)
 	public ResponseEntity<Object> handleMissingCookieException(MissingCookieException ex, WebRequest request) {
-		LOGGER.error(ex);
+		SECURITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
 	}
 	
 	@ExceptionHandler(PasswordResetTokenCooldownException.class)
 	public ResponseEntity<Object> handlePasswordResetTokenCooldownException(PasswordResetTokenCooldownException ex, WebRequest request) {
-		LOGGER.error(ex);
+		SECURITY_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.TOO_MANY_REQUESTS, request);
 	}
 	
 	@ExceptionHandler(EmailSendFailedException.class)
 	public ResponseEntity<Object> handleEmailSendFailedException(EmailSendFailedException ex, WebRequest request) {
-		LOGGER.error(ex);
+		NOTIFICATION_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
 	}
 	
 	@ExceptionHandler(UserNotVerifiedException.class)
 	public ResponseEntity<Object> handleUserNotVerifiedException(UserNotVerifiedException ex, WebRequest request) {
-		LOGGER.error(ex);
+		AUTH_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.FORBIDDEN, request);
 	}
 	
 	@ExceptionHandler(HumanVerificationException.class)
 	public ResponseEntity<Object> handleHumanVerificationException(HumanVerificationException ex, WebRequest request) {
-		LOGGER.error(ex);
+		VALIDATION_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		Map<String, Object> bodyOfResponse = Map.of(
 				"error", ex.getMessage()
 		);
@@ -187,7 +190,7 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	
 	@ExceptionHandler(BadRequestException.class)
 	public ResponseEntity<Object> handleBadRequestException(BadRequestException ex, WebRequest request) {
-		LOGGER.error(ex);
+		VALIDATION_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
 	}
 	
@@ -197,9 +200,11 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	 * @param ex
 	 * @return
 	 */
-    /*@ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleGenericException(Exception ex) {
-    	LOGGER.error(ex);
-    	return new ResponseEntity<>("Server encountered an internal error", HttpStatus.INTERNAL_SERVER_ERROR);
-    }*/
+	/*
+	@ExceptionHandler(RuntimeException.class)
+	public ResponseEntity<Object> handleUnhandled(RuntimeException ex, WebRequest request) {
+		GENERAL_LOGGER.error("Unhandled error", ex);
+		return handleExceptionInternal(ex, "Server encountered an internal error", new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
+	}
+	*/
 }

@@ -108,7 +108,6 @@ public class MovieService {
 	}
     
     public Page<Movie> searchMoviesResult(MovieFilter movieFilter, Pageable pageable) {
-    	System.out.println(movieFilter);
     	Sort sort = pageable.getSort();
     	List<Order> customSortOrders = new ArrayList<>();
     	for(Order order : sort) {
@@ -131,30 +130,6 @@ public class MovieService {
 		return moviePage;
     }
     
-    /*
-	public Specification<Genre> getMovieGenreCategories(MovieFilter params) {
-	    Specification<Genre> spec = (root, query, cb) -> {
-	        //Subquery<Long> movieSubquery = query.subquery(Long.class);
-	    	Specification<Movie> movieSpec = createMovieSearchSpecification(params);
-	    	CriteriaQuery<Object> movieSubquery = cb.createQuery();
-	        Root<Movie> movieRoot = movieSubquery.from(Movie.class);
-	    	//movieSpec.
-	    	
-	    	//dummyQuery.from
-	    	Predicate moviePredicate = movieSpec.toPredicate(movieRoot, movieSubquery, cb);
-	    	movieSubquery.select(movieRoot.get("id")).where(moviePredicate);
-	    	//movieSpec.
-	    	
-	    	//Predicate genrePredicate = root.get("id").in(moviePredicate);
-	    	
-	    	System.out.println("Movie predicate: " + moviePredicate);
-	    	//query.where(moviePredicate);
-	    	return root.get("id").in(movieSubquery);
-	    			//cb.and(moviePredicate);
-	    };
-	    return spec;
-	}
-    */
 	public Specification<Movie> createMovieSearchSpecification(MovieFilter params, Sort sort) {
 	    Specification<Movie> spec = (root, query, cb) -> {
 	        List<Predicate> predicates = new ArrayList<>();
@@ -196,7 +171,6 @@ public class MovieService {
             if(params.getGenres() != null) {
 				Join<Movie, Genre> genres = root.join("genres", JoinType.LEFT);
 				List<Long> requestedGenres = params.getGenres();
-				System.out.println("Requested genres: " + requestedGenres);
 				
 			    // 3) Prevent duplicate root results
 			    query.distinct(true);
@@ -318,7 +292,6 @@ public class MovieService {
         MoviePageDto moviePageDto = new MoviePageDto();
         moviePageDto.setMovie(movieDto);
         MovieRating movieRating = movie.getMovieRating();
-        System.out.println("Movie Rating: " + movieRating);
         if (movieRating != null) {
         	Long totalRatings = movieRating.getTotalRatings();
         	if(totalRatings != null && totalRatings > 0) {

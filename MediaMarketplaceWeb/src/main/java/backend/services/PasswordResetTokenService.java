@@ -119,11 +119,6 @@ public class PasswordResetTokenService {
 				//cooldown period not passed, do nothing
 				LocalDateTime cooldownEnd = existingToken.getCreatedDate().plus(PASSWORD_RESET_TOKEN_EXPIRATION_COOLDOWN);
 				Duration timeSinceCreation = Duration.between(LocalDateTime.now(), cooldownEnd);
-				System.out.println(timeSinceCreation);
-				System.out.println(cooldownEnd);
-				System.out.println(existingToken.getCreatedDate());
-				System.out.println(LocalDateTime.now());
-				System.out.println(PASSWORD_RESET_TOKEN_EXPIRATION_COOLDOWN);
 				throw new PasswordResetTokenCooldownException("Please wait more " + DataUtils.timeLeftString(timeSinceCreation) + " before requesting a new password reset.");
 			}
 			//delete existing token

@@ -12,7 +12,13 @@ import backend.entities.CurrencyKind;
 
 public class I18nUtils {
 	
+	public static final String DEFAULT_CURRENCY = "USD";
+	public static final String DEFAULT_COUNTRY = "US";
+	
 	public static Locale getLocaleForCountry(String countryCode) {
+		if(countryCode == null || countryCode.isEmpty()) {
+			countryCode = DEFAULT_COUNTRY;
+		}
 		for (Locale locale : Locale.getAvailableLocales()) {
 			if (locale.getCountry().equalsIgnoreCase(countryCode) && !locale.getLanguage().isEmpty()) {
 				return locale;

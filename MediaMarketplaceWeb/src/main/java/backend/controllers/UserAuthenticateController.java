@@ -4,6 +4,8 @@ import java.time.Duration;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -65,7 +67,7 @@ import jakarta.validation.Valid;
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class UserAuthenticateController {
 	
-	private final Log LOGGER = LogFactory.getLog(getClass());
+	private static final Logger VALIDATION_LOGGER = LoggerFactory.getLogger("myapp.logging.validation");
 
     @Autowired
     private UserAuthenticateService userAuthService;
@@ -149,7 +151,7 @@ public class UserAuthenticateController {
     	TurnstileResponse response = cloudflareTurnstileService.validateToken(turnstileToken, clientIp);
     	if(!response.isSuccess()) {
     		// log if there are any warning or error codes
-    		LOGGER.error("Turnstile verification warnings or errors: " + (response.getErrorCodes() != null ? String.join(", ", response.getErrorCodes()) : ""));
+    		VALIDATION_LOGGER.error("Turnstile verification warnings or errors: " + (response.getErrorCodes() != null ? String.join(", ", response.getErrorCodes()) : ""));
     		// failed human verification
     		throw new HumanVerificationException("Human verification failed, please try again later");
     	}

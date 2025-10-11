@@ -48,20 +48,12 @@ public class MovieController {
      * @return A list of {@link MovieReference} objects.
      */
     @GetMapping("/search")
-    public Page<MovieReference> searchMovies(MovieFilter movieFilter/*, PageableDto pageableDto*/, Pageable pageable) {
-    	//System.out.println(movieFilter);
-    	//PageRequest pageable = PageRequest.of(movieFilter.getPage(), movieFilter.getSize());
-        //return movieService.searchMovies(movieFilter);
-    	//System.out.println("Sorti: " + sortt);
+    public Page<MovieReference> searchMovies(MovieFilter movieFilter, Pageable pageable) {
     	return movieService.searchMovies(movieFilter, pageable);
     }
     
     @GetMapping("/search/categories")
     public List<String> getMoviesSearchCategories(MovieFilter movieFilter) {
-    	//System.out.println(movieFilter);
-    	//PageRequest pageable = PageRequest.of(movieFilter.getPage(), movieFilter.getSize());
-        //return movieService.searchMovies(movieFilter);
-    	//System.out.println("Sorti: " + sortt);
     	return movieService.getMoviesSearchCategories(movieFilter);
     }
     
