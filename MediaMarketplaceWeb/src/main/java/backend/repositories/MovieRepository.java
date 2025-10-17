@@ -4,6 +4,8 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -37,4 +39,8 @@ public interface MovieRepository extends JpaRepository<Movie, Long>, JpaSpecific
      * @return an {@link Optional} containing the found {@link Movie}, or {@link Optional#empty()} if no movie is found
      */
     Optional<Movie> findByMediaID(@Param("media_id") String mediaID);
+    
+    @Modifying
+    @Query("UPDATE Movie m SET m.totalPageViews = m.totalPageViews + :increment WHERE m.id = :movieId")
+    void incrementTotalPageViews(@Param("movieId") Long movieId, @Param("increment") double increment);
 }

@@ -40,6 +40,7 @@ public class CurrencyStartupChecker {
         if (shouldUpdate) {
             System.out.println("[Startup] Currency data is stale. Fetching now...");
             currencyService.updateAllCurrencyExchanges();
+            System.out.println("[Startup] Currency data update complete.");
         } else {
             System.out.println("[Startup] Currency data is fresh. No need to update.");
         }

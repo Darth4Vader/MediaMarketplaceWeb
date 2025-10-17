@@ -155,6 +155,9 @@ public class Movie {
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "movie_rating_id", referencedColumnName = "id")
     private MovieRating movieRating;
+    
+    @Column(name = "total_page_views", nullable = false)
+    private double totalPageViews;
 
     /**
      * Default constructor for the Movie class.
@@ -396,6 +399,14 @@ public class Movie {
     
     public void setMovieRating(MovieRating movieRating) {
 		this.movieRating = movieRating;
+    }
+
+    public double getTotalPageViews() {
+		return totalPageViews;
+    }
+    
+    public void setTotalPageViews(double totalPageViews) {
+		this.totalPageViews = totalPageViews;
     }
 
     /**

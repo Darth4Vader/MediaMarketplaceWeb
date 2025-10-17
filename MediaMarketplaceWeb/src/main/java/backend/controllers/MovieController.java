@@ -20,10 +20,13 @@ import backend.dtos.MovieDto;
 import backend.dtos.MoviePageDto;
 import backend.dtos.references.MovieReference;
 import backend.dtos.search.MovieFilter;
+import backend.entities.Movie;
 import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.services.MovieService;
+import backend.services.ai.MoviePageViewService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 /**
@@ -38,6 +41,9 @@ public class MovieController {
 
     @Autowired
     private MovieService movieService;
+    
+    @Autowired
+    private MoviePageViewService moviePageViewService;
 
     /**
      * Retrieves all movies.
@@ -92,7 +98,13 @@ public class MovieController {
      * @throws EntityNotFoundException If the movie with the specified ID does not exist.
      */
     @GetMapping("/{id}")
-    public MoviePageDto getMovie(@PathVariable("id") Long movieId) throws EntityNotFoundException {
+    public MoviePageDto getMovie(@PathVariable("id") Long movieId, HttpServletRequest request) throws EntityNotFoundException {
+        // first we will log the page view
+    	// and if it fails we will just ignore it
+    	try {
+    		Movie movie = movieService.getMovieByID(movieId); 
+			moviePageViewService.addMoviePageView(movie, request);
+		} catch (Exception e) { /*ignore*/ }
         return movieService.getMovie(movieId);
     }
     
