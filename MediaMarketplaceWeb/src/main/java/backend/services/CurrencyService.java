@@ -193,6 +193,9 @@ public class CurrencyService {
 				String dateText = json.has("date") ? json.get("date").asText() : null;
 				LocalDateTime date = LocalDateTime.parse(dateText + "T00:00:00");
 				
+				// lets use current date for now (because sometimes the api date does not update every date)
+				date = LocalDateTime.now();
+				
 				// Extract rates
 				JsonNode ratesNode = json.get(fromCode);
 				if(ratesNode == null || ratesNode.isEmpty()) {

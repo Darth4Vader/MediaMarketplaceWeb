@@ -19,6 +19,7 @@ import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.exceptions.EntityRemovalException;
 import backend.exceptions.EntityUnprocessableException;
+import backend.exceptions.GeneralServerException;
 import backend.exceptions.HumanVerificationException;
 import backend.exceptions.JwtTokenExpiredException;
 import backend.exceptions.JwtTokenNotFoundException;
@@ -192,6 +193,12 @@ public class DefaultExceptionHandler extends ResponseEntityExceptionHandler {
 	public ResponseEntity<Object> handleBadRequestException(BadRequestException ex, WebRequest request) {
 		VALIDATION_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
 		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+	}
+	
+	@ExceptionHandler(GeneralServerException.class)
+	public ResponseEntity<Object> handleGeneralServerException(GeneralServerException ex, WebRequest request) {
+		SYSTEM_LOGGER.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
+		return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR, request);
 	}
 	
 	/**

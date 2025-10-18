@@ -33,6 +33,8 @@ public class CurrencyStartupChecker {
         }
 
         CurrencyExchange latest = currencyService.getLatestExchange();
+        
+        System.out.println(latest.getLastUpdated());
 
         boolean shouldUpdate = latest == null ||
             latest.getLastUpdated().isBefore(now.minusHours(24));

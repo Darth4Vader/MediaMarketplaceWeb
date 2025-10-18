@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +26,7 @@ import backend.exceptions.EntityAdditionException;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
 import backend.services.MovieService;
+import backend.services.ai.MovieLikeService;
 import backend.services.ai.MoviePageViewService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -44,6 +46,9 @@ public class MovieController {
     
     @Autowired
     private MoviePageViewService moviePageViewService;
+    
+    @Autowired
+    private MovieLikeService movieLikeService;
 
     /**
      * Retrieves all movies.
@@ -143,4 +148,13 @@ public class MovieController {
             throw new EntityAdditionException("Unable to update the movie with the media id: \"" + createMovieDto.getMediaID() + "\"", e);
         }
     }
+    
+    @PatchMapping("/{id}/likes/current-user")
+    public void userToggleLikeMovie(@PathVariable("id") Long movieId) throws EntityNotFoundException {
+    	try {
+    		movieLikeService.userToggleLikeMovie(movieId);
+    	} catch (DataAccessException e) {
+            throw new EntityAdditionException("Unable to update the like status of the movie with the id \"" + movieId + "\"", e);
+        }
+	}
 }
