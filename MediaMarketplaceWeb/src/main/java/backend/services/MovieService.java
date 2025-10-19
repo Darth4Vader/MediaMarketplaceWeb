@@ -21,12 +21,14 @@ import backend.auth.AuthenticateAdmin;
 import backend.dtos.CreateMovieDto;
 import backend.dtos.MovieDto;
 import backend.dtos.MoviePageDto;
+import backend.dtos.movies.KeywordCreateRequest;
 import backend.dtos.movies.RuntimeDto;
 import backend.dtos.references.MovieReference;
 import backend.dtos.search.MovieFilter;
 import backend.entities.Actor;
 import backend.entities.Director;
 import backend.entities.Genre;
+import backend.entities.Keyword;
 import backend.entities.Movie;
 import backend.entities.MovieRating;
 import backend.exceptions.EntityAlreadyExistsException;
@@ -61,6 +63,9 @@ public class MovieService {
     
     @Autowired
     private GenreService genreService;
+    
+    @Autowired
+    private KeywordService keywordService;
     
     @Autowired
     private UrlUtils urlUtils;
@@ -335,10 +340,17 @@ public class MovieService {
         for (String genreName : genresNames) {
             genres.add(genreService.getGenreByName(genreName));
         }
+        // Find the new keywords in the keywords database
+        List<KeywordCreateRequest> keywordsNames = createMovieDto.getKeywords();
+        List<Keyword> keywords = new ArrayList<>();
+        for (KeywordCreateRequest keywordName : keywordsNames) {
+			keywords.add(keywordService.getKeywordByMediaID(keywordName.getMediaID()));
+		}
         // Create the movie and save it into the database
         Movie movie = new Movie();
         movie.setMediaID(mediaID);
         movie.setGenres(genres);
+        movie.setKeywords(keywords);
         updateMovieByDto(movie, movieDto);
         movieRepository.save(movie);
     }
@@ -371,6 +383,16 @@ public class MovieService {
                 newGenres.add(genreService.getGenreByName(genreName));
             }
             movie.setGenres(newGenres); // Set new genres
+        }
+        // update the movie's keywords only if there are new keywords provided.
+        List<KeywordCreateRequest> keywordsNames = createMovieDto.getKeywords();
+        if (keywordsNames != null) {
+            movie.setKeywords(null); // Remove current keywords
+            List<Keyword> newKeywords = new ArrayList<>();
+            for (KeywordCreateRequest keywordName : keywordsNames) {
+            	newKeywords.add(keywordService.getKeywordByMediaID(keywordName.getMediaID()));
+            }
+            movie.setKeywords(newKeywords); // Set new keywords
         }
         // Update the movie and save it
         updateMovieByDto(movie, movieDto);

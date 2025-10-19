@@ -14,6 +14,8 @@ public enum UserLogInfo {
      * Represents the user's name or email.
      */
     EMAIL("email"),
+    
+    USERNAME("username"),
 
     /**
      * Represents the user's password.

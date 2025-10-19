@@ -149,6 +149,14 @@ public class Movie {
             inverseJoinColumns = @JoinColumn(name = "genre_id"))
     private List<Genre> genres;
     
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(
+		name = "movie_keywords",
+		joinColumns = @JoinColumn(name = "movie_id"),
+		inverseJoinColumns = @JoinColumn(name = "keyword_id")
+	)
+	private List<Keyword> keywords;
+
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "movie", cascade = CascadeType.ALL)
     private List<MovieReview> movieReviews;
     
@@ -214,6 +222,15 @@ public class Movie {
     }
 
     /**
+	 * Gets the list of keywords associated with this movie.
+	 * 
+	 * @return the list of keywords for this movie
+	 */
+	public List<Keyword> getKeywords() {
+		return keywords;
+	}
+
+    /**
      * Sets the unique identifier for this movie.
      * 
      * @param id the unique identifier to set
@@ -257,6 +274,15 @@ public class Movie {
     public void setGenres(List<Genre> genres) {
         this.genres = genres;
     }
+
+    /**
+	 * Sets the list of keywords associated with this movie.
+	 * 
+	 * @param keywords the list of keywords to set
+	 */
+	public void setKeywords(List<Keyword> keywords) {
+		this.keywords = keywords;
+	}
 
     /**
      * Gets the synopsis of the movie.

@@ -1,0 +1,39 @@
+package backend.repositories;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
+
+import backend.entities.Keyword;
+
+/**
+ * Repository interface for managing {@link Keyword} entities.
+ * 
+ * This repository is part of the data manipulation layer of the Spring application,
+ * responsible for performing operations such as saving, deleting, and modifying {@link Keyword} entities.
+ * It extends {@link JpaRepository}, which provides basic CRUD operations for {@link Keyword}.
+ * 
+ * <p>In addition to standard CRUD operations, this repository includes a method to find a keyword
+ * by its name.</p>
+ */
+@Repository
+public interface KeywordRepository extends JpaRepository<Keyword, Long>, JpaSpecificationExecutor<Keyword> {
+
+	/**
+	 * Finds a {@link Keyword} by its name.
+	 * 
+	 * @param name the name of the keyword
+	 * @return an {@link Optional} containing the found {@link Keyword}, or {@link Optional#empty()} if no keyword is found with the given name
+	 */
+	Optional<Keyword> findByName(String name);
+
+	/**
+	 * Finds a {@link Keyword} by its TMDB media ID.
+	 * 
+	 * @param mediaID the media ID of the keyword
+	 * @return an {@link Optional} containing the found {@link Keyword}, or {@link Optional#empty()} if no keyword is found with the given media ID
+	 */
+	Optional<Keyword> findByMediaID(String mediaID);
+}

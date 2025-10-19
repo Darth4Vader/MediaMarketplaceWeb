@@ -16,12 +16,14 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import backend.DataUtils;
 import backend.controllers.ActorController;
 import backend.controllers.DirectorController;
 import backend.controllers.GenreController;
+import backend.controllers.KeywordController;
 import backend.controllers.MovieController;
 import backend.controllers.PersonController;
 import backend.dtos.CreateMovieDto;
@@ -30,6 +32,7 @@ import backend.dtos.PersonDto;
 import backend.dtos.admin.ActorAdminReference;
 import backend.dtos.admin.DirectorAdminReference;
 import backend.dtos.admin.PersonAdminDto;
+import backend.dtos.movies.KeywordCreateRequest;
 import backend.dtos.references.MovieReference;
 import backend.exceptions.EntityAlreadyExistsException;
 import backend.exceptions.EntityNotFoundException;
@@ -42,6 +45,7 @@ import info.movito.themoviedbapi.model.Genre;
 import info.movito.themoviedbapi.model.MovieDb;
 import info.movito.themoviedbapi.model.core.MovieResultsPage;
 import info.movito.themoviedbapi.model.core.ResponseStatusException;
+import info.movito.themoviedbapi.model.keywords.Keyword;
 import info.movito.themoviedbapi.model.people.Person;
 import info.movito.themoviedbapi.model.people.PersonCast;
 import info.movito.themoviedbapi.model.people.PersonCrew;
@@ -66,7 +70,8 @@ public class CreateMovie {
     /**
      * TMDb API key for authentication.
      */
-    public static final String TMDB_API_KEY = TMDBUtils.loadApiKey();
+    @Value("${TMDB_API_KEY}")
+    public String TMDB_API_KEY;
     
     /**
      * Job title for director in TMDb.
@@ -95,6 +100,9 @@ public class CreateMovie {
     
     @Autowired
     private GenreController genreController;
+    
+    @Autowired
+    private KeywordController keywordController;
     
     @Autowired
     private MovieController movieController;
@@ -214,6 +222,8 @@ public class CreateMovie {
         MovieDto movieDto = createMovieDto.getMovieDto();
         //first we check that all of the genres are created and exists.
         createGenres(movieDto);
+        // then we create keywords
+        createKeywords(movieDb);
         String movieMediaID = createMovieDto.getMediaID();
         //Now we send the dto to the controller in order to add the movie in the database
         LOGGER.info("Starting to create the movie information");
@@ -281,6 +291,8 @@ public class CreateMovie {
         MovieDto movieDto = createMovieDto.getMovieDto();
         //first we check that all of the genres are created and exists.
         createGenres(movieDto);
+        // then we create keywords
+        createKeywords(movieDb);
         String movieMediaID = createMovieDto.getMediaID();
         LOGGER.info("Starting to update the movie information");
         //Now we send the dto to the controller in order to update the movie in the database.
@@ -372,7 +384,7 @@ public class CreateMovie {
     private MovieDb getMovieDb(int movieId) {
         TmdbApi tmdbApi = new TmdbApi(TMDB_API_KEY);
         TmdbMovies tmdbMovies = tmdbApi.getMovies();
-        return tmdbMovies.getMovie(movieId, "en-US", MovieMethod.credits);
+        return tmdbMovies.getMovie(movieId, "en-US", MovieMethod.credits, MovieMethod.keywords);
     }
     
     /**
@@ -391,6 +403,27 @@ public class CreateMovie {
                 // This is okay if the genre already exists
             }
         }
+    }
+    
+    /**
+     * Creates keywords in the database based on the movie's keyword list.
+     *
+     * @param movieDto the {@link MovieDto} object containing movie details
+     */
+    private void createKeywords(MovieDb movieDb) {
+    	LOGGER.info("Starting to create keywords");
+    	List<Keyword> keywords = movieDb.getKeywords();
+    	for (Keyword keyword : keywords) {
+    		try {
+    			KeywordCreateRequest keywordDto = new KeywordCreateRequest();
+    			keywordDto.setMediaID("" + keyword.getId());
+    			keywordDto.setName(keyword.getName());
+    			keywordController.createKeyword(keywordDto);
+    			LOGGER.info(" The Keyword \"" + keywordDto.getName() + "\" has been created");
+    		} catch (EntityAlreadyExistsException e) {
+    			// This is okay if the keyword already exists
+    		}
+    	}
     }
     
     /**
@@ -499,6 +532,17 @@ public class CreateMovie {
             movieDto.setBackdropPath(BACKDROP_PATH + mediaId + ".jpg");
         }
         createMovieDto.setMovieDto(movieDto);
+        List<Keyword> keywords = movieDb.getKeywords();
+        List<KeywordCreateRequest> movieKeywords = new ArrayList<>();
+        if (keywords != null) {
+			for (Keyword keyword : keywords) {
+				KeywordCreateRequest keywordRef = new KeywordCreateRequest();
+				keywordRef.setName(keyword.getName());
+				keywordRef.setMediaID("" + keyword.getId());
+				movieKeywords.add(keywordRef);
+			}
+		}
+        createMovieDto.setKeywords(movieKeywords);
         return createMovieDto;
     }
     

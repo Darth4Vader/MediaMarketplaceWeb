@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import backend.DataUtils;
+import backend.auth.AuthenticateNonAdmin;
 import backend.dtos.users.ResetPasswordDto;
 import backend.dtos.users.ResetPasswordTokenRequest;
 import backend.entities.PasswordResetToken;
@@ -42,6 +43,7 @@ public class PasswordResetTokenService {
 	@Autowired
 	private UserRepository userRepository;
 	
+	@AuthenticateNonAdmin
 	public PasswordResetToken createPasswordResetToken(ResetPasswordTokenRequest resetPasswordTokenRequest) throws UserDoesNotExistsException, PasswordResetTokenCooldownException, LogValuesAreIncorrectException, UserNotVerifiedException {
 		String email = resetPasswordTokenRequest != null ? resetPasswordTokenRequest.getEmail() : null;
 		UserAuthenticateService.checkForEmailException(email);

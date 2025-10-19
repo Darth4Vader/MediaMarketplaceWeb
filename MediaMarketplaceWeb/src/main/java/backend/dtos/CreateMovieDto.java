@@ -1,5 +1,9 @@
 package backend.dtos;
 
+import java.util.List;
+
+import backend.dtos.movies.KeywordCreateRequest;
+
 /**
  * Data Transfer Object for creating a movie with associated details.
  */
@@ -14,6 +18,8 @@ public class CreateMovieDto {
      * The movie details encapsulated in a {@link MovieDto} object.
      */
     private MovieDto movieDto;
+    
+    private List<KeywordCreateRequest> keywords;
 
     /**
      * Gets the TMDb ID for the movie.
@@ -50,4 +56,12 @@ public class CreateMovieDto {
     public void setMovieDto(MovieDto movieDto) {
         this.movieDto = movieDto;
     }
+    
+    public List<KeywordCreateRequest> getKeywords() {
+		return keywords;
+	}
+    
+	public void setKeywords(List<KeywordCreateRequest> keywords) {
+		this.keywords = keywords;
+	}
 }

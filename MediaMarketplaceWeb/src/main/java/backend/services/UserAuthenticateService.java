@@ -283,46 +283,39 @@ public class UserAuthenticateService {
 			// User registered via OAuth2 and does not have a password set
 			throw new UserPasswordIsIncorrectException("User registered via OAuth2, no password set");
 		}
-
-        try {
-        	// Set as the current authentication user
-            Authentication auth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email, password, user.getAuthorities()));
-            // Set as the current authentication user
-            setAuthentication(auth);
-            
-            //check if user is verified
-            try {
-            	checkIfUserIsVerified(user);
-            }
-            catch(UserNotVerifiedException e) {
-				SecurityContextHolder.getContext().setAuthentication(null);
-				// Issue new account verification token if user tries login after the previous one cooldown expired
-				AccountVerificationToken token = getActiveAccountVerificationToken(user);
-				if(token != null && !DataUtils.isUseable(token.getCreatedDate(), ACCOUNT_VERIFICATION_EXPIRATION_COOLDOWN)) {
-					// Account verification token expired, delete the token and the user and notify them to register again
-					VerifyAccountDto verifyAccountDto = new VerifyAccountDto();
-					verifyAccountDto.setEmail(user.getEmail());
-					String redirectUrl = token.getRedirectUrl();
-					token.setUser(null);
-					accountVerificationTokenRepository.delete(token);
-					AccountVerificationToken newToken = createAccountVerificationToken(user, redirectUrl);
-					verifyAccountDto.setToken(newToken.getToken());
-					throw new UserNotVerifiedException(verifyAccountDto, redirectUrl, "User email is not verified, new verification email sent");
-				}
-				throw e;
-			}
-            
-            // Generate the JWT token
-            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
-            String accessToken = tokenService.generateAccessToken(user);
-            return new LoginResponse(accessToken, refreshToken.getToken());
-        } catch (AuthenticationException e) {
-            // If there is a problem with authenticating the user, the password is incorrect
-        	// Because we check that the email exists, so it can only be the password.
-            SecurityContextHolder.getContext().setAuthentication(null);
-            throw new UserPasswordIsIncorrectException();
+        
+        // we check that it is a regular user and not an admin trying to login from here
+        if(isUserAdmin(user)) {
+        	throw new UserDoesNotExistsException("User does not exist");
         }
+        
+    	// try login authentication
+    	loginAuthentication(email, password, user);
+        
+        //check if user is verified
+        try {
+        	checkIfUserIsVerified(user);
+        }
+        catch(UserNotVerifiedException e) {
+			SecurityContextHolder.getContext().setAuthentication(null);
+			// Issue new account verification token if user tries login after the previous one cooldown expired
+			AccountVerificationToken token = getActiveAccountVerificationToken(user);
+			if(token != null && !DataUtils.isUseable(token.getCreatedDate(), ACCOUNT_VERIFICATION_EXPIRATION_COOLDOWN)) {
+				// Account verification token expired, delete the token and the user and notify them to register again
+				VerifyAccountDto verifyAccountDto = new VerifyAccountDto();
+				verifyAccountDto.setEmail(user.getEmail());
+				String redirectUrl = token.getRedirectUrl();
+				token.setUser(null);
+				accountVerificationTokenRepository.delete(token);
+				AccountVerificationToken newToken = createAccountVerificationToken(user, redirectUrl);
+				verifyAccountDto.setToken(newToken.getToken());
+				throw new UserNotVerifiedException(verifyAccountDto, redirectUrl, "User email is not verified, new verification email sent");
+			}
+			throw e;
+		}
+        
+        // Generate the JWT token
+        return generateLoginResponseForUser();
     }
 
     /**
@@ -477,6 +470,10 @@ public class UserAuthenticateService {
      */
     public boolean isCurrentUserAdmin() {
         User user = tokenService.getCurretUser();
+        return isUserAdmin(user);
+    }
+    
+    public boolean isUserAdmin(User user) {
         Role adminRole = getRoleByType(RoleType.ROLE_ADMIN);
         Collection<? extends GrantedAuthority> roles = user.getAuthorities();
         return roles != null && roles.contains(adminRole);
@@ -525,6 +522,29 @@ public class UserAuthenticateService {
         role = roleRepository.save(role);
         return role;
     }
+    
+    public LoginResponse generateLoginResponseForUser() {
+    	User user = tokenService.getCurretUser();
+		// Generate the JWT token
+		RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+		String accessToken = tokenService.generateAccessToken(user);
+		return new LoginResponse(accessToken, refreshToken.getToken());
+    }
+    
+    public void loginAuthentication(String email, String password, User user) throws UserPasswordIsIncorrectException {
+		try {
+	    	Authentication auth = authenticationManager.authenticate(
+					new UsernamePasswordAuthenticationToken(email, password, user.getAuthorities()));
+			// Set as the current authentication user
+			setAuthentication(auth);
+		} 
+		catch (AuthenticationException e) {
+	        // If there is a problem with authenticating the user, the password is incorrect
+	    	// Because we check that the email exists, so it can only be the password.
+	        SecurityContextHolder.getContext().setAuthentication(null);
+	        throw new UserPasswordIsIncorrectException();
+		}
+	}
 
     /**
      * Reloads the authentication for the given user.
