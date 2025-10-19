@@ -81,17 +81,17 @@ public class CreateMovie {
     /**
      * Path for storing poster images.
      */
-    public static final String POSTERS_PATH = "posters/";
+    public static final String POSTERS_PATH = "/images/posters/";
     
     /**
      * Path for storing backdrop images.
      */
-    public static final String BACKDROP_PATH = "backdrops/";
+    public static final String BACKDROP_PATH = "/images/backdrops/";
     
     /**
      * Path for storing people images.
      */
-    public static final String PEOPLE_PATH = "people/";
+    public static final String PEOPLE_PATH = "/images/people/";
     
     /**
      * Random number generator for introducing delays.
